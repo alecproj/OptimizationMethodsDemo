@@ -6,10 +6,9 @@
 #ifndef GRADIENTDESCENT_GRADIENTDESCENT_HPP_
 #define GRADIENTDESCENT_GRADIENTDESCENT_HPP_
 
-#include <GradientDescent/GradientInput.hpp>
-#include <Application/Reporter.hpp>
-#include <Application/Common.hpp>
+#include <GradientDescent/Common.hpp>
 
+template <typename Reporter>
 class GradientDescent {
 
     // Пример объявления и инициализации констант
@@ -17,10 +16,35 @@ class GradientDescent {
 
 public:
 
-    GradientDescent(Reporter *reporter);
+    GradientDescent(Reporter *reporter) :
+        m_data{nullptr},
+        m_reporter{reporter}
+    {
+    }
 
-    AlgResult setInputData(GradientInput *data);
-    AlgResult solve(); 
+    GDResult setInputData(const GradientInput *data)
+    {
+        if (!data) {
+            return GDResult::InvalidInput;
+        }
+        // Сначала проверить все поля на корректность
+        m_data = data;
+        return GDResult::Success;
+    }
+
+    GDResult solve()
+    {
+        if (!m_data || !m_reporter || m_reporter->begin() == 0) {
+            return GDResult::Fail;
+        }
+        
+        // Процесс решения и записи отчета (разбить на приватные функции)
+
+        if (m_reporter->end() == 0) {
+            return GDResult::Success;
+        }
+        return GDResult::Fail;
+    }
 
 private:
 

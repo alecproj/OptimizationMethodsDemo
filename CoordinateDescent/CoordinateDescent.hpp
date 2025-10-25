@@ -6,10 +6,9 @@
 #ifndef COORDINATEDESCENT_COORDINATEDESCENT_HPP_
 #define COORDINATEDESCENT_COORDINATEDESCENT_HPP_
 
-#include <CoordinateDescent/CoordinateInput.hpp>
-#include <Application/Reporter.hpp>
-#include <Application/Common.hpp>
+#include <CoordinateDescent/Common.hpp>
 
+template <typename Reporter>
 class CoordinateDescent {
 
     // Пример объявления и инициализации констант
@@ -17,10 +16,35 @@ class CoordinateDescent {
 
 public:
 
-    CoordinateDescent(Reporter *reporter);
+    CoordinateDescent(Reporter *reporter) :
+        m_data{nullptr},
+        m_reporter{reporter}
+    {
+    }
 
-    AlgResult setInputData(CoordinateInput *data);
-    AlgResult solve(); 
+    CDResult setInputData(const CoordinateInput *data)
+    {
+        if (!data) {
+            return CDResult::InvalidInput;
+        }
+        // Сначала проверить все поля на корректность
+        m_data = data;
+        return CDResult::Success;
+    }
+
+    CDResult solve()
+    {
+        if (!m_data || !m_reporter || m_reporter->begin() == 0) {
+            return CDResult::Fail;
+        }
+
+        // Процесс решения и записи отчета (разбить на приватные функции)
+
+        if (m_reporter->end() == 0) {
+            return CDResult::Success;
+        }
+        return CDResult::Fail;
+    }
 
 private:
 
