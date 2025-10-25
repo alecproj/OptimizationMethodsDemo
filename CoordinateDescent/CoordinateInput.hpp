@@ -1,0 +1,13 @@
+//
+// Created on 25 Oct, 2025
+//  by alecproj
+//
+
+#ifndef COORDINATEDESCENT_COORDINATEINPUT_HPP_
+#define COORDINATEDESCENT_COORDINATEINPUT_HPP_
+
+struct CoordinateInput {
+
+};
+
+#endif // COORDINATEDESCENT_COORDINATEINPUT_HPP_
