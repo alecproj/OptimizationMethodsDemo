@@ -17,7 +17,7 @@ class CoordinateDescent {
 public:
 
     CoordinateDescent(Reporter *reporter) :
-        m_data{nullptr},
+        m_inputData{nullptr},
         m_reporter{reporter}
     {
     }
@@ -28,14 +28,18 @@ public:
             return CDResult::InvalidInput;
         }
         // Сначала проверить все поля на корректность
-        m_data = data;
+        m_inputData = data;
         return CDResult::Success;
     }
 
     CDResult solve()
     {
-        if (!m_data || !m_reporter || m_reporter->begin() == 0) {
+        if (!m_inputData || !m_reporter || m_reporter->begin() == 0) {
             return CDResult::Fail;
+        }
+
+        if (m_inputData->extended) {
+            // Расширенный функционал
         }
 
         // Процесс решения и записи отчета (разбить на приватные функции)
@@ -48,7 +52,7 @@ public:
 
 private:
 
-    CoordinateInput *m_data;
+    const CoordinateInput *m_inputData;
     Reporter *m_reporter;
 
 };

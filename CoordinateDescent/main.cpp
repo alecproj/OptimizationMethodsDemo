@@ -14,14 +14,14 @@ public:
 
 int main()
 {
-    using AlgoType = typename CoordinateDescent<MockReporter>;
+    using AlgoType = CoordinateDescent<MockReporter>;
 
     MockReporter reporter{};
     AlgoType algo{&reporter};
     CoordinateInput data{};
 
     auto rv = algo.setInputData(&data);
-    if (rv == 0) {
+    if (rv == CDResult::Success) {
         rv = algo.solve();
     }
 

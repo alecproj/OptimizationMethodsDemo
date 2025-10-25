@@ -8,6 +8,7 @@
 
 struct GradientInput {
     long double approximation;
+    bool extended;
 };
 
 enum class GDResult : int {

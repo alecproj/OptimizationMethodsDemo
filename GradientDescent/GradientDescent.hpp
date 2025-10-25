@@ -17,7 +17,7 @@ class GradientDescent {
 public:
 
     GradientDescent(Reporter *reporter) :
-        m_data{nullptr},
+        m_inputData{nullptr},
         m_reporter{reporter}
     {
     }
@@ -28,16 +28,20 @@ public:
             return GDResult::InvalidInput;
         }
         // Сначала проверить все поля на корректность
-        m_data = data;
+        m_inputData = data;
         return GDResult::Success;
     }
 
     GDResult solve()
     {
-        if (!m_data || !m_reporter || m_reporter->begin() == 0) {
+        if (!m_inputData || !m_reporter || m_reporter->begin() == 0) {
             return GDResult::Fail;
         }
         
+        if (m_inputData->extended) {
+            // Расширенный функционал
+        }
+
         // Процесс решения и записи отчета (разбить на приватные функции)
 
         if (m_reporter->end() == 0) {
@@ -48,7 +52,7 @@ public:
 
 private:
 
-    GradientInput *m_data;
+    const GradientInput *m_inputData;
     Reporter *m_reporter;
 
 };

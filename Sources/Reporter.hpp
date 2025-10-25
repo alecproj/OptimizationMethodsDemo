@@ -13,6 +13,9 @@ class Reporter : public QObject {
 
 public:
     explicit Reporter(QObject* parent = nullptr);
+
+    int begin();
+    int end();
 };
 
 #endif // SOURCES_REPORTER_HPP_

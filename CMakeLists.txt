@@ -2,40 +2,57 @@ cmake_minimum_required(VERSION 3.16)
 
 project(OptimizationMethodsDemo VERSION 0.1 LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick)
+# Если вы добавляете репозиторий как submodule в другой проект,
+# можно переопределить эти опции извне.
+option(COORDINATEDESCENT_BUILD_STANDALONE "Build CoordinateDescent as standalone exe" OFF)
+option(GRADIENTDESCENT_BUILD_STANDALONE "Build GradientDescent as standalone exe" OFF)
 
+# --------------- Qt ---------------
+
+find_package(Qt6 REQUIRED COMPONENTS Quick Core)
 qt_standard_project_setup(REQUIRES 6.8)
 
-qt_add_executable({$PROJECT_NAME}
+# --------------- Subprojects ---------------
+
+add_subdirectory(CoordinateDescent)
+add_subdirectory(GradientDescent)
+
+add_subdirectory(Sources)
+
+# --------------- Application (Qt) ---------------
+
+qt_add_executable(${PROJECT_NAME}App
     Sources/main.cpp
 )
 
-qt_add_qml_module({$PROJECT_NAME}
-    URI {$PROJECT_NAME}
+qt_add_qml_module(${PROJECT_NAME}App
+    URI ${PROJECT_NAME}
     VERSION 1.0
     QML_FILES
         Qml/Main.qml
 )
 
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
-set_target_properties({$PROJECT_NAME} PROPERTIES
-#    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.appOptimizationMethodsDemo
+target_link_libraries(${PROJECT_NAME}App
+    PRIVATE
+        app_sources
+        CoordinateDescent
+        GradientDescent
+        Qt6::Quick
+)
+
+set_target_properties(${PROJECT_NAME}App PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
 
-target_link_libraries({$PROJECT_NAME}
-    PRIVATE Qt6::Quick
-)
-
 include(GNUInstallDirs)
-install(TARGETS {$PROJECT_NAME}
+install(TARGETS ${PROJECT_NAME}App
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

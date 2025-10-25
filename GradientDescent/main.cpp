@@ -14,14 +14,14 @@ public:
 
 int main()
 {
-    using AlgoType = typename GradientDescent<MockReporter>;
+    using AlgoType = GradientDescent<MockReporter>;
 
     MockReporter reporter{};
     AlgoType algo{&reporter};
     GradientInput data{};
 
     auto rv = algo.setInputData(&data);
-    if (rv == 0) {
+    if (rv == GDResult::Success) {
         rv = algo.solve();
     }
 

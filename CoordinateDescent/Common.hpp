@@ -8,6 +8,7 @@
 
 struct CoordinateInput {
     long double approximation;
+    bool extended;
 };
 
 enum class CDResult : int {
