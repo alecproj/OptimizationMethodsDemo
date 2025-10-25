@@ -1,0 +1,59 @@
+cmake_minimum_required(VERSION 3.16)
+
+project(OptimizationMethodsDemo VERSION 0.1 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Если вы добавляете репозиторий как submodule в другой проект,
+# можно переопределить эти опции извне.
+option(COORDINATEDESCENT_BUILD_STANDALONE "Build CoordinateDescent as standalone exe" OFF)
+option(GRADIENTDESCENT_BUILD_STANDALONE "Build GradientDescent as standalone exe" OFF)
+
+# --------------- Qt ---------------
+
+find_package(Qt6 REQUIRED COMPONENTS Quick Core)
+qt_standard_project_setup(REQUIRES 6.8)
+
+# --------------- Subprojects ---------------
+
+add_subdirectory(CoordinateDescent)
+add_subdirectory(GradientDescent)
+
+add_subdirectory(Sources)
+
+# --------------- Application (Qt) ---------------
+
+qt_add_executable(${PROJECT_NAME}App
+    Sources/main.cpp
+)
+
+qt_add_qml_module(${PROJECT_NAME}App
+    URI ${PROJECT_NAME}
+    VERSION 1.0
+    QML_FILES
+        Qml/Main.qml
+)
+
+target_link_libraries(${PROJECT_NAME}App
+    PRIVATE
+        app_sources
+        CoordinateDescent
+        GradientDescent
+        Qt6::Quick
+)
+
+set_target_properties(${PROJECT_NAME}App PROPERTIES
+    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE TRUE
+    WIN32_EXECUTABLE TRUE
+)
+
+include(GNUInstallDirs)
+install(TARGETS ${PROJECT_NAME}App
+    BUNDLE DESTINATION .
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
