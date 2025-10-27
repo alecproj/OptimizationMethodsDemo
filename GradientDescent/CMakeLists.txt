@@ -12,23 +12,15 @@ option(GRADIENTDESCENT_BUILD_STANDALONE "Build GradientDescent standalone exe" $
 file(GLOB_RECURSE GD_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp" "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 file(GLOB_RECURSE GD_SOURCES_ALL CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/*.cxx" "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
 
-set(GD_MAIN "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
-        ../CoordinateDescent/CoordinateDescent.hpp
-        ../CoordinateDescent/CoordinateDescent.hpp
-        ../CoordinateDescent/CoordinateDescent.hpp
-        ../CoordinateDescent/CoordinateDescent.hpp)
+set(GD_MAIN "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
 list(REMOVE_ITEM GD_SOURCES_ALL ${GD_MAIN})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(GD_SOURCES_ALL)
-    add_library(GradientDescent STATIC ${GD_SOURCES_ALL} ${GD_HEADERS}
-            ../CoordinateDescent/CoordinateDescent.hpp
-            ../CoordinateDescent/CoordinateDescent.hpp
-            ../CoordinateDescent/CoordinateDescent.hpp)
+    add_library(GradientDescent STATIC ${GD_SOURCES_ALL} ${GD_HEADERS})
 else()
-    add_library(GradientDescent INTERFACE
-            ../CoordinateDescent/CoordinateDescent.hpp)
+    add_library(GradientDescent INTERFACE)
 endif()
 
 target_include_directories(GradientDescent
@@ -39,7 +31,6 @@ target_include_directories(GradientDescent
 target_compile_features(GradientDescent INTERFACE cxx_std_17)
 
 if(GRADIENTDESCENT_BUILD_STANDALONE AND EXISTS ${GD_MAIN})
-    add_executable(GradientDescent_app ${GD_MAIN}
-            ../CoordinateDescent/CoordinateDescent.hpp)
+    add_executable(GradientDescent_app ${GD_MAIN})
     target_link_libraries(GradientDescent_app PRIVATE GradientDescent)
 endif()

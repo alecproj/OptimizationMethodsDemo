@@ -12,8 +12,6 @@ public:
     int end() { return 0; }
 };
 
-
-
 int main()
 {
     using AlgoType = CoordinateDescent<MockReporter>;
