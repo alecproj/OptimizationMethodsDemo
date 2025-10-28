@@ -11,7 +11,6 @@
 #include <cmath>
 #include <functional>
 #include <stdexcept>
-#include "LatexParser.hpp"
 
 template <typename Reporter>
 class GradientDescent {
@@ -113,12 +112,6 @@ private:
         }
         return (f_left < f_right) ? left_internal : right_internal;
     }
-
-    /*
-    Пример передачи аргументов:
-    auto f1 = [](double x){ return (x - 2)*(x - 2); };
-    double x1 = golden_section(f1, -5, 5, 1e-6);
-     */
 
 };
 
