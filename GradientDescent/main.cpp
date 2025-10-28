@@ -3,6 +3,7 @@
 //  by alecproj
 //
 
+#include <iostream>
 #include <GradientDescent/GradientDescent.hpp>
 #include <muParser.h>
 #include <iostream>
