@@ -3,6 +3,7 @@
 //  by alecproj
 //
 
+#include <iostream>
 #include <GradientDescent/GradientDescent.hpp>
 
 // Класс-заглушка - реализовывать не нужно!
