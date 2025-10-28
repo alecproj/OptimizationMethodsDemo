@@ -48,8 +48,6 @@ int main()
     AlgoType algo{&reporter};
     GradientInput data{};
 
-
-
     auto rv = algo.setInputData(&data);
     if (rv == GDResult::Success) {
         rv = algo.solve();
