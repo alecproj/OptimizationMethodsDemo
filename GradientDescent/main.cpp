@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <GradientDescent/GradientDescent.hpp>
+#include "LatexParser.hpp"
 
 // Класс-заглушка - реализовывать не нужно!
 class MockReporter {
@@ -20,6 +21,8 @@ int main()
     MockReporter reporter{};
     AlgoType algo{&reporter};
     GradientInput data{};
+
+
 
     auto rv = algo.setInputData(&data);
     if (rv == GDResult::Success) {
