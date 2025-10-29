@@ -17,7 +17,7 @@ find_package(Qt6 REQUIRED COMPONENTS Quick Core)
 qt_standard_project_setup(REQUIRES 6.8)
 
 # ------------ muparser ------------
-
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(MUPARSER_TARGET_NAME muparser CACHE STRING "Target name created by muparser CMake")
 set(MUPARSER_DIR "${CMAKE_CURRENT_LIST_DIR}/muparser" CACHE PATH "Path to muparser sources or submodule")
 

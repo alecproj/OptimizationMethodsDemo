@@ -17,6 +17,7 @@ set(GD_MAIN "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
 list(REMOVE_ITEM GD_SOURCES_ALL ${GD_MAIN})
 
 # -------------------- muparser -----------------------
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(MUPARSER_TARGET_NAME muparser CACHE STRING "Target name created by muparser CMake")
 set(MUPARSER_DIR "${CMAKE_CURRENT_LIST_DIR}/../muparser" CACHE PATH "Path to muparser sources or submodule")
 
