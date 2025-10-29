@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(OptimizationMethodsDemo VERSION 0.1 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -16,8 +16,22 @@ option(GRADIENTDESCENT_BUILD_STANDALONE "Build GradientDescent as standalone exe
 find_package(Qt6 REQUIRED COMPONENTS Quick Core)
 qt_standard_project_setup(REQUIRES 6.8)
 
+# --------------- ExprTk --------------------
+
+option(USE_TOPLEVEL_EXPRTK "Use ExprTk included in top-level source tree" ON)
+
+if(USE_TOPLEVEL_EXPRTK AND EXISTS "${CMAKE_SOURCE_DIR}/ExprTk/CMakeLists.txt")
+    message(STATUS "Adding top-level ExprTk")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/ExprTk" EXCLUDE_FROM_ALL) # добавляем, но можно EXCLUDE_FROM_ALL если не хотим собирать тесты
+    # пометим, что ExprTk доступен (PROPAGATE)
+    set(EXPRTK_FROM_TOPLEVEL TRUE CACHE BOOL "ExprTk provided from top-level" FORCE)
+else()
+    set(EXPRTK_FROM_TOPLEVEL FALSE CACHE BOOL "ExprTk provided from top-level" FORCE)
+endif()
+
 # --------------- Subprojects ---------------
 
+# add_subdirectory(ExprTk)
 add_subdirectory(CoordinateDescent)
 add_subdirectory(GradientDescent)
 
