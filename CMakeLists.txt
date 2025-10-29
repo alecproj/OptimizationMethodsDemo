@@ -16,6 +16,27 @@ option(GRADIENTDESCENT_BUILD_STANDALONE "Build GradientDescent as standalone exe
 find_package(Qt6 REQUIRED COMPONENTS Quick Core)
 qt_standard_project_setup(REQUIRES 6.8)
 
+# ------------ muparser ------------
+
+set(MUPARSER_TARGET_NAME muparser CACHE STRING "Target name created by muparser CMake")
+set(MUPARSER_DIR "${CMAKE_CURRENT_LIST_DIR}/muparser" CACHE PATH "Path to muparser sources or submodule")
+
+if (NOT TARGET ${MUPARSER_TARGET_NAME})
+  if (EXISTS "${MUPARSER_DIR}/CMakeLists.txt")
+    message(STATUS "Using muparser from ${MUPARSER_DIR}")
+    add_subdirectory("${MUPARSER_DIR}" "${CMAKE_BINARY_DIR}/third_party/muparser" EXCLUDE_FROM_ALL)
+  else()
+    message(STATUS "muparser not found at ${MUPARSER_DIR}, falling back to FetchContent")
+    include(FetchContent)
+    FetchContent_Declare(
+      muparser
+      GIT_REPOSITORY https://github.com/beltoforion/muparser.git
+      GIT_TAG v2.3.5
+    )
+    FetchContent_MakeAvailable(muparser)
+  endif()
+endif()
+
 # --------------- Subprojects ---------------
 
 add_subdirectory(CoordinateDescent)
@@ -39,6 +60,7 @@ qt_add_qml_module(${PROJECT_NAME}App
 target_link_libraries(${PROJECT_NAME}App
     PRIVATE
         app_sources
+        ${MUPARSER_TARGET_NAME}
         CoordinateDescent
         GradientDescent
         Qt6::Quick
