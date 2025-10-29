@@ -4,6 +4,8 @@
 //
 
 #include <GradientDescent/GradientDescent.hpp>
+#include <muParser.h>
+#include <iostream>
 
 // Класс-заглушка - реализовывать не нужно!
 class MockReporter {
@@ -12,8 +14,33 @@ public:
     int end() { return 0; }
 };
 
+double MySqr(double a_fVal) {  return a_fVal*a_fVal; }
+
+void testMuparser()
+{
+    try
+	{
+		double var_a = 1;
+		mu::Parser p;
+		p.DefineVar("a", &var_a); 
+		p.DefineFun("MySqr", MySqr); 
+		p.SetExpr("MySqr(a)*_pi+min(10,a)");
+
+		for (std::size_t a=0; a<5; ++a)
+		{
+			var_a = a;  // Change value of variable a
+			std::cout << p.Eval() << std::endl;
+		}
+	}
+	catch (mu::Parser::exception_type &e)
+	{
+		std::cout << e.GetMsg() << std::endl;
+	}
+}
+
 int main()
 {
+    testMuparser();
     using AlgoType = GradientDescent<MockReporter>;
 
     MockReporter reporter{};
