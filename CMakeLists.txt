@@ -51,6 +51,11 @@ add_subdirectory(Sources)
 # --------------- Application (Qt) ---------------
 set(CMAKE_AUTORCC ON)
 
+set_source_files_properties(Qml/Singleton/AppStates.qml
+    PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(Qml/Singleton/AppPalette.qml
+    PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+
 qt_add_executable(${PROJECT_NAME}App
     resources.qrc
     Sources/main.cpp
@@ -61,6 +66,10 @@ qt_add_qml_module(${PROJECT_NAME}App
     VERSION 1.0
     QML_FILES
         Qml/Main.qml
+        Qml/VerticalTabBar.qml
+        Qml/Components/TabIconButton.qml
+        Qml/Singleton/AppPalette.qml
+        Qml/Singleton/AppStates.qml
 )
 
 target_link_libraries(${PROJECT_NAME}App
