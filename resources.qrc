@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/folder.svg</file>
+        <file>icons/file-alt.svg</file>
+        <file>icons/file-xmark.svg</file>
+        <file>icons/file-check.svg</file>
+        <file>icons/xmark.svg</file>
+        <file>icons/flask.svg</file>
+        <file>icons/trash.svg</file>
+    </qresource>
+</RCC>
+

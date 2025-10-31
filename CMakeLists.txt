@@ -11,6 +11,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(COORDINATEDESCENT_BUILD_STANDALONE "Build CoordinateDescent as standalone exe" OFF)
 option(GRADIENTDESCENT_BUILD_STANDALONE "Build GradientDescent as standalone exe" OFF)
 
+# ----------- QML Files ------------
+
+file(GLOB_RECURSE QML_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Qml/*.qml")
+
 # --------------- Qt ---------------
 
 find_package(Qt6 REQUIRED COMPONENTS Quick Core)
@@ -45,8 +49,10 @@ add_subdirectory(GradientDescent)
 add_subdirectory(Sources)
 
 # --------------- Application (Qt) ---------------
+set(CMAKE_AUTORCC ON)
 
 qt_add_executable(${PROJECT_NAME}App
+    resources.qrc
     Sources/main.cpp
 )
 
