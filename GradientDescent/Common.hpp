@@ -6,9 +6,19 @@
 #ifndef GRADIENTDESCENT_COMMON_HPP_
 #define GRADIENTDESCENT_COMMON_HPP_
 
+// Структура для хранения всех входных параметров
 struct GradientInput {
-    long double approximation;
-    bool extended;
+    std::string function; // Строка с функцией
+    double initialApproximationX_0;            // начальное приближение X
+    double initialApproximationY_0;            // начальное приближение Y
+    double coefficientStep;             // коэффициентный шаг
+    double resultAccuracy;           // точность результата
+    double calculationAccuracy;      // точность вычислений
+    double leftBorderX;         // левая граница X
+    double rightBorderX;         // правая граница X
+    double leftBorderY;         // левая граница Y
+    double rightBorderY;         // правая граница Y
+    bool extended = false;
 };
 
 enum class GDResult : int {
