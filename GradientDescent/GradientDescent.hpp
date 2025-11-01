@@ -20,7 +20,7 @@ class GradientDescent {
 
 public:
 
-    GradientDescent(Reporter *reporter) :
+    explicit GradientDescent(Reporter *reporter) :
         m_inputData{nullptr},
         m_reporter{reporter}
     {
@@ -29,9 +29,56 @@ public:
     GDResult setInputData(const GradientInput *data)
     {
         if (!data) {
+            std::cerr << "Ошибка: передан nullptr вместо данных." << std::endl;
             return GDResult::InvalidInput;
         }
-        // Сначала проверить все поля на корректность
+
+        // Проверка строки функции
+        if (data->function.empty()) {
+            std::cerr << "Ошибка: поле 'function' пустое." << std::endl;
+            return GDResult::InvalidInput;
+        }
+
+        // Проверка начальных приближений
+        if (data->initialApproximationX_0 != data->initialApproximationX_0) { // NaN
+            std::cerr << "Ошибка: начальное приближение X некорректно (NaN)." << std::endl;
+            return GDResult::InvalidInput;
+        }
+        if (data->initialApproximationY_0 != data->initialApproximationY_0) { // NaN
+            std::cerr << "Ошибка: начальное приближение Y некорректно (NaN)." << std::endl;
+            return GDResult::InvalidInput;
+        }
+
+        // Проверка коэффициента шага
+        if (data->coefficientStep <= 0) {
+            std::cerr << "Ошибка: коэффициентный шаг должен быть положительным." << std::endl;
+            return GDResult::InvalidInput;
+        }
+
+        // Проверка точности результата
+        if (data->resultAccuracy <= 0) {
+            std::cerr << "Ошибка: точность результата (eps) должна быть положительной." << std::endl;
+            return GDResult::InvalidInput;
+        }
+
+        // Проверка точности вычислений
+        if (data->calculationAccuracy <= 0) {
+            std::cerr << "Ошибка: точность вычислений (calc_eps) должна быть положительной." << std::endl;
+            return GDResult::InvalidInput;
+        }
+
+        // Проверка границ X
+        if (data->leftBorderX >= data->rightBorderX) {
+            std::cerr << "Ошибка: левая граница X должна быть меньше правой." << std::endl;
+            return GDResult::InvalidInput;
+        }
+
+        // Проверка границ Y
+        if (data->leftBorderY >= data->rightBorderY) {
+            std::cerr << "Ошибка: левая граница Y должна быть меньше правой." << std::endl;
+            return GDResult::InvalidInput;
+        }
+
         m_inputData = data;
         return GDResult::Success;
     }
