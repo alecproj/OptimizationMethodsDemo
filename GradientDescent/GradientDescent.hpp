@@ -10,6 +10,8 @@
 #include <chrono>
 #include <cmath>
 #include <functional>
+#include <regex>
+#include <set>
 #include <stdexcept>
 
 template <typename Reporter>
@@ -39,12 +41,17 @@ public:
             return GDResult::InvalidInput;
         }
 
+        if (!validateFunctionVariables(data->function)) {
+            std::cerr << "Ошибка: функция содержит недопустимые данные. Разрешены только: x, y, +, -, *, /, ^, sin, cos, exp, sqrt, pow" << std::endl;
+            return GDResult::InvalidInput;
+        }
+/*
         // Проверка начальных приближений
-        if (data->initialApproximationX_0 != data->initialApproximationX_0) { // NaN
+        if (std::isnan(data->initialApproximationX_0)) {// NaN
             std::cerr << "Ошибка: начальное приближение X некорректно (NaN)." << std::endl;
             return GDResult::InvalidInput;
         }
-        if (data->initialApproximationY_0 != data->initialApproximationY_0) { // NaN
+        if (std::isnan(data->initialApproximationY_0)){ // NaN
             std::cerr << "Ошибка: начальное приближение Y некорректно (NaN)." << std::endl;
             return GDResult::InvalidInput;
         }
@@ -78,7 +85,7 @@ public:
             std::cerr << "Ошибка: левая граница Y должна быть меньше правой." << std::endl;
             return GDResult::InvalidInput;
         }
-
+*/
         m_inputData = data;
         return GDResult::Success;
     }
@@ -158,6 +165,30 @@ private:
             }
         }
         return (f_left < f_right) ? left_internal : right_internal;
+    }
+
+    static bool validateFunctionVariables(const std::string &funcStr) {
+        // Разрешённые имена функций и переменные
+        const std::set<std::string> allowedIds = {"x", "y", "sin", "cos", "exp", "sqrt", "pow"};
+
+        // Токены: последовательности букв/цифр/нижнего подчеркивания, начинающиеся с буквы
+        std::regex tokenPattern(R"(\b[a-zA-Z_]\w*\b)");
+        std::smatch match;
+        std::string s = funcStr;
+
+        while (std::regex_search(s, match, tokenPattern)) {
+            std::string token = match.str();
+
+            // Если слово не из разрешенного списка — ошибка
+            if (!allowedIds.contains(token)) {
+                std::cerr << "Недопустимый идентификатор в функции: " << token << std::endl;
+                return false;
+            }
+
+            s = match.suffix().str();
+        }
+
+        return true;
     }
 
 };
