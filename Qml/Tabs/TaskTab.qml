@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 
 Rectangle {
     id: root
@@ -8,7 +9,7 @@ Rectangle {
 
     property int selectedAlgorithm: 1
 
-    Column {
+    ColumnLayout {
         id: column
         anchors.fill: parent
 
@@ -16,8 +17,10 @@ Rectangle {
 
         Label {
             id: title
-            anchors.horizontalCenter: parent.horizontalCenter
-            topPadding: column.spacing
+
+            Layout.alignment: Qt.AlignHCenter
+            Layout.topMargin: column.spacing
+
             text: "Постановка задачи"
             font.pixelSize: 20
             font.bold: true
@@ -25,9 +28,8 @@ Rectangle {
 
         StyledComboBox {
             id: algorithm
-            anchors.left: parent.left
-            anchors.leftMargin: (parent.width * 0.05)
-            width: 230
+            Layout.leftMargin: (parent.width * 0.05)
+            Layout.preferredWidth: 230
 
             model: [
                 { value: 1, text: "Метод координатного спуска" },
@@ -42,36 +44,28 @@ Rectangle {
 
         StyledTextField {
             id: formula
-            width: parent.width * 0.8
-            anchors.horizontalCenter: parent.horizontalCenter
+            Layout.preferredWidth: (parent.width * 0.8)
+            Layout.alignment: Qt.AlignHCenter
             placeholderText: "Введите формулу"
-
         }
 
         Item {
             id: inputParams
-            height: parent.height
-                -formula.height
-                -reportList.height
-                -algorithm.height
-                -reportListLabel.height
-                -title.height
-                -(6 * column.spacing)
-            width: parent.width
+            Layout.fillHeight: true
         }
 
         Label {
             id: reportListLabel
-            anchors.left: parent.left
-            anchors.leftMargin: (parent.width * 0.05) + 10
+            Layout.leftMargin: (parent.width * 0.05) + 10
             text: "Восстановить входные данные из отчета:"
         }
 
         ReportList {
             id: reportList
-            width: parent.width * 0.9
-            height: parent.height * 0.3
-            anchors.horizontalCenter: parent.horizontalCenter
+            Layout.preferredWidth: (parent.width * 0.9)
+            Layout.preferredHeight: (parent.height * 0.3)
+            Layout.alignment: Qt.AlignHCenter
+            Layout.bottomMargin: column.spacing
         }
     }
 
