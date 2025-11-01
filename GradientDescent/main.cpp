@@ -39,14 +39,70 @@ void testMuparser()
 	}
 }
 
+//Используется для обработки вводимых символов
+template<typename T>
+T safeReadOrNaN() {
+	T value;
+	std::cin >> value;
+	if (std::cin.fail()) {
+		std::cin.clear();
+		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		return std::numeric_limits<T>::quiet_NaN(); // возвращаем NaN
+	}
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	return value;
+}
+
+
+
+GradientInput getInputParameters() {
+	GradientInput input;
+
+	std::cout << "Введите функцию f(x,y) (например: x^2 + y^2): ";
+	std::getline(std::cin, input.function);
+
+	std::cout << "Введите начальное приближение x0: ";
+	input.initialApproximationX_0 = safeReadOrNaN<double>();
+
+	std::cout << "Введите начальное приближение y0: ";
+	input.initialApproximationY_0 = safeReadOrNaN<double>();
+
+	std::cout << "Введите коэффициентный шаг h: ";
+	input.coefficientStep = safeReadOrNaN<double>();
+
+	std::cout << "Введите точность результата eps: ";
+	input.resultAccuracy = safeReadOrNaN<double>();
+
+	std::cout << "Введите точность вычислений (calc_eps): ";
+	input.calculationAccuracy = safeReadOrNaN<double>();
+
+	std::cout << "Введите левую границу X: ";
+	input.leftBorderX = safeReadOrNaN<double>();
+
+	std::cout << "Введите правую границу X: ";
+	input.rightBorderX = safeReadOrNaN<double>();
+
+	std::cout << "Введите левую границу Y: ";
+	input.leftBorderY = safeReadOrNaN<double>();
+
+	std::cout << "Введите правую границу Y: ";
+	input.rightBorderY = safeReadOrNaN<double>();
+
+	return input;
+}
+
+
+
+
 int main()
 {
-    testMuparser();
+    //testMuparser();
     using AlgoType = GradientDescent<MockReporter>;
-
     MockReporter reporter{};
     AlgoType algo{&reporter};
-    GradientInput data{};
+
+	// Получаем данные от пользователя
+    const GradientInput data = getInputParameters();
 
     auto rv = algo.setInputData(&data);
     if (rv == GDResult::Success) {
