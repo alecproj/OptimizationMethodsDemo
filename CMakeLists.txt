@@ -68,8 +68,13 @@ qt_add_qml_module(${PROJECT_NAME}App
         Qml/Main.qml
         Qml/VerticalTabBar.qml
         Qml/Components/TabIconButton.qml
+        Qml/Components/StyledTextField.qml
+        Qml/Components/StyledComboBox.qml
+        Qml/Components/ReportListEntry.qml
+        Qml/Components/ReportList.qml
         Qml/Singleton/AppPalette.qml
         Qml/Singleton/AppStates.qml
+        Qml/Tabs/TaskTab.qml
 )
 
 target_link_libraries(${PROJECT_NAME}App

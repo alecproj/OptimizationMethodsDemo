@@ -26,13 +26,8 @@ ApplicationWindow {
             Layout.fillHeight: true
             currentIndex: AppStates.currentTabIndex
     
-            Rectangle {
-                color: "#ffffff"
-                Label {
-                    anchors.centerIn: parent
-                    text: "Постановка задачи"
-                    font.pixelSize: 20
-                }
+            TaskTab {
+                id: taskTab
             }
     
             Rectangle {
