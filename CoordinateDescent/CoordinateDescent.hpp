@@ -37,9 +37,9 @@ public:
         if (!m_inputData || !m_reporter || m_reporter->begin() == 0) {
             return CDResult::Fail;
         }
-
-        if (m_inputData->extended) {
-            // Расширенный функционал
+       
+        if (m_inputData->extended) { // тут исправить 
+            // Расширенный функционал // тут исправить 
         }
 
         // Процесс решения и записи отчета (разбить на приватные функции)
