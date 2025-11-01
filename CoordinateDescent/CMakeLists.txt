@@ -20,7 +20,7 @@ list(REMOVE_ITEM CD_SOURCES_ALL ${CD_MAIN})
 # -------------------- muparser -----------------------
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(MUPARSER_TARGET_NAME muparser CACHE STRING "Target name created by muparser CMake")
-set(MUPARSER_DIR "${CMAKE_CURRENT_LIST_DIR}/../muparser" CACHE PATH "Path to muparser sources or submodule")
+set(MUPARSER_DIR "${CMAKE_CURRENT_LIST_DIR}/muparser" CACHE PATH "Path to muparser sources or submodule")
 
 if (NOT TARGET ${MUPARSER_TARGET_NAME})
   if (EXISTS "${MUPARSER_DIR}/CMakeLists.txt")
