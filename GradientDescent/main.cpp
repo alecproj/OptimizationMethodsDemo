@@ -60,7 +60,7 @@ GradientInput getInputParameters() {
 
 	std::cout << "Введите функцию f(x,y) (например: x^2 + y^2): ";
 	std::getline(std::cin, input.function);
-/*
+
 	std::cout << "Введите начальное приближение x0: ";
 	input.initialApproximationX_0 = safeReadOrNaN<double>();
 
@@ -87,7 +87,7 @@ GradientInput getInputParameters() {
 
 	std::cout << "Введите правую границу Y: ";
 	input.rightBorderY = safeReadOrNaN<double>();
-*/
+
 	return input;
 }
 
@@ -104,10 +104,15 @@ int main()
 	// Получаем данные от пользователя
     const GradientInput data = getInputParameters();
 
-
     auto rv = algo.setInputData(&data);
     if (rv == GDResult::Success) {
         rv = algo.solve();
+    	if (rv != GDResult::Success) {
+    		std::cerr << "Градиентный спуск завершился с ошибкой.\n";
+    		return 1;
+    	}
+
+    	std::cout << "Градиентный спуск выполнен успешно.\n";
     }
 
     return 0;
