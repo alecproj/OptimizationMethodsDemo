@@ -41,12 +41,12 @@ Rectangle {
             valueRole: "value"
             currentValue: AppStates.selectedAlgorithm
             onActivated: {
-                AppStates.selectedAlgorithm = currentValue
+                AppStates.selectedAlgorithm = currentValue;
                 AppStates.selectedFullAlgo 
                     = helper.calculateFullType(
                         AppStates.selectedAlgorithm, 
                         AppStates.selectedExtension
-                    )
+                    );
             }
         }
 
@@ -106,6 +106,34 @@ Rectangle {
 
             text: "Решить"
             enabled: inputParams.valid && func.accepted
+
+            onReleased: {
+                inputParams.inputData.function = func.text;
+                var obj = inputParams.inputData;
+                var data = {
+                    "function": obj.function,
+                    "algorithmId": obj.algorithmId,
+                    "extensionId": obj.extensionId,
+                    "fullAlgoId": obj.fullAlgoId,
+                    "extremumId": obj.extremumId,
+                    "maxIteractions": obj.maxIteractions,
+                    "calcAccuracy": obj.calcAccuracy,
+                    "resultAccuracy": obj.resultAccuracy,
+                    "startX1": obj.startX1,
+                    "startY1": obj.startY1,
+                    "startX2": obj.startX2,
+                    "startY2": obj.startY2,
+                    "stepX": obj.stepX,
+                    "stepY": obj.stepY,
+                    "coefficientStep": obj.coefficientStep,
+                    "minX": obj.minX,
+                    "maxX": obj.maxX,
+                    "minY": obj.minY,
+                    "maxY": obj.maxY
+                };
+
+                console.log("InputData dump:\n" + JSON.stringify(data, null, 2));
+            }
         }
 
         Label {

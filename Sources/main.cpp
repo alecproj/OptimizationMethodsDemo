@@ -1,5 +1,6 @@
 #include "Reporter.hpp"
 #include "AppEnums.hpp"
+#include "InputData.hpp"
 
 #include <CoordinateDescent/CoordinateDescent.hpp>
 #include <GradientDescent/GradientDescent.hpp>
@@ -70,6 +71,7 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<FullAlgoType>("AppEnums", 1, 0, "FullAlgoType", "Full algo type ID");
     qmlRegisterUncreatableType<CheckList>("AppEnums", 1, 0, "CheckList", "Input data check list");
     qmlRegisterType<EnumHelper>("AppEnums", 1, 0, "EnumHelper");
+    qmlRegisterType<InputData>("InputData", 1, 0, "InputData");
     QQmlApplicationEngine engine;
     QObject::connect(
         &engine,

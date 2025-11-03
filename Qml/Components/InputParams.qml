@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import AppEnums
+import InputData
 
 Flickable {
     id: root
@@ -10,6 +11,15 @@ Flickable {
     contentHeight: column.implicitHeight
     flickableDirection: Flickable.HorizontalAndVerticalFlick
     clip: true
+
+    property alias inputData: inputData
+
+    InputData {
+        id: inputData
+        algorithmId: AppStates.selectedAlgorithm
+        extensionId: AppStates.selectedExtension
+        fullAlgoId: AppStates.selectedFullAlgo
+    }
 
     EnumHelper { id: helper }
 
@@ -25,7 +35,8 @@ Flickable {
     }
 
     function validate() {
-        if (flags === helper.getCheckByFullType(AppStates.selectedFullAlgo)) {
+        var mask = helper.getCheckByFullType(AppStates.selectedFullAlgo);
+        if ((flags & mask) ===  mask) {
             return true;
         }
         return false;
@@ -59,7 +70,10 @@ Flickable {
                 textRole: "text"
                 valueRole: "value"
                 currentValue: extremum.selected
-                onActivated: extremum.selected = currentValue
+                onActivated: {
+                    extremum.selected = currentValue;
+                    inputData.extremumId = currentValue;
+                }
             }
         }
 
@@ -95,12 +109,12 @@ Flickable {
                 valueRole: "value"
                 currentValue: AppStates.selectedExtension
                 onActivated: {
-                    AppStates.selectedExtension = currentValue
+                    AppStates.selectedExtension = currentValue;
                     AppStates.selectedFullAlgo 
                         = helper.calculateFullType(
                             AppStates.selectedAlgorithm, 
                             AppStates.selectedExtension
-                        )
+                        );
                 }
             }
         }
@@ -126,7 +140,8 @@ Flickable {
                 }
 
                 onTextEdited: {
-                    if (acceptableInput) {
+                    if (acceptableInput 
+                        && inputData.setCalcAccuracyFromString(text)) {
                         calcAccuracy.valid = true;
                         root.setFlag(CheckList.CalcAccuracy);
                     } else {
@@ -160,7 +175,8 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput
+                        && inputData.setResultAccuracyFromString(text)) {
                         resultAccuracy.valid = true
                         root.setFlag(CheckList.ResultAccuracy)
                     } else {
@@ -197,7 +213,8 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput 
+                        && inputData.setStartX1FromString(text)) {
                         startX1.valid = true
                         root.setFlag(CheckList.StartX1)
                     } else {
@@ -219,7 +236,8 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput
+                        && inputData.setStartY1FromString(text)) {
                         startY1.valid = true
                         root.setFlag(CheckList.StartY1)
                     } else {
@@ -255,7 +273,8 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput
+                        && inputData.setStartX2FromString(text)) {
                         startX2.valid = true
                         root.setFlag(CheckList.StartX2)
                     } else {
@@ -277,12 +296,13 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput
+                        && inputData.setStartY2FromString(text)) {
                         startY2.valid = true
-                        root.setFlag(CheckList.startY2)
+                        root.setFlag(CheckList.StartY2)
                     } else {
                         startY2.valid = false
-                        root.clearFlag(CheckList.startY2)
+                        root.clearFlag(CheckList.StartY2)
                     }
                     root.valid = root.validate()
                 }
@@ -313,7 +333,8 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput
+                        && inputData.setStepXFromString(text)) {
                         stepX.valid = true
                         root.setFlag(CheckList.StepX)
                     } else {
@@ -335,7 +356,8 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput
+                        && inputData.setStepYFromString(text)) {
                         stepY.valid = true
                         root.setFlag(CheckList.StepY)
                     } else {
@@ -371,7 +393,8 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput
+                        && inputData.setCoefficientStepFromString(text)) {
                         coefficientStep.valid = true
                         root.setFlag(CheckList.CoefficientStep)
                     } else {
@@ -406,7 +429,8 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput
+                        && inputData.setMinXFromString(text)) {
                         minX.valid = true
                         root.setFlag(CheckList.MinX)
                     } else {
@@ -428,7 +452,8 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput
+                        && inputData.setMaxXFromString(text)) {
                         maxX.valid = true
                         root.setFlag(CheckList.MaxX)
                     } else {
@@ -464,7 +489,8 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput
+                        && inputData.setMinYFromString(text)) {
                         minY.valid = true
                         root.setFlag(CheckList.MinY)
                     } else {
@@ -486,7 +512,8 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput
+                        && inputData.setMaxYFromString(text)) {
                         maxY.valid = true
                         root.setFlag(CheckList.MaxY)
                     } else {
@@ -520,7 +547,8 @@ Flickable {
                 }
 
                 onActiveFocusChanged: {
-                    if (acceptableInput) {
+                    if (acceptableInput
+                        && inputData.setMaxIterationsFromString(text)) {
                         iterations.valid = true
                         root.setFlag(CheckList.Iterations)
                     } else {

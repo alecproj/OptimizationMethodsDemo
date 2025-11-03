@@ -148,7 +148,7 @@ public:
         return FullAlgoType::INVALID;
     }
 
-    Q_INVOKABLE int getCheckByFullType(int type) 
+    Q_INVOKABLE CheckList::Check getCheckByFullType(FullAlgoType::Type type) 
     {
         if (type == FullAlgoType::CDB) {
             return CheckList::CDBCheck;
