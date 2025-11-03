@@ -7,6 +7,8 @@ ComboBox {
     id: root
 
     property int vSpacing: 10
+    topPadding: 13
+    bottomPadding: 13
     spacing: 0
 
     delegate: ItemDelegate {
@@ -68,8 +70,9 @@ ComboBox {
     }
 
     background: Rectangle {
-        implicitWidth: 120
-        implicitHeight: 40
+        implicitWidth: root.contentItem.implicitWidth + root.indicator.width + 3 * root.vSpacing
+        implicitHeight: root.contentItem.implicitHeight + root.topPadding + root.bottomPadding
+        // implicitHeight: 40
         color: AppPalette.surface
         radius: width * 0.15
         border.color: root.activeFocus ? AppPalette.accent : "transparent"

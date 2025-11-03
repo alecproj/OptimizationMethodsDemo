@@ -1,0 +1,41 @@
+import QtQuick
+import QtQuick.Controls
+
+Button {
+    id: root
+
+    font.pixelSize: 16
+    property int margins: 5
+
+    contentItem: Text {
+        id: content
+        text: root.text
+        font: root.font
+        color: AppPalette.foreground
+        opacity: enabled ? 1.0 : 0.3
+        leftPadding: root.margins
+        rightPadding: root.margins
+        topPadding: root.margins
+        bottomPadding: root.margins
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        elide: Text.ElideRight
+    }
+
+    background: Rectangle {
+        implicitHeight: content.implicitHeight
+        implicitWidth: content.implicitWidth
+        color: {
+            if (root.enabled) {
+                if (root.hovered) {
+                    AppPalette.withAlpha(AppPalette.accent, 0.8)
+                } else {
+                    AppPalette.accent
+                }
+            } else {
+                AppPalette.withAlpha(AppPalette.accent, 0.4)
+            }
+        }
+        radius: width * 0.15
+    }
+}

@@ -17,7 +17,7 @@ file(GLOB_RECURSE QML_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Qml/*
 
 # --------------- Qt ---------------
 
-find_package(Qt6 REQUIRED COMPONENTS Quick Core)
+find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick)
 qt_standard_project_setup(REQUIRES 6.8)
 
 # ------------ muparser ------------
@@ -72,6 +72,8 @@ qt_add_qml_module(${PROJECT_NAME}App
         Qml/Components/StyledComboBox.qml
         Qml/Components/ReportListEntry.qml
         Qml/Components/ReportList.qml
+        Qml/Components/StyledButton.qml
+        Qml/Components/InputParams.qml
         Qml/Singleton/AppPalette.qml
         Qml/Singleton/AppStates.qml
         Qml/Tabs/TaskTab.qml
@@ -83,6 +85,8 @@ target_link_libraries(${PROJECT_NAME}App
         ${MUPARSER_TARGET_NAME}
         CoordinateDescent
         GradientDescent
+        Qt6::Core
+        Qt6::Qml
         Qt6::Quick
 )
 

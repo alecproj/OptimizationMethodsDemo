@@ -1,4 +1,5 @@
 #include "Reporter.hpp"
+#include "AppEnums.hpp"
 
 #include <CoordinateDescent/CoordinateDescent.hpp>
 #include <GradientDescent/GradientDescent.hpp>
@@ -63,6 +64,12 @@ int main(int argc, char *argv[])
     /* ------------- /TEST ------------- */
     QGuiApplication app(argc, argv);
 
+    qmlRegisterUncreatableType<ExtremumType>("AppEnums", 1, 0, "ExtremumType", "Type of extremum");
+    qmlRegisterUncreatableType<AlgoType>("AppEnums", 1, 0, "AlgoType", "Algo type ID");
+    qmlRegisterUncreatableType<ExtensionType>("AppEnums", 1, 0, "ExtensionType", "Extension type ID");
+    qmlRegisterUncreatableType<FullAlgoType>("AppEnums", 1, 0, "FullAlgoType", "Full algo type ID");
+    qmlRegisterUncreatableType<CheckList>("AppEnums", 1, 0, "CheckList", "Input data check list");
+    qmlRegisterType<EnumHelper>("AppEnums", 1, 0, "EnumHelper");
     QQmlApplicationEngine engine;
     QObject::connect(
         &engine,
