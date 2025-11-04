@@ -43,8 +43,8 @@ endif()
 
 # --------------- Subprojects ---------------
 
-add_subdirectory(CoordinateDescent)
-add_subdirectory(GradientDescent)
+add_subdirectory(CoordinateDescent EXCLUDE_FROM_ALL)
+add_subdirectory(GradientDescent EXCLUDE_FROM_ALL)
 
 add_subdirectory(Sources)
 
@@ -83,8 +83,6 @@ target_link_libraries(${PROJECT_NAME}App
     PRIVATE
         app_sources
         ${MUPARSER_TARGET_NAME}
-        CoordinateDescent
-        GradientDescent
         Qt6::Core
         Qt6::Qml
         Qt6::Quick

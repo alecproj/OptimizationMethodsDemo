@@ -9,6 +9,18 @@
 #include <QObject>
 #include <cassert>
 
+class Result: public QObject {
+    Q_OBJECT
+public:
+    enum Type {
+        Fail        = -1,
+        Success     = 0,
+    };
+    Q_ENUM(Type)
+
+    explicit Result(QObject *parent = nullptr) : QObject(parent) {}
+};
+
 class ExtremumType : public QObject {
     Q_OBJECT
 public:

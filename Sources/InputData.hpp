@@ -86,6 +86,8 @@ public:
     double minY() const { return m_minY; }
     double maxY() const { return m_maxY; }
 
+    Q_INVOKABLE InputData *instance() { return this; }
+
 public slots:
     // Setters
     void setFunction(const QString& v)
