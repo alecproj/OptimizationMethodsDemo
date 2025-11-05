@@ -1,4 +1,4 @@
-//
+п»ї//
 // Created on 25 Oct, 2025
 //  by alecproj
 //
@@ -11,183 +11,142 @@
 
 
 // ============================================================================
-// Перечисления состояний и ошибок
+// РџРµСЂРµС‡РёСЃР»РµРЅРёСЏ СЃРѕСЃС‚РѕСЏРЅРёР№ Рё РѕС€РёР±РѕРє
 // ============================================================================
 
-// Результат выполнения алгоритма
+// Р РµР·СѓР»СЊС‚Р°С‚ РІС‹РїРѕР»РЅРµРЅРёСЏ Р°Р»РіРѕСЂРёС‚РјР°
 enum class CDResult : int {
-    Success            = 0,   // Успешное выполнение
-    Fail              = -1,   // Общая ошибка
-    InvalidInput      = -2,   // Неверные входные данные
-    NoConvergence     = -3,   // Нет сходимости
-    OutOfBounds       = -4,   // Выход за границы
-    MaxIterations     = -5,   // Превышение макс. числа итераций
-    MaxFunctionsCalls = -6,   // Превышение макс. числа вызовов функции
-    ParseError        = -7,   // Ошибка парсинга функции
-    ComputeError      = -8,   // Вычислительная ошибка
-    NonDifferentiable = -9    // Функция не явл. дифференцируемой
+    Success            = 0,   // РЈСЃРїРµС€РЅРѕРµ РІС‹РїРѕР»РЅРµРЅРёРµ
+    Fail              = -1,   // РћР±С‰Р°СЏ РѕС€РёР±РєР°
+    InvalidInput      = -2,   // РќРµРІРµСЂРЅС‹Рµ РІС…РѕРґРЅС‹Рµ РґР°РЅРЅС‹Рµ
+    NoConvergence     = -3,   // РќРµС‚ СЃС…РѕРґРёРјРѕСЃС‚Рё
+    OutOfBounds       = -4,   // Р’С‹С…РѕРґ Р·Р° РіСЂР°РЅРёС†С‹
+    MaxIterations     = -5,   // РџСЂРµРІС‹С€РµРЅРёРµ РјР°РєСЃ. С‡РёСЃР»Р° РёС‚РµСЂР°С†РёР№
+    MaxFunctionsCalls = -6,   // РџСЂРµРІС‹С€РµРЅРёРµ РјР°РєСЃ. С‡РёСЃР»Р° РІС‹Р·РѕРІРѕРІ С„СѓРЅРєС†РёРё
+    ParseError        = -7,   // РћС€РёР±РєР° РїР°СЂСЃРёРЅРіР° С„СѓРЅРєС†РёРё
+    ComputeError      = -8,   // Р’С‹С‡РёСЃР»РёС‚РµР»СЊРЅР°СЏ РѕС€РёР±РєР°
+    NonDifferentiable = -9    // Р¤СѓРЅРєС†РёСЏ РЅРµ СЏРІР». РґРёС„С„РµСЂРµРЅС†РёСЂСѓРµРјРѕР№
 };
 
-// Тип алгоритма оптимизации
+// РўРёРї Р°Р»РіРѕСЂРёС‚РјР° РѕРїС‚РёРјРёР·Р°С†РёРё
 enum class AlgorithmType {
-    BASIC_COORDINATE_DESCENT,    // Базовый алгоритм покоординатного спуска
-    STEEPEST_COORDINATE_DESCENT, // Расширение: покоординатный спуск методом наискорейшего спуска
-    DERIVATIVE_FREE_DESCENT      // Покоординатный спуск (без производных)
+    BASIC_COORDINATE_DESCENT,    // Р‘Р°Р·РѕРІС‹Р№ Р°Р»РіРѕСЂРёС‚Рј РїРѕРєРѕРѕСЂРґРёРЅР°С‚РЅРѕРіРѕ СЃРїСѓСЃРєР°
+    STEEPEST_COORDINATE_DESCENT, // Р Р°СЃС€РёСЂРµРЅРёРµ: РїРѕРєРѕРѕСЂРґРёРЅР°С‚РЅС‹Р№ СЃРїСѓСЃРє РјРµС‚РѕРґРѕРј РЅР°РёСЃРєРѕСЂРµР№С€РµРіРѕ СЃРїСѓСЃРєР°
 };
 
 
-// Тип экстремума
+// РўРёРї СЌРєСЃС‚СЂРµРјСѓРјР°
 enum class ExtremumType {
-    MINIMUM, // Минимум
-    MAXIMUM  // Максимум
+    MINIMUM, // РњРёРЅРёРјСѓРј
+    MAXIMUM  // РњР°РєСЃРёРјСѓРј
 };
 
-// Тип шага в алгоритме
+// РўРёРї С€Р°РіР° РІ Р°Р»РіРѕСЂРёС‚РјРµ
 enum class StepType {
-    CONSTANT,    // Постоянный шаг:     step = const;
-    COEFFICIENT, // Коэффициентный шаг: step = k * производная
-    ADAPTIVE     // Адаптивный шаг:     step подбирается автоматически на каждой итерации
+    CONSTANT,    // РџРѕСЃС‚РѕСЏРЅРЅС‹Р№ С€Р°Рі:     step = const;
+    COEFFICIENT, // РљРѕСЌС„С„РёС†РёРµРЅС‚РЅС‹Р№ С€Р°Рі: step = k * РїСЂРѕРёР·РІРѕРґРЅР°СЏ
+    ADAPTIVE     // РђРґР°РїС‚РёРІРЅС‹Р№ С€Р°Рі:     step РїРѕРґР±РёСЂР°РµС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РЅР° РєР°Р¶РґРѕР№ РёС‚РµСЂР°С†РёРё
 };
 
-// Состояние выполнения алгоритма
+// РЎРѕСЃС‚РѕСЏРЅРёРµ РІС‹РїРѕР»РЅРµРЅРёСЏ Р°Р»РіРѕСЂРёС‚РјР°
 
 enum class AlgorithmState {
-    NOT_STARTED,  // Алгоритм не запущен
-    INITIALIZING, // Инициализация алгоритма
-    RUNNING ,      // Алгоритм выполняется
-    CONVERGED,    // Алгоритм сходится
-    STOPPED,      // Алгоритм завершил работу успешно
-    FAILED        // Алгоритм завершил работу с ошибкой
+    NOT_STARTED,  // РђР»РіРѕСЂРёС‚Рј РЅРµ Р·Р°РїСѓС‰РµРЅ
+    INITIALIZING, // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Р°Р»РіРѕСЂРёС‚РјР°
+    RUNNING ,      // РђР»РіРѕСЂРёС‚Рј РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ
+    CONVERGED,    // РђР»РіРѕСЂРёС‚Рј СЃС…РѕРґРёС‚СЃСЏ
+    STOPPED,      // РђР»РіРѕСЂРёС‚Рј Р·Р°РІРµСЂС€РёР» СЂР°Р±РѕС‚Сѓ СѓСЃРїРµС€РЅРѕ
+    FAILED        // РђР»РіРѕСЂРёС‚Рј Р·Р°РІРµСЂС€РёР» СЂР°Р±РѕС‚Сѓ СЃ РѕС€РёР±РєРѕР№
 };
 
 // ============================================================================
-// Структуры входных данных
+// РЎС‚СЂСѓРєС‚СѓСЂС‹ РІС…РѕРґРЅС‹С… РґР°РЅРЅС‹С…
 // ============================================================================
+long double gradient_epsilon = 1e-8;     // РўРѕС‡РЅРѕСЃС‚СЊ РІС‹С‡РёСЃР»РµРЅРёСЏ РіСЂР°РґРёРµРЅС‚Р°
 
-// Параметры для алгоритма базового покоординатного спуска
-struct BasicAlgorithmParams {
-    long double x_step  = 0.1;               // Шаг по X
-    long double y_step = 0.1;                // Шаг по Y
-    long double coefficient_step = 1.0;      // Коэффициентный шаг
-    StepType step_type = StepType::CONSTANT; // Тип шага
-    long double gradient_epsilon = 1e-8;     // Точность вычисления градиента
-};
-
-// Параметры для алгоритма покоординатного спуска методом наискорейшего спуска
-struct SteepestAlgorithmParams {
-
-    long double learning_rate = 0.01;         // Скорость "обучения"
-    long double gradient_epsilon = 1e-8;      // Точность вычисления градиента
-    long double line_search_precision = 1e-6; // Точность линейного поиска
-
-};
-
-// Параметры для беспроизводного покоординатного спуска
-struct DerivativeFreeAlgorithmParams {
-    long double initial_step = 0.1;      // Начальный шаг
-    long double step_reduction = 0.5;    // Коэффициент уменьшения шага
-    long double exploration_step = 0.01; // Шаг для исследования
-    int max_exploration_attempts = 10;   // Макс. попыток исследования
-};
-
-// Основные входные параметры для алгоритма
+// РћСЃРЅРѕРІРЅС‹Рµ РІС…РѕРґРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ РґР»СЏ Р°Р»РіРѕСЂРёС‚РјР°
 struct CoordinateInput {
 
-    // --- ОБЯЗАТЕЛЬНЫЕ ПАРАМЕТРЫ ---
-    std::string function;         // Функция для оптимизации
-    AlgorithmType algorithm_type; // Тип алгоритма
-    ExtremumType extremum_type;   // Тип экстремума
+    // --- РћР‘РЇР—РђРўР•Р›Р¬РќР«Р• РџРђР РђРњР•РўР Р« ---
+    std::string function;         // Р¤СѓРЅРєС†РёСЏ РґР»СЏ РѕРїС‚РёРјРёР·Р°С†РёРё
+    AlgorithmType algorithm_type; // РўРёРї Р°Р»РіРѕСЂРёС‚РјР°
+    ExtremumType extremum_type;   // РўРёРї СЌРєСЃС‚СЂРµРјСѓРјР°
 
-    // --- НАЧАЛЬНЫЕ УСЛОВИЯ ---
-    long double initial_x = 0.0; // Начальное приближение X
-    long double initial_y = 0.0; // Начальное приближение Y
+    // --- РќРђР§РђР›Р¬РќР«Р• РЈРЎР›РћР’РРЇ ---
+    long double initial_x = 0.0; // РќР°С‡Р°Р»СЊРЅРѕРµ РїСЂРёР±Р»РёР¶РµРЅРёРµ X
+    long double initial_y = 0.0; // РќР°С‡Р°Р»СЊРЅРѕРµ РїСЂРёР±Р»РёР¶РµРЅРёРµ Y
 
-    // --- ГРАНИЦЫ ПОИСКА ---
-    long double x_left_bound = -10.0; // Левая граница диапазона X
-    long double x_right_bound = 10.0; // Правая граница диапазона X
-    long double y_left_bound = -10.0; // Левая граница диапазона Y
-    long double y_right_bound = 10.0; // Правая граница диапазона Y
+    // --- Р“Р РђРќРР¦Р« РџРћРРЎРљРђ ---
+    long double x_left_bound = -10.0; // Р›РµРІР°СЏ РіСЂР°РЅРёС†Р° РґРёР°РїР°Р·РѕРЅР° X
+    long double x_right_bound = 10.0; // РџСЂР°РІР°СЏ РіСЂР°РЅРёС†Р° РґРёР°РїР°Р·РѕРЅР° X
+    long double y_left_bound = -10.0; // Р›РµРІР°СЏ РіСЂР°РЅРёС†Р° РґРёР°РїР°Р·РѕРЅР° Y
+    long double y_right_bound = 10.0; // РџСЂР°РІР°СЏ РіСЂР°РЅРёС†Р° РґРёР°РїР°Р·РѕРЅР° Y
 
-    // --- ПАРАМЕТРЫ ТОЧНОСТИ ---
-    long double result_precision = 1e-06;     // Точность результата
-    long double computation_precision = 1e-8; // Точность вычислений
-    
-    // --- АЛГОРИТМО-СПЕЦИФИЧНЫЕ ПАРАМЕТРЫ ---
-    BasicAlgorithmParams basic_params;                    // Для BASIC_COORDINATE_DESCENT
-    SteepestAlgorithmParams steepest_params;              // Для STEEPEST_COORDINATE_DESCENT
-    DerivativeFreeAlgorithmParams derivative_free_params; // Для DERIVATIVE_FREE_DESCENT      
-
-    // --- ОГРАНИЧЕНИЯ ---
-    int max_iterations = 1000;       // Макс. число итераций 
-    int max_function_calls = 10000;  // Макс. число вызовов функции
-
-    // --- ДОПОЛНИТЕЛЬНЫЕ ФЛАГИ ---
-    bool enable_logging = false;         // Включение логирования
-    bool save_iteration_history = false; // Сохранение истории итераций
+    // --- РџРђР РђРњР•РўР Р« РўРћР§РќРћРЎРўР ---
+    long double result_precision = 1e-06;     // РўРѕС‡РЅРѕСЃС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚Р°
+    long double computation_precision = 1e-8; // РўРѕС‡РЅРѕСЃС‚СЊ РІС‹С‡РёСЃР»РµРЅРёР№
+     
+    // --- РћР“Р РђРќРР§Р•РќРРЇ ---
+    int max_iterations = 1000;       // РњР°РєСЃ. С‡РёСЃР»Рѕ РёС‚РµСЂР°С†РёР№ 
+    int max_function_calls = 10000;  // РњР°РєСЃ. С‡РёСЃР»Рѕ РІС‹Р·РѕРІРѕРІ С„СѓРЅРєС†РёРё
 
 };
 
 // ============================================================================
-// Структура выходных данных
+// РЎС‚СЂСѓРєС‚СѓСЂР° РІС‹С…РѕРґРЅС‹С… РґР°РЅРЅС‹С…
 // ============================================================================
 
-// Результат оптимизации
+// Р РµР·СѓР»СЊС‚Р°С‚ РѕРїС‚РёРјРёР·Р°С†РёРё
 struct CoordinateResult {
-    CDResult status = CDResult::Success;    // Статус выполнения
-    std::vector<long double> optimum_point; // Точка экстремума [X, Y]
-    long double optimum_value;              // Значение функции в точке экстремума
-    int iterations = 0;                     // Кол-во выполненных итераций
-    int function_calls = 0;                 // Кол-во вызовов функции
-    std::string message;                    // Сообщение о результате
+    CDResult status = CDResult::Success;    // РЎС‚Р°С‚СѓСЃ РІС‹РїРѕР»РЅРµРЅРёСЏ
+    std::vector<long double> optimum_point; // РўРѕС‡РєР° СЌРєСЃС‚СЂРµРјСѓРјР° [X, Y]
+    long double optimum_value;              // Р—РЅР°С‡РµРЅРёРµ С„СѓРЅРєС†РёРё РІ С‚РѕС‡РєРµ СЌРєСЃС‚СЂРµРјСѓРјР°
+    int iterations = 0;                     // РљРѕР»-РІРѕ РІС‹РїРѕР»РЅРµРЅРЅС‹С… РёС‚РµСЂР°С†РёР№
+    int function_calls = 0;                 // РљРѕР»-РІРѕ РІС‹Р·РѕРІРѕРІ С„СѓРЅРєС†РёРё
+    std::string message;                    // РЎРѕРѕР±С‰РµРЅРёРµ Рѕ СЂРµР·СѓР»СЊС‚Р°С‚Рµ
 };
 
 // ============================================================================
-// Вспомогательные функции
+// Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ С„СѓРЅРєС†РёРё
 // ============================================================================
 
-// Конвертация результата алгоритма в строковое сообщение
+// РљРѕРЅРІРµСЂС‚Р°С†РёСЏ СЂРµР·СѓР»СЊС‚Р°С‚Р° Р°Р»РіРѕСЂРёС‚РјР° РІ СЃС‚СЂРѕРєРѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ
 inline std::string resultToString(CDResult result) {
     switch (result) {
-        case CDResult::Success:           return "Success";
-        case CDResult::Fail:              return "General failure";
-        case CDResult::InvalidInput:      return "Invalid input parameters";
-        case CDResult::NoConvergence:     return "No convergence";
-        case CDResult::OutOfBounds:       return "Point out of bounds";
-        case CDResult::MaxIterations:     return "Maximum iterations exceeded";
-        case CDResult::MaxFunctionsCalls: return "Maximum function calls exceeded";
-        case CDResult::ParseError:        return "Function parsing error";
-        case CDResult::ComputeError:      return "Computation error";
-        case CDResult::NonDifferentiable: return "Function is not differentiable";
+        case CDResult::Success:           return "РЈСЃРїРµС€РЅРѕ";
+        case CDResult::Fail:              return "РџСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР°";
+        case CDResult::InvalidInput:      return "РќРµРєРѕСЂСЂРµРєС‚РЅС‹Рµ РІС…РѕРґРЅС‹Рµ РґР°РЅРЅС‹Рµ";
+        case CDResult::NoConvergence:     return "РђР»РіРѕСЂРёС‚Рј РЅРµ СЃС…РѕРґРёС‚СЃСЏ";
+        case CDResult::OutOfBounds:       return "Р’С‹С…РѕРґ Р·Р° РіСЂР°РЅРёС†С‹";
+        case CDResult::MaxIterations:     return "Р”РѕСЃС‚РёРіРЅСѓС‚ РјР°РєСЃРёРјСѓРј РёС‚РµСЂР°С†РёР№";
+        case CDResult::MaxFunctionsCalls: return "Р”РѕСЃС‚РёРіРЅСѓС‚ РјР°РєСЃРёРјСѓРј РІС‹Р·РѕРІРѕРІ С„СѓРЅРєС†РёРё";
+        case CDResult::ParseError:        return "РћС€РёР±РєР° РѕР±СЂР°Р±РѕС‚РєРё С„СѓРЅРєС†РёРё";
+        case CDResult::ComputeError:      return "Р’С‹С‡РёСЃР»РёС‚РµР»СЊРЅР°СЏ РѕС€РёР±РєР°";
+        case CDResult::NonDifferentiable: return "Р¤СѓРЅРєС†РёСЏ РЅРµ СЏРІР»СЏРµС‚СЃСЏ РґРёС„С„РµСЂРµРЅС†РёСЂСѓРµРјРѕР№";
         
         default:                          return "Unknown result";
     }
 }
 
-// Конвертация типа алгоритма в строковое сообщение
+// РљРѕРЅРІРµСЂС‚Р°С†РёСЏ С‚РёРїР° Р°Р»РіРѕСЂРёС‚РјР° РІ СЃС‚СЂРѕРєРѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ
 inline std::string algorithmTypeToString(AlgorithmType type) {
     switch (type) {
-        case AlgorithmType::BASIC_COORDINATE_DESCENT:    return "Basic Coordinate Descent";
-        case AlgorithmType::STEEPEST_COORDINATE_DESCENT: return "Steepest Coordinate Descent";
-        case AlgorithmType::DERIVATIVE_FREE_DESCENT:     return "Derivative-Free Coordinate Descent";
+        case AlgorithmType::BASIC_COORDINATE_DESCENT:    return "Р‘Р°Р·РѕРІС‹Р№ РђР»РіРѕСЂРёС‚Рј РїРѕРєРѕРѕСЂРґРёРЅР°С‚РЅРѕРіРѕ СЃРїСѓСЃРєР°";
+        case AlgorithmType::STEEPEST_COORDINATE_DESCENT: return "РђР»РіРѕСЂРёС‚Рј РїРѕРєРѕРѕСЂРґРёРЅР°С‚РЅРѕРіРѕ СЃРїСѓСЃРєР° СЃ СЂР°СЃРёС€СЂРµРЅРёРµРј (РЅР°РёСЃРєРѕСЂРµР№С€РёР№ СЃРїСѓСЃРє)";
         
-        default:                                         return "Unknown Algorithm";
+        default:                                         return "РћС€РёР±РєР°. РќРµРёР·РІРµСЃС‚РЅС‹Р№ Р°Р»РіРѕСЂРёС‚Рј";
     }
 }
 
-// Конвертация типа экстремума в строку
+// РљРѕРЅРІРµСЂС‚Р°С†РёСЏ С‚РёРїР° СЌРєСЃС‚СЂРµРјСѓРјР° РІ СЃС‚СЂРѕРєСѓ
 inline std::string extremumTypeToString(ExtremumType type) {
     switch (type) {
-        case ExtremumType::MINIMUM: return "Minimum";
-        case ExtremumType::MAXIMUM: return "Maximum";
+        case ExtremumType::MINIMUM: return "РњРёРЅРёРјСѓРј";
+        case ExtremumType::MAXIMUM: return "РњР°РєСЃРёРјСѓРј";
 
-        default:                    return "Unknow";
+        default:                    return "РћС€РёР±РєР°. РЅРµРёР·РІРµСЃС‚РЅС‹Р№ РїР°СЂР°РјРµС‚СЂ";
     }
 }
 
-// Проверка: требуется ли вычислять производную функции
-inline bool algorithmRequiresDerivatives(AlgorithmType type) {
-    return type == AlgorithmType::BASIC_COORDINATE_DESCENT ||
-        type == AlgorithmType::STEEPEST_COORDINATE_DESCENT;
-}
 
 #endif // COORDINATEDESCENT_COMMON_HPP_
