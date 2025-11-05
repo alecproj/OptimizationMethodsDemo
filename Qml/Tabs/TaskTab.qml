@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import AppEnums
+import InputData
 
 Rectangle {
     id: root
@@ -110,9 +111,8 @@ Rectangle {
             onReleased: {
                 inputParams.inputData.function = func.text;
                 var rv = controller.setInputData(inputParams.inputData.instance());
-                console.log("SetInputData: " + rv);
                 rv = controller.solve();
-                console.log("Solve: " + rv);
+                controller.updateQuickInfoModel();
             }
         }
 
@@ -122,12 +122,33 @@ Rectangle {
             text: "Восстановить входные данные из отчета:"
         }
 
+        InputData { id: sourceInputData }
+
         ReportList {
             id: reportList
             Layout.preferredWidth: (parent.width * 0.9)
             Layout.preferredHeight: (parent.height * 0.2)
             Layout.alignment: Qt.AlignHCenter
             Layout.bottomMargin: column.spacing
+            model: controller.quickInfoModel
+
+            onPressed: function(fileName) {
+                var rv = controller.inputDataFromFile(fileName, sourceInputData);
+                if (rv === Result.Success) {
+                    AppStates.selectedAlgorithm = sourceInputData.algorithmId;
+                    AppStates.selectedExtension = sourceInputData.extensionId;
+                    AppStates.selectedfullAlgo = sourceInputData.fullAlgoId;
+                    func.text = sourceInputData.function;
+                    if (func.text !== "") {
+                        func.valid = true;
+                        func.accepted = true;
+                    } else {
+                        func.valid = false;
+                        func.accepted = false;
+                    }
+                    inputParams.setInputData(sourceInputData);
+                }
+            }
         }
     }
 

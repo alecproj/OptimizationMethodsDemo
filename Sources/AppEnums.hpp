@@ -9,6 +9,24 @@
 #include <QObject>
 #include <cassert>
 
+class ReportStatus: public QObject {
+    Q_OBJECT
+public:
+    enum Status {
+        CheckFailed         = -6,
+        InvalidDataStruct   = -5,
+        InvalidCRC          = -4,
+        InvalidFile         = -3,
+        InvalidName         = -2,
+        FileDoesNotExists   = -1,
+        Ok                  = 0,
+        NotVerified         = 1
+    };
+    Q_ENUM(Status)
+
+    explicit ReportStatus(QObject *parent = nullptr) : QObject(parent) {}
+};
+
 class Result: public QObject {
     Q_OBJECT
 public:

@@ -6,11 +6,12 @@ Button {
 
     height: txt.font.pixelSize + 16
 
-    required property string file
+    required property string name
+    required property string info
     required property int status
 
     icon.source: {
-        if (root.status == 0) {
+        if (root.status === 0) {
             "qrc:/icons/file-alt.svg" 
         } else {
             "qrc:/icons/file-xmark.svg"
@@ -41,7 +42,7 @@ Button {
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
 
-            text: root.file
+            text: root.info
             font.pixelSize: 16
             color: AppPalette.foreground
         }

@@ -8,6 +8,7 @@
 
 #include "AppEnums.hpp"
 #include "ReportWriter.hpp"
+#include "QuickInfoListModel.hpp"
 
 #include <CoordinateDescent/CoordinateDescent.hpp>
 #include <GradientDescent/GradientDescent.hpp>
@@ -20,12 +21,21 @@ using CDAlgoType = CoordinateDescent<ReportWriter>;
 
 class MainController : public QObject {
     Q_OBJECT
+
+    Q_PROPERTY(QuickInfoListModel *quickInfoModel READ quickInfoModel NOTIFY quickInfoModelChanged)
 public:
 
     explicit MainController(QObject *parent = nullptr);
 
     Q_INVOKABLE Status setInputData(const InputData *data);
     Q_INVOKABLE Status solve();
+    Q_INVOKABLE void updateQuickInfoModel();
+    Q_INVOKABLE Status inputDataFromFile(const QString &fileName, InputData *out);
+
+    QuickInfoListModel *quickInfoModel() { return &m_quickInfoModel; }
+
+signals:
+    void quickInfoModelChanged();
 
 private:
     ReportWriter m_writer;
@@ -35,6 +45,7 @@ private:
     CoordinateInput m_cdData;
     GDAlgoType m_gdAlgo;
     GradientInput m_gdData;
+    QuickInfoListModel m_quickInfoModel;
 
 };
 

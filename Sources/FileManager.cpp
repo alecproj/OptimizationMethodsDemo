@@ -25,7 +25,7 @@ bool FileManager::ensureBaseDirExists(QString &outDir)
     return true;
 }
 
-QStringList FileManager::listFiles(QDir::SortFlag sortBy, const QString &filter)
+QStringList FileManager::listFiles(QDir::SortFlags sortBy, const QString &filter)
 {
     QString path{};
     if (!ensureBaseDirExists(path)) {

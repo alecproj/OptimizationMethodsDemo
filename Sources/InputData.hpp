@@ -88,6 +88,35 @@ public:
 
     Q_INVOKABLE InputData *instance() { return this; }
 
+    Q_INVOKABLE QString maxIterationsAsString() const { return QString::number(m_maxIterations); }
+
+    static QString formatDoubleWithDot(double v) {
+        QString s = QString::number(v, 'f', 6);
+        if (s.contains('.')) {
+            while (s.endsWith('0'))
+                s.chop(1);
+            if (s.endsWith('.'))
+                s += '0';
+        } else {
+            s += ".0";
+        }
+        return s;
+    }
+
+    Q_INVOKABLE QString calcAccuracyAsString() const { return formatDoubleWithDot(m_calcAccuracy); }
+    Q_INVOKABLE QString resultAccuracyAsString() const { return formatDoubleWithDot(m_resultAccuracy); }
+    Q_INVOKABLE QString startX1AsString() const { return formatDoubleWithDot(m_startX1); }
+    Q_INVOKABLE QString startY1AsString() const { return formatDoubleWithDot(m_startY1); }
+    Q_INVOKABLE QString startX2AsString() const { return formatDoubleWithDot(m_startX2); }
+    Q_INVOKABLE QString startY2AsString() const { return formatDoubleWithDot(m_startY2); }
+    Q_INVOKABLE QString stepXAsString() const { return formatDoubleWithDot(m_stepX); }
+    Q_INVOKABLE QString stepYAsString() const { return formatDoubleWithDot(m_stepY); }
+    Q_INVOKABLE QString coefficientStepAsString() const { return formatDoubleWithDot(m_coefficientStep); }
+    Q_INVOKABLE QString minXAsString() const { return formatDoubleWithDot(m_minX); }
+    Q_INVOKABLE QString maxXAsString() const { return formatDoubleWithDot(m_maxX); }
+    Q_INVOKABLE QString minYAsString() const { return formatDoubleWithDot(m_minY); }
+    Q_INVOKABLE QString maxYAsString() const { return formatDoubleWithDot(m_maxY); }
+
 public slots:
     // Setters
     void setFunction(const QString& v)

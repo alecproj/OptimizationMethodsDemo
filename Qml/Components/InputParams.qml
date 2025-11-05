@@ -26,6 +26,26 @@ Flickable {
     property int flags: 0
     property bool valid: false
 
+    function setInputData(data) {
+        extremum.selected = data.extremumId;
+        iterations.text = data.maxIterationsAsString();
+        calcAccuracy.text = data.calcAccuracyAsString();
+        resultAccuracy.text = data.resultAccuracyAsString();
+        startX1.text = data.startX1AsString();
+        startY1.text = data.startY1AsString();
+        startX2.text = data.startX2AsString();
+        startY2.text = data.startY2AsString();
+        stepX.text = data.stepXAsString();
+        stepY.text = data.stepYAsString();
+        coefficientStep.text = data.coefficientStepAsString();
+        minX.text = data.minXAsString();
+        maxX.text = data.maxXAsString();
+        minY.text = data.minYAsString();
+        maxY.text = data.maxYAsString();
+        flags = helper.getCheckByFullType(AppStates.selectedFullAlgo);
+        valid = true;
+    }
+
     function setFlag(flag) {
         flags = flags | flag
     }

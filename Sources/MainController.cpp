@@ -1,4 +1,6 @@
 #include "MainController.hpp"
+#include "FileManager.hpp"
+#include "ReportReader.hpp"
 
 MainController::MainController(QObject *parent)
     : QObject{parent}
@@ -9,6 +11,7 @@ MainController::MainController(QObject *parent)
     , m_cdData{}
     , m_gdAlgo{&m_writer}
     , m_gdData{}
+    , m_quickInfoModel{this}
 {
 }
 
@@ -50,3 +53,34 @@ Status MainController::solve()
 
     return Status::Success;
 }
+
+void MainController::updateQuickInfoModel()
+{
+    bool updates = false;
+    QStringList files = FileManager::listFiles();
+    for (const auto file : files) {
+        if (!m_quickInfoModel.exists(file)) {
+            auto info = new QuickInfo(&m_quickInfoModel);
+            auto rv = ReportReader::quickInfo(file, info);
+            if (rv == ReportStatus::Ok) {
+                m_quickInfoModel.prepend(info);
+                updates = true;
+            } else {
+                delete info;
+            }
+        }
+    }
+    if (updates) {
+        emit quickInfoModelChanged();
+    }
+}
+
+Status MainController::inputDataFromFile(const QString &fileName, InputData *out)
+{
+    auto rv = ReportReader::inputData(fileName, out);
+    if (rv == ReportStatus::Ok || rv == ReportStatus::InvalidCRC) {
+        return Status::Success;
+    }
+    return Status::Fail;
+}
+

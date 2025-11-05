@@ -15,7 +15,10 @@ class FileManager {
 public:
 
     static bool ensureBaseDirExists(QString &outDir);
-    static QStringList listFiles(QDir::SortFlag sortBy = QDir::Time, const QString &filter = QString());
+    static QStringList listFiles(
+        QDir::SortFlags sortBy = (QDir::Time | QDir::Reversed),
+        const QString &filter = QString()
+    );
     static bool fileExists(const QString &fileName);
     static bool loadJsonFile(const QString &fileName, QJsonObject &outObj);
     static bool saveJsonFile(const QString &fileName, const QJsonObject &obj);

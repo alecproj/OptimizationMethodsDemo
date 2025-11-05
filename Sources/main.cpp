@@ -55,10 +55,13 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<ExtensionType>("AppEnums", 1, 0, "ExtensionType", "Extension type ID");
     qmlRegisterUncreatableType<FullAlgoType>("AppEnums", 1, 0, "FullAlgoType", "Full algo type ID");
     qmlRegisterUncreatableType<CheckList>("AppEnums", 1, 0, "CheckList", "Input data check list");
+    qmlRegisterUncreatableType<Result>("AppEnums", 1, 0, "Result", "Result of MainController methods");
     qmlRegisterType<EnumHelper>("AppEnums", 1, 0, "EnumHelper");
     qmlRegisterType<InputData>("InputData", 1, 0, "InputData");
 
     MainController controller{};
+    controller.updateQuickInfoModel();
+    qDebug() << "Files count: " << controller.quickInfoModel()->count();
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("controller", &controller);

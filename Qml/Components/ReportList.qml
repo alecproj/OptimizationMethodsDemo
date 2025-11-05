@@ -7,7 +7,10 @@ Rectangle {
     color: AppPalette.surface
     radius: 15
 
+    required property var model
     property int contentPadding: 10
+
+    signal pressed(string fileName)
 
     Flickable {
         id: list
@@ -25,15 +28,10 @@ Rectangle {
             padding: root.contentPadding
 
             Repeater {
-                model: [
-                    { file: "GD 31.10.25 20:28", status: 0 },
-                    { file: "GD 31.10.25 13:18", status: 0 },
-                    { file: "GD 31.10.25 10:10", status: 0 },
-                    { file: "GD 30.10.25 13:18", status: 1 }
-                ]
-
+                model: root.model
                 delegate: ReportListEntry {
                     width: (root.width - (2 * root.contentPadding))
+                    onReleased: root.pressed(name)
                 }
             }
         }
