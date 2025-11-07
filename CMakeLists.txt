@@ -77,6 +77,9 @@ qt_add_qml_module(${PROJECT_NAME}App
         Qml/Singleton/AppPalette.qml
         Qml/Singleton/AppStates.qml
         Qml/Tabs/TaskTab.qml
+        Qml/Tabs/ReportTab.qml
+        Qml/Components/TableLoader.qml
+        Qml/Components/TableRow.qml
 )
 
 target_link_libraries(${PROJECT_NAME}App

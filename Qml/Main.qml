@@ -39,13 +39,10 @@ ApplicationWindow {
                 }
             }
     
-            Rectangle {
-                color: "#ffffff"
-                Label {
-                    anchors.centerIn: parent
-                    text: "GD-31-10-25-13-48"
-                    font.pixelSize: 20
-                }
+            ReportTab {
+                id: reportTab
+                Layout.fillWidth: true
+                Layout.fillHeight: true
             }
         }
     }
