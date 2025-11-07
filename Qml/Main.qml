@@ -38,11 +38,20 @@ ApplicationWindow {
                     font.pixelSize: 20
                 }
             }
-    
-            ReportTab {
-                id: reportTab
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+
+            Repeater {
+                model: controller.openReportsCount
+
+                delegate: Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    ReportTab {
+                        anchors.fill: parent
+                        id: reportTab
+                        report: controller.openReports[index]
+                    }
+                }
             }
         }
     }

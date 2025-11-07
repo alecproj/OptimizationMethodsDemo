@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -6,6 +8,7 @@ Rectangle {
     id: root
     color: AppPalette.background
 
+    required property var report
     property int fontSize: 14
 
     Flickable {
@@ -34,7 +37,7 @@ Rectangle {
             }
 
             Repeater {
-                model: controller.openReports[0]
+                model: root.report.solution
 
                 delegate: Item {
                     id: container

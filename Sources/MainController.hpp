@@ -8,7 +8,7 @@
 
 #include "AppEnums.hpp"
 #include "ReportWriter.hpp"
-#include "ReportModel.hpp"
+#include "Report.hpp"
 #include "QuickInfoListModel.hpp"
 
 #include <CoordinateDescent/CoordinateDescent.hpp>
@@ -24,7 +24,7 @@ class MainController : public QObject {
     Q_OBJECT
 
     Q_PROPERTY(QuickInfoListModel *quickInfoModel READ quickInfoModel NOTIFY quickInfoModelChanged)
-    Q_PROPERTY(QList<ReportModel *> openReports READ openReports NOTIFY openReportsUpdated)
+    Q_PROPERTY(QList<Report *> openReports READ openReports NOTIFY openReportsUpdated)
     Q_PROPERTY(int openReportsCount READ openReportsCount NOTIFY openReportsUpdated)
 public:
 
@@ -36,7 +36,7 @@ public:
     Q_INVOKABLE Status inputDataFromFile(const QString &fileName, InputData *out);
     Q_INVOKABLE void openReport(const QString &fileName);
     Q_INVOKABLE int openReportsCount() { return m_openReports.count(); }
-    QList<ReportModel *> &openReports() { return m_openReports; }
+    QList<Report *> &openReports() { return m_openReports; }
 
     QuickInfoListModel *quickInfoModel() { return &m_quickInfoModel; }
 
@@ -53,7 +53,7 @@ private:
     GDAlgoType m_gdAlgo;
     GradientInput m_gdData;
     QuickInfoListModel m_quickInfoModel;
-    QList<ReportModel *> m_openReports;
+    QList<Report *> m_openReports;
 
 };
 

@@ -1,6 +1,7 @@
 #include "MainController.hpp"
 #include "FileManager.hpp"
 #include "ReportReader.hpp"
+#include "SolutionModel.hpp"
 
 MainController::MainController(QObject *parent)
     : QObject{parent}
@@ -80,9 +81,12 @@ void MainController::openReport(const QString &fileName)
 {
     ReportData data;
     ReportReader::reportData(fileName, &data);
-    auto model = new ReportModel(this);
-    model->setData(data.solution, fileName);
-    m_openReports.append(model);
+    auto model = new SolutionModel();
+    auto report = new Report(fileName, &data.input, model, data.result, this);
+    model->setData(data.solution);
+    model->setParent(report);
+    data.input.setParent(report);
+    m_openReports.append(report);
     emit openReportsUpdated();
 }
 

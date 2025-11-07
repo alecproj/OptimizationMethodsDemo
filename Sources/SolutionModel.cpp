@@ -1,26 +1,25 @@
 //
-// Created on 6 Nov, 2025
+// Created on 8 Nov, 2025
 //  by alecproj
 //
 
-#include "ReportModel.hpp"
+#include "SolutionModel.hpp"
 
 #include <QVariant>
 
-ReportModel::ReportModel(QObject *parent)
+SolutionModel::SolutionModel(QObject *parent)
     : QAbstractListModel(parent)
-    , m_fileName{}
     , m_items{}
 {
 }
 
-int ReportModel::rowCount(const QModelIndex &parent) const
+int SolutionModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.isValid()) return 0;
     return m_items.size();
 }
 
-QVariant ReportModel::data(const QModelIndex &index, int role) const
+QVariant SolutionModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid()) return {};
     if (index.row() < 0 || index.row() >= m_items.size()) return {};
@@ -53,7 +52,7 @@ QVariant ReportModel::data(const QModelIndex &index, int role) const
     }
 }
 
-QHash<int, QByteArray> ReportModel::roleNames() const
+QHash<int, QByteArray> SolutionModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
     roles[TypeRole] = "type";
@@ -65,9 +64,8 @@ QHash<int, QByteArray> ReportModel::roleNames() const
     return roles;
 }
 
-void ReportModel::setData(const QJsonArray &arr, const QString &fileName)
+void SolutionModel::setData(const QJsonArray &arr)
 {
-    m_fileName = fileName;
     beginResetModel();
     m_items = arr;
     endResetModel();

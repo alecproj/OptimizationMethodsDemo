@@ -1,10 +1,10 @@
 //
-// Created on 6 Nov, 2025
+// Created on 8 Nov, 2025
 //  by alecproj
 //
 
-#ifndef SOURCES_REPORTMODEL_HPP_
-#define SOURCES_REPORTMODEL_HPP_
+#ifndef SOURCES_SOLUTIONMODEL_HPP_
+#define SOURCES_SOLUTIONMODEL_HPP_
 
 #include <QAbstractListModel>
 #include <QJsonArray>
@@ -12,11 +12,9 @@
 #include <QJsonObject>
 #include <QString>
 
-class ReportModel : public QAbstractListModel {
+class SolutionModel : public QAbstractListModel {
     Q_OBJECT
 public:
-    QString m_fileName;
-
     enum Roles {
         TypeRole = Qt::UserRole + 1,
         TitleRole,
@@ -26,17 +24,17 @@ public:
         RowsRole
     };
 
-    ReportModel(QObject *parent = nullptr);
+    SolutionModel(QObject *parent = nullptr);
 
     // QAbstractListModel
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
 
-    void setData(const QJsonArray &arr, const QString &filename);
+    void setData(const QJsonArray &arr);
 
 private:
     QJsonArray m_items;
 };
 
-#endif // SOURCES_REPORTMODEL_HPP_
+#endif // SOURCES_SOLUTIONMODEL_HPP_
