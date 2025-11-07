@@ -186,9 +186,29 @@ public:
                 double elapsed = std::chrono::duration<double>(current_time - start_time).count();
                 if (elapsed >= max_seconds) break;
 
-                // Численный градиент
-                double fx = (evalFunc(x + delta, y) - evalFunc(x - delta, y)) / (2.0 * delta);
-                double fy = (evalFunc(x, y + delta) - evalFunc(x, y - delta)) / (2.0 * delta);
+                // Численный градиент (частные производные первый способ)
+                //double fx = (evalFunc(x + delta, y) - evalFunc(x - delta, y)) / (2.0 * delta);
+                //double fy = (evalFunc(x, y + delta) - evalFunc(x, y - delta)) / (2.0 * delta);
+
+
+                double fx = 0.0;
+                double fy = 0.0;
+
+                try {
+                    // Вычисляем производные по x и y через muParserX::Diff
+                    // первый аргумент — указатель на переменную (та же переменная, что передана в DefineVar)
+                    // второй аргумент — текущее значение переменной (x или y)
+                    // третий аргумент — шаг (delta)
+                    fx = p.Diff(&x, x, delta);
+                    fy = p.Diff(&y, y, delta);
+                } catch (mu::Parser::exception_type &e) {
+                    std::cerr << "Ошибка при вычислении производных (Diff): " << e.GetMsg() << "\n";
+                    return GDResult::Fail;
+                } catch (...) {
+                    std::cerr << "Неизвестная ошибка при Diff().\n";
+                    return GDResult::Fail;
+                }
+
 
                 double grad_norm = std::sqrt(fx*fx + fy*fy);
 
