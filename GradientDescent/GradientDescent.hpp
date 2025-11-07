@@ -30,7 +30,7 @@ public:
     {
     }
 
- GDResult setInputData(const GradientInput *data)
+    GDResult setInputData(const GradientInput *data)
 {
     // === 1. Проверка указателя ===
     if (!data) {
@@ -155,9 +155,9 @@ public:
     m_inputData = data;
     return GDResult::Success;
 }
-
-       GDResult solve()
+    GDResult solve()
     {
+        //if (!m_inputData || !m_reporter || m_reporter->begin() == 0) {
         if (!m_inputData) return GDResult::Fail;
 
         try {
@@ -181,6 +181,7 @@ public:
             constexpr double max_seconds = 60.0;
 
             while (true) {
+                static int tmp;
                 auto current_time = std::chrono::steady_clock::now();
                 double elapsed = std::chrono::duration<double>(current_time - start_time).count();
                 if (elapsed >= max_seconds) break;
@@ -193,9 +194,12 @@ public:
 
                 // Отладочный вывод
                 double f_val = evalFunc(x, y);
-                std::cout << "[DEBUG] x=" << x
+                std::cout << "[DEBUG] n = " << tmp
+                          << ", x=" << x
                           << ", y=" << y
                           << ", f(x,y)=" << f_val
+                          <<", df/dx=" << fx
+                          << ", df/dy=" << fy
                           << ", |grad|=" << grad_norm << "\n";
 
                 // Условие окончания по норме градиента
@@ -211,6 +215,8 @@ public:
                 // Ограничение по границам
                 x = std::min(std::max(x, m_inputData->leftBorderX), m_inputData->rightBorderX);
                 y = std::min(std::max(y, m_inputData->leftBorderY), m_inputData->rightBorderY);
+
+                tmp++;
             }
 
         } catch (mu::Parser::exception_type &e) {
@@ -221,8 +227,14 @@ public:
             return GDResult::Fail;
         }
 
+
+        if (m_inputData->extended) {
+            // Расширенный функционал
+        }
+
+
         if (m_reporter->end() == 0) return GDResult::Success;
-        return GDResult::Fail;
+        else return GDResult::Fail;
     }
 
 
@@ -230,60 +242,6 @@ private:
 
     const GradientInput *m_inputData;
     Reporter *m_reporter;
-    // Метод золотого сечения для одномерной минимизации
-    static double golden_section(const std::function<double(double)> &func, double left_bound, double right_bound, const double tol = 1e-5, double max_seconds = 60.0) {
-
-        if (!func) {
-            throw std::invalid_argument("golden_section: Function pointer is null");
-        }
-        if (left_bound > right_bound) {
-            std::swap(left_bound, right_bound);
-        }
-        if (tol <= 0) {
-            throw std::invalid_argument("golden_section: Tolerance must be positive");
-        }
-        if (tol >= std::fabs(right_bound - left_bound)) {
-            throw std::invalid_argument("golden_section: Tolerance is too large for the given interval");
-        }
-        if (max_seconds <= 0) {
-            throw std::invalid_argument("golden_section: Max_seconds must be positive");
-        }
-
-        static const double PHI = (1 + std::sqrt(5)) / 2;
-
-        // Вычисляем внутренние точки интервала
-        double left_internal = right_bound - (right_bound - left_bound) / PHI;
-        double right_internal = left_bound + (right_bound - left_bound) / PHI;
-
-        // Вычисляем значения функции в этих точках
-        double f_left = func(left_internal);
-        double f_right = func(right_internal);
-
-
-        const auto start_time = std::chrono::steady_clock::now();
-
-        // Пока длина интервала больше заданной точности
-        while (std::fabs(right_bound - left_bound) > tol) {
-            auto current_time = std::chrono::steady_clock::now();
-            if (std::chrono::duration<double> elapsed = current_time - start_time; elapsed.count() >= max_seconds) {
-                throw std::runtime_error("golden_section: Time limit exceeded before convergence");
-            }
-            if (f_left < f_right) {
-                right_bound = right_internal;
-                right_internal = left_internal;
-                f_right = f_left;
-                left_internal = right_bound - (right_bound - left_bound) / PHI;
-                f_left = func(left_internal);
-            } else {
-                left_bound = left_internal;
-                left_internal = right_internal;
-                f_left = f_right;
-                right_internal = left_bound + (right_bound - left_bound) / PHI;
-                f_right = func(right_internal);
-            }
-        }
-        return (f_left < f_right) ? left_internal : right_internal;
-    }
 
     static bool validateFunctionVariables(const std::string &funcStr) {
         // Разрешённые имена функций и переменные
