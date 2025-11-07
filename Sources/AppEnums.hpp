@@ -13,6 +13,7 @@ class ReportStatus: public QObject {
     Q_OBJECT
 public:
     enum Status {
+        NoResult            = -7,
         CheckFailed         = -6,
         InvalidDataStruct   = -5,
         InvalidCRC          = -4,

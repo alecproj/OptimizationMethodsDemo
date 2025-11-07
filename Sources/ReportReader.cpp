@@ -76,6 +76,33 @@ ReportStatus::Status ReportReader::inputData(const QString &fileName, InputData 
     return readInputData(data.json, out);
 }
 
+
+ReportStatus::Status ReportReader::reportData(const QString &fileName, ReportData *out)
+{
+    if (!out) {
+        return ReportStatus::NotVerified;
+    }
+    FileData data{};
+    auto rv = validateFile(fileName, &data);
+    switch (rv) {
+        case ReportStatus::Ok:
+        case ReportStatus::InvalidCRC:
+            break;
+        default:
+            return rv;
+    }
+    rv = readInputData(data.json, &out->input);
+    if (rv != ReportStatus::Ok) {
+        return rv;
+    }
+    rv = readSolution(data.json, &out->solution);
+    if (rv != ReportStatus::Ok) {
+        return rv;
+    }
+// TODO
+    return readResult(data.json, nullptr);
+}
+
 ReportStatus::Status ReportReader::readInputData(const QJsonObject &obj, InputData *out)
 {
     QJsonObject dataObj = obj.value("data").toObject();
@@ -205,6 +232,34 @@ ReportStatus::Status ReportReader::readInputData(const QJsonObject &obj, InputDa
         out->setMaxY(inputObj.value("maxY").toDouble(out->maxY()));
     } else {
         return ReportStatus::InvalidDataStruct;
+    }
+
+    return ReportStatus::Ok;
+}
+
+ReportStatus::Status ReportReader::readSolution(const QJsonObject &obj, QJsonArray *out)
+{
+    QJsonObject dataObj = obj.value("data").toObject();
+    if (dataObj.isEmpty()) {
+        return ReportStatus::InvalidDataStruct;
+    }
+    *out = dataObj.value("solution").toArray();
+    if (out->isEmpty()) {
+        return ReportStatus::InvalidDataStruct;
+    }
+    return ReportStatus::Ok;
+}
+
+ReportStatus::Status ReportReader::readResult(const QJsonObject &obj, QJsonObject *out)
+{
+    QJsonObject dataObj = obj.value("data").toObject();
+    if (dataObj.isEmpty()) {
+        return ReportStatus::InvalidDataStruct;
+    }
+
+    QJsonObject resultObj = dataObj.value("result").toObject();
+    if (resultObj.isEmpty()) {
+        return ReportStatus::NoResult;
     }
 
     return ReportStatus::Ok;

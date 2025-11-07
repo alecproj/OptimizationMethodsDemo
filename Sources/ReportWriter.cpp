@@ -9,12 +9,35 @@
 #include <QString>
 #include <QDateTime>
 #include <QMetaEnum>
+#include <QDebug>
+
+// Helper: convert std::string -> QString
+static inline QString qs(const std::string &s) { return QString::fromStdString(s); }
+
+// Convert Cell variant to QJsonValue
+static QJsonValue cellToJsonValue(const ReportWriter::Cell &c) {
+    if (std::holds_alternative<std::string>(c)) {
+        return QJsonValue(QString::fromStdString(std::get<std::string>(c)));
+    } else if (std::holds_alternative<double>(c)) {
+        return QJsonValue(std::get<double>(c));
+    } else if (std::holds_alternative<long long>(c)) {
+        return QJsonValue(static_cast<qint64>(std::get<long long>(c)));
+    } else if (std::holds_alternative<bool>(c)) {
+        return QJsonValue(std::get<bool>(c));
+    } else {
+        return QJsonValue(); // null
+    }
+}
 
 ReportWriter::ReportWriter()
     : m_inputData{nullptr}
     , m_path{QString{}}
     , m_fileName{QString{}}
     , m_report{QJsonObject{}}
+    , m_solution{}
+    , m_result{}
+    , m_openTables{}
+    , m_nextTableId{1}
 {
 }
 
@@ -29,13 +52,83 @@ int ReportWriter::begin()
     m_fileName = fileName(
         static_cast<FullAlgoType::Type>(m_inputData->fullAlgoId())
     );
+    m_solution = QJsonArray{};
+    m_openTables.clear();
+    m_nextTableId = 1;
     prepare();
     writeInputData();
     return 0;
 }
 
+void ReportWriter::insertValue(const std::string &name, double value)
+{
+    QJsonObject obj;
+    obj["type"] = "value";
+    obj["title"] = qs(name);
+    obj["value"] = value;
+    m_solution.append(obj);
+}
+
+void ReportWriter::insertMessage(const std::string &text)
+{
+    QJsonObject obj;
+    obj["type"] = "message";
+    obj["text"] = qs(text);
+    m_solution.append(obj);
+}
+
+int ReportWriter::beginTable(const std::string &title, const std::vector<std::string> &columnHeaders)
+{
+    QJsonObject tbl;
+    tbl["type"] = "table";
+    tbl["title"] = qs(title);
+    QJsonArray cols;
+    for (const auto &c : columnHeaders) cols.append(qs(c));
+    tbl["columns"] = cols;
+    tbl["rows"] = QJsonArray();
+    m_solution.append(tbl);
+    int index = m_solution.size() - 1;
+
+    int tableId = m_nextTableId++;
+    m_openTables.insert(tableId, index);
+    return tableId;
+}
+
+int ReportWriter::insertRow(int tableId, const std::vector<Cell> &row)
+{
+    if (!m_openTables.contains(tableId)) {
+        qWarning("ReportWriter::writeRow: tableId not open");
+        return -1;
+    }
+    int idx = m_openTables.value(tableId);
+    QJsonObject tbl = m_solution.at(idx).toObject();
+    QJsonArray rows = tbl["rows"].toArray();
+
+    QJsonArray jsonRow;
+    for (const auto &cell : row) {
+        jsonRow.append(cellToJsonValue(cell));
+    }
+    rows.append(jsonRow);
+    tbl["rows"] = rows;
+    m_solution.replace(idx, tbl);
+    return 0;
+}
+
+void ReportWriter::endTable(int tableId)
+{
+    m_openTables.remove(tableId);
+}
+
+void ReportWriter::insertResult(double x, double y, double funcValue)
+{
+    m_result["x"] = x;
+    m_result["y"] = y;
+    m_result["funcValue"] = funcValue;
+}
+
 int ReportWriter::end()
 {
+    writeSolutionAndResult();
     writeCRC();
     if (!FileManager::saveJsonFile(m_fileName, m_report)) {
         return -1;
@@ -84,6 +177,14 @@ void ReportWriter::writeInputData()
     QJsonObject taskObj = dataObj.value("task").toObject();
     taskObj.insert("inputData", inputData);
     dataObj.insert("task", taskObj);
+    m_report.insert("data", dataObj);
+}
+
+void ReportWriter::writeSolutionAndResult()
+{
+    QJsonObject dataObj = m_report.value("data").toObject();
+    dataObj.insert("solution", m_solution);
+    dataObj.insert("result", m_result);
     m_report.insert("data", dataObj);
 }
 

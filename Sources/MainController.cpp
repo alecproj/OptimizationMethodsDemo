@@ -12,6 +12,7 @@ MainController::MainController(QObject *parent)
     , m_gdAlgo{&m_writer}
     , m_gdData{}
     , m_quickInfoModel{this}
+    , m_openReports{}
 {
 }
 
@@ -73,6 +74,16 @@ void MainController::updateQuickInfoModel()
     if (updates) {
         emit quickInfoModelChanged();
     }
+}
+
+void MainController::openReport(const QString &fileName)
+{
+    ReportData data;
+    ReportReader::reportData(fileName, &data);
+    auto model = new ReportModel(this);
+    model->setData(data.solution, fileName);
+    m_openReports.append(model);
+    emit openReportsUpdated();
 }
 
 Status MainController::inputDataFromFile(const QString &fileName, InputData *out)
