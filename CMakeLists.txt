@@ -78,6 +78,7 @@ qt_add_qml_module(${PROJECT_NAME}App
         Qml/Singleton/AppStates.qml
         Qml/Tabs/TaskTab.qml
         Qml/Tabs/ReportTab.qml
+        Qml/Tabs/FolderTab.qml
         Qml/Components/TableLoader.qml
         Qml/Components/TableRow.qml
 )

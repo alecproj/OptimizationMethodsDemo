@@ -56,7 +56,6 @@ int main(int argc, char *argv[])
 
     MainController controller{};
     controller.updateQuickInfoModel();
-    controller.openReport("CDB-07-11-2025-12-37-10.json");
     qDebug() << "Files count: " << controller.quickInfoModel()->count();
 
     QQmlApplicationEngine engine;

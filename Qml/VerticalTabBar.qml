@@ -31,13 +31,19 @@ Flickable {
         }
 
         Repeater {
-            model: [
-                { source: "qrc:/icons/file-alt.svg", idx: 2 }
-            ]
+            model: controller.openReportsCount
 
-            delegate: TabIconButton {
+            delegate: Item {
+                implicitWidth: btn.implicitWidth
+                implicitHeight: btn.implicitHeight
 
-                onTabChanged: root.tabChanged(idx)
+                TabIconButton {
+                    id: btn
+                    source: "qrc:/icons/file-alt.svg"
+                    idx: index + 2
+
+                    onTabChanged: root.tabChanged(idx)
+                }
             }
         }
     }

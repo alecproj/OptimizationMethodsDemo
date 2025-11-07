@@ -30,13 +30,8 @@ ApplicationWindow {
                 id: taskTab
             }
     
-            Rectangle {
-                color: "#ffffff"
-                Label {
-                    anchors.centerIn: parent
-                    text: "Отчеты"
-                    font.pixelSize: 20
-                }
+            FolderTab {
+                id: folderTab
             }
 
             Repeater {
