@@ -88,6 +88,9 @@ GradientInput getInputParameters() {
 	std::cout << "Введите правую границу Y: ";
 	input.rightBorderY = safeReadOrNaN<double>();
 
+	std::cout << "Введите правую границу расширение(0 или 1): ";
+	std::cin >> input.extended;
+
 	return input;
 }
 
