@@ -6,6 +6,7 @@
 #include <CoordinateDescent/CoordinateDescent.hpp>
 #include <muParser.h>
 #include <iostream>
+#include <typeinfo>
 
 // Класс-заглушка - реализовывать не нужно!
 class MockReporter {
@@ -48,6 +49,10 @@ int main()
     AlgoType algo{&reporter};
     CoordinateInput data{};
 
+
+	// Временно добавить для отладки
+	std::cout << "mu::value_type size: " << sizeof(mu::value_type) << std::endl;
+	std::cout << "double size: " << sizeof(double) << std::endl;
     auto rv = algo.setInputData(&data);
     if (rv == CDResult::Success) {
         rv = algo.solve();
