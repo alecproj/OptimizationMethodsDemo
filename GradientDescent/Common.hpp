@@ -18,7 +18,7 @@ struct GradientInput {
     double rightBorderX;         // правая граница X
     double leftBorderY;         // левая граница Y
     double rightBorderY;         // правая граница Y
-    bool extended = false;
+    int extended = 0;
 };
 
 enum class GDResult : int {
