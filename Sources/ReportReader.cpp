@@ -77,9 +77,10 @@ ReportStatus::Status ReportReader::inputData(const QString &fileName, InputData 
 }
 
 
-ReportStatus::Status ReportReader::reportData(const QString &fileName, ReportData *out)
+ReportStatus::Status ReportReader::reportData(const QString &fileName,
+    InputData *outInput, QJsonArray &outSolution, ResultData *outResult)
 {
-    if (!out) {
+    if (!outInput) {
         return ReportStatus::NotVerified;
     }
     FileData data{};
@@ -91,16 +92,15 @@ ReportStatus::Status ReportReader::reportData(const QString &fileName, ReportDat
         default:
             return rv;
     }
-    rv = readInputData(data.json, &out->input);
+    rv = readInputData(data.json, outInput);
     if (rv != ReportStatus::Ok) {
         return rv;
     }
-    rv = readSolution(data.json, &out->solution);
+    rv = readSolution(data.json, &outSolution);
     if (rv != ReportStatus::Ok) {
         return rv;
     }
-// TODO
-    return readResult(data.json, nullptr);
+    return readResult(data.json, outResult);
 }
 
 ReportStatus::Status ReportReader::readInputData(const QJsonObject &obj, InputData *out)
@@ -245,12 +245,12 @@ ReportStatus::Status ReportReader::readSolution(const QJsonObject &obj, QJsonArr
     }
     *out = dataObj.value("solution").toArray();
     if (out->isEmpty()) {
-        return ReportStatus::InvalidDataStruct;
+        return ReportStatus::NoSolution;
     }
     return ReportStatus::Ok;
 }
 
-ReportStatus::Status ReportReader::readResult(const QJsonObject &obj, QJsonObject *out)
+ReportStatus::Status ReportReader::readResult(const QJsonObject &obj, ResultData *out)
 {
     QJsonObject dataObj = obj.value("data").toObject();
     if (dataObj.isEmpty()) {
@@ -260,6 +260,24 @@ ReportStatus::Status ReportReader::readResult(const QJsonObject &obj, QJsonObjec
     QJsonObject resultObj = dataObj.value("result").toObject();
     if (resultObj.isEmpty()) {
         return ReportStatus::NoResult;
+    }
+
+    if (resultObj.contains("x") && !resultObj.value("x").isNull()) {
+        out->setXValue(resultObj.value("x").toDouble(out->xValue()));
+    } else {
+        return ReportStatus::InvalidDataStruct;
+    }
+
+    if (resultObj.contains("y") && !resultObj.value("y").isNull()) {
+        out->setYValue(resultObj.value("y").toDouble(out->yValue()));
+    } else {
+        return ReportStatus::InvalidDataStruct;
+    }
+
+    if (resultObj.contains("funcValue") && !resultObj.value("funcValue").isNull()) {
+        out->setFuncValue(resultObj.value("funcValue").toDouble(out->funcValue()));
+    } else {
+        return ReportStatus::InvalidDataStruct;
     }
 
     return ReportStatus::Ok;

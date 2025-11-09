@@ -2,6 +2,7 @@
 #include "FileManager.hpp"
 #include "ReportReader.hpp"
 #include "SolutionModel.hpp"
+#include "ResultData.hpp"
 
 MainController::MainController(QObject *parent)
     : QObject{parent}
@@ -77,17 +78,55 @@ void MainController::updateQuickInfoModel()
     }
 }
 
-void MainController::openReport(const QString &fileName)
+Status MainController::openReport(const QString &fileName)
 {
-    ReportData data;
-    ReportReader::reportData(fileName, &data);
+    auto input = new InputData();
     auto model = new SolutionModel();
-    auto report = new Report(fileName, &data.input, model, data.result, this);
-    model->setData(data.solution);
+    auto result = new ResultData();
+    QJsonArray solution;
+    auto rv = ReportReader::reportData(fileName, input, solution, result);
+    switch (rv) {
+        case ReportStatus::NoResult:
+            delete result;
+            result = nullptr;
+        case ReportStatus::Ok:
+        case ReportStatus::InvalidCRC:
+            break;
+        default: {
+            delete input;
+            input = nullptr;
+            delete model;
+            model = nullptr;
+            delete result;
+            result = nullptr;
+            return Status::Fail;
+        }
+    }
+    model->setData(solution);
+    auto report = new Report(fileName, input, model, result, this);
+    input->setParent(report);
     model->setParent(report);
-    data.input.setParent(report);
+    if (result) result->setParent(report);
     m_openReports.append(report);
     emit openReportsUpdated();
+    return Status::Success;
+}
+
+
+void MainController::closeReport(const QString &fileName)
+{
+    const size_t reportsCnt = m_openReports.count();
+    for (size_t i = 0; i < reportsCnt; ++i) {
+        if (m_openReports[i]->fileName() == fileName) {
+            m_openReports.remove(i, 1);
+            emit openReportsUpdated();
+        }
+    }
+}
+
+void MainController::requestDeleteReport(const QString &fileName)
+{
+    return;
 }
 
 Status MainController::inputDataFromFile(const QString &fileName, InputData *out)

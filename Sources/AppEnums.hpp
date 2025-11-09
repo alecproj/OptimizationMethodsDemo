@@ -13,6 +13,7 @@ class ReportStatus: public QObject {
     Q_OBJECT
 public:
     enum Status {
+        NoSolution          = -8,
         NoResult            = -7,
         CheckFailed         = -6,
         InvalidDataStruct   = -5,
@@ -193,6 +194,72 @@ public:
             return CheckList::GDRCheck;
         }
         return CheckList::Error;
+    }
+
+    Q_INVOKABLE QString algoTypeToString(AlgoType::Type type)
+    {
+        switch (type) {
+            case AlgoType::CD:
+                return "Метод покоординатного спуска";
+            case AlgoType::GD:
+                return "Метод градиентного спуска";
+            default:
+                return "";
+        }
+    }
+
+    Q_INVOKABLE QString extensionTypeToString(ExtensionType::Type type)
+    {
+        switch (type) {
+            case ExtensionType::B:
+                return "Базовый";
+            case ExtensionType::S:
+                return "Метод наискорейшего спуска";
+            case ExtensionType::R:
+                return "Овражный метод";
+            default:
+                return "";
+        }
+    }
+
+    Q_INVOKABLE QString extremumTypeToString(ExtremumType::Type type)
+    {
+        switch (type) {
+            case ExtremumType::MINIMUM:
+                return "Минимум";
+            case ExtremumType::MAXIMUM:
+                return "Максимум";
+            default:
+                return "";
+        }
+    }
+
+    Q_INVOKABLE QString ReportStatusToString(ReportStatus::Status status)
+    {
+        switch (status) {
+            case ReportStatus::NoSolution:
+                return "Отчет не содержит вычислений";
+            case ReportStatus::NoResult:
+                return "Отчет не содержит результат";
+            case ReportStatus::CheckFailed:
+                return "При проверке файла что-то пошло не так";
+            case ReportStatus::InvalidDataStruct:
+                return "Неверная структура файла (не хватает данных)";
+            case ReportStatus::InvalidCRC:
+                return "Файл был изменен или поврежден";
+            case ReportStatus::InvalidFile:
+                return "Файл не является отчетом";
+            case ReportStatus::InvalidName:
+                return "Неверное имя файла";
+            case ReportStatus::FileDoesNotExists:
+                return "Файл не существует";
+            case ReportStatus::Ok:
+                return "Файл корректен";
+            case ReportStatus::NotVerified:
+                return "Проверка файла не выполнена";
+            default:
+                return "";
+        }
     }
 };
 

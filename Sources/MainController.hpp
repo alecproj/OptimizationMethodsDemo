@@ -34,7 +34,9 @@ public:
     Q_INVOKABLE Status solve();
     Q_INVOKABLE void updateQuickInfoModel();
     Q_INVOKABLE Status inputDataFromFile(const QString &fileName, InputData *out);
-    Q_INVOKABLE void openReport(const QString &fileName);
+    Q_INVOKABLE Status openReport(const QString &fileName);
+    Q_INVOKABLE void closeReport(const QString &fileName);
+    Q_INVOKABLE void requestDeleteReport(const QString &fileName);
     Q_INVOKABLE int openReportsCount() { return m_openReports.count(); }
     QList<Report *> &openReports() { return m_openReports; }
 

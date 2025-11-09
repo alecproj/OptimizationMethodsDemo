@@ -91,7 +91,7 @@ public:
     Q_INVOKABLE QString maxIterationsAsString() const { return QString::number(m_maxIterations); }
 
     static QString formatDoubleWithDot(double v) {
-        QString s = QString::number(v, 'f', 6);
+        QString s = QString::number(v, 'f', 15);
         if (s.contains('.')) {
             while (s.endsWith('0'))
                 s.chop(1);

@@ -8,6 +8,7 @@
 
 #include "InputData.hpp"
 #include "QuickInfo.hpp"
+#include "ResultData.hpp"
 #include "AppEnums.hpp"
 
 #include <QString>
@@ -23,24 +24,21 @@ struct FileData {
     QTime time;
 };
 
-struct ReportData {
-    InputData input;
-    QJsonArray solution;
-    QJsonObject result;
-};
-
 class ReportReader {
 
 public:
 
     static ReportStatus::Status quickInfo(const QString &fileName, QuickInfo *out);
     static ReportStatus::Status inputData(const QString &fileName, InputData *out);
-    static ReportStatus::Status reportData(const QString &fileName, ReportData *out);
+    static ReportStatus::Status reportData(
+        const QString &fileName, InputData *outInput,
+        QJsonArray &outSolution, ResultData *outResult
+    );
 
 private:
     static inline ReportStatus::Status readInputData(const QJsonObject &obj, InputData *out);
     static inline ReportStatus::Status readSolution(const QJsonObject &obj, QJsonArray *out);
-    static inline ReportStatus::Status readResult(const QJsonObject &obj, QJsonObject *out);
+    static inline ReportStatus::Status readResult(const QJsonObject &obj, ResultData *out);
 
     static inline ReportStatus::Status validateFile(const QString &fileName, FileData *out);
     static inline bool validateName(const QString &fileName, FileData *out = nullptr);

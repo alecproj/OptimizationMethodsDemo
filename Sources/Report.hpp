@@ -6,8 +6,9 @@
 #ifndef SOURCES_REPORT_HPP_
 #define SOURCES_REPORT_HPP_
 
-#include "SolutionModel.hpp"
 #include "InputData.hpp"
+#include "SolutionModel.hpp"
+#include "ResultData.hpp"
 
 #include <QObject>
 #include <QString>
@@ -15,9 +16,10 @@
 class Report : public QObject {
     Q_OBJECT
 
+    Q_PROPERTY(QString fileName READ fileName CONSTANT)
     Q_PROPERTY(InputData *inputData READ inputData CONSTANT)
     Q_PROPERTY(SolutionModel *solution READ solution CONSTANT)
-    Q_PROPERTY(QJsonObject resultData READ resultData CONSTANT)
+    Q_PROPERTY(ResultData *resultData READ resultData CONSTANT)
 public:
     QString m_fileName;
 
@@ -25,7 +27,7 @@ public:
         const QString &fileName,
         InputData *inputData,
         SolutionModel *solution,
-        const QJsonObject &resultData,
+        ResultData *resultData,
         QObject *parent = nullptr
     )
         : QObject{parent}
@@ -36,14 +38,15 @@ public:
     {
     }
 
+    QString &fileName() { return m_fileName; }
     InputData *inputData() { return m_inputData; }
     SolutionModel *solution() { return m_solution; }
-    QJsonObject &resultData() { return m_resultData; }
+    ResultData *resultData() { return m_resultData; }
 
 private:
     InputData *m_inputData;
     SolutionModel *m_solution;
-    QJsonObject m_resultData;
+    ResultData *m_resultData;
 
 };
 

@@ -45,8 +45,9 @@ Rectangle {
             model: controller.quickInfoModel
 
             onPressed: function(fileName) {
-                controller.openReport(fileName);
-                AppStates.currentTabIndex = controller.openReportsCount + 1;
+                if (controller.openReport(fileName) == 0) {
+                    AppStates.currentTabIndex = controller.openReportsCount + 1;
+                }
             }
         }
     }
