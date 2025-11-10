@@ -8,7 +8,7 @@
 
 #include <string>
 #include <vector>
-
+#include <stdexcept>
 
 // ============================================================================
 // Перечисления состояний и ошибок
@@ -25,7 +25,7 @@ enum class CDResult : int {
     MaxFunctionsCalls = -6,            // Превышение макс. числа вызовов функции
     ParseError        = -7,            // Ошибка парсинга функции
     ComputeError      = -8,            // Вычислительная ошибка
-    NonDifferentiable = -9,            // Функция не явл. дифференцируемой
+    NonDifferentiableFunction = -9,    // Функция не явл. дифференцируемой
     EmptyFunction     = -10,           // Функция пустая
     InvalidAlgorithmType = -11,        // Неверный ввод типа алгоритма
     InvalidExtremumType = -12,         // Неверный ввод типа экстремума
@@ -39,6 +39,12 @@ enum class CDResult : int {
     InvalidLogicPrecision = -20,       // Неверный ввод точностей
     InvalidConstantStepSize = -21,     // Неверный ввод постоянного шага
     InvalidCoefficientStepSize = -22,  // Неверный ввод коэффициентного шага
+    InvalidConstantStepSizeX = -23,    // Неверный ввод постоянного шага X
+    InvalidCoefficientStepSizeX = -24, // Неверный ввод коэффициентного шага X
+    InvalidConstantStepSizeY = -25,    // Неверный ввод постоянного шага Y
+    InvalidCoefficientStepSizeY = -26, // Неверный ввод коэффициентного шага Y
+    InvalidStepTypeX = -27,            // Неверный тип шага для X
+    InvalidStepTypeY = -28             // Неверный тип шага для Y
 };
 
 // Тип алгоритма оптимизации
@@ -75,7 +81,7 @@ enum class AlgorithmState {
 // ============================================================================
 // Структуры входных данных
 // ============================================================================
-double gradient_epsilon = 1e-8;     // Точность вычисления градиента
+double gradient_epsilon = 1e-8;     // Точность вычисления градиента 
 
 // Основные входные параметры для алгоритма
 struct CoordinateInput {
@@ -85,7 +91,11 @@ struct CoordinateInput {
     AlgorithmType algorithm_type; // Тип алгоритма
     ExtremumType extremum_type;   // Тип экстремума
     StepType step_type;           // Тип шага
-
+    
+    // РАЗДЕЛЬНЫЕ ТИПЫ ШАГОВ ДЛЯ X И Y
+    StepType step_type_x;    // Тип шага для координаты X
+    StepType step_type_y;    // Тип шага для координаты Y
+    
     // --- НАЧАЛЬНЫЕ УСЛОВИЯ ---
     double initial_x = 0.0; // Начальное приближение X
     double initial_y = 0.0; // Начальное приближение Y
@@ -95,6 +105,12 @@ struct CoordinateInput {
     double x_right_bound = 1000.0; // Правая граница диапазона X
     double y_left_bound = -1000.0; // Левая граница диапазона Y
     double y_right_bound = 1000.0; // Правая граница диапазона Y
+
+    // --- РАЗНЫЕ ШАГИ ДЛЯ X И Y ---
+    double constant_step_size_x = 0.1;    // Постоянный шаг для X
+    double constant_step_size_y = 0.1;    // Постоянный шаг для Y
+    double coefficient_step_size_x = 0.1; // Коэффициентный шаг для X  
+    double coefficient_step_size_y = 0.1; // Коэффициентный шаг для Y
 
     // --- ПАРАМЕТРЫ ТОЧНОСТИ ---
     double result_precision = 1e-06;     // Точность результата
@@ -131,7 +147,7 @@ struct CoordinateResult {
 // Конвертация результата алгоритма в строковое сообщение
 inline std::string resultToString(CDResult result) {
     switch (result) {
-        case CDResult::Success:                     return "Ошибка: Успешно";
+        case CDResult::Success:                     return "Успешно";
         case CDResult::Fail:                        return "Ошибка: Произошла ошибка";
         case CDResult::InvalidInput:                return "Ошибка: Некорректные входные данные";
         case CDResult::NoConvergence:               return "Ошибка: Алгоритм не сходится";
@@ -140,7 +156,7 @@ inline std::string resultToString(CDResult result) {
         case CDResult::MaxFunctionsCalls:           return "Ошибка: Достигнут максимум вызовов функции";
         case CDResult::ParseError:                  return "Ошибка: Ошибка обработки функции";
         case CDResult::ComputeError:                return "Ошибка: Вычислительная ошибка";
-        case CDResult::NonDifferentiable:           return "Ошибка: Функция не является дифференцируемой";
+        case CDResult::NonDifferentiableFunction:   return "Ошибка: Функция не является дифференцируемой";
         case CDResult::EmptyFunction:               return "Ошибка: Функция простая";
         case CDResult::InvalidAlgorithmType:        return "Ошибка: Неверный ввод типа алгоритма";
         case CDResult::InvalidExtremumType:         return "Ошибка: Неверный ввод типа экстремума";
@@ -154,6 +170,12 @@ inline std::string resultToString(CDResult result) {
         case CDResult::InvalidLogicPrecision:       return "Ошибка: Неверный ввод точностей";
         case CDResult::InvalidConstantStepSize:     return "Ошибка: Неверный ввод постоянного шага";
         case CDResult::InvalidCoefficientStepSize:  return "Ошибка: Неверный ввод коэффициентного шага";
+        case CDResult::InvalidConstantStepSizeX:    return "Ошибка: Неверный ввод постоянного шага X";
+        case CDResult::InvalidCoefficientStepSizeX: return "Ошибка: Неверный ввод коэффициентного шага X"; 
+        case CDResult::InvalidConstantStepSizeY:    return "Ошибка: Неверный ввод постоянного шага Y";
+        case CDResult::InvalidCoefficientStepSizeY: return "Ошибка: Неверный ввод коэффициентного шага Y";
+        case CDResult::InvalidStepTypeX:            return "Ошибка: Неверный тип шага для X";
+        case CDResult::InvalidStepTypeY:            return "Ошибка: Неверный тип шага для Y"; 
         default:                                    return "Unknown result";
     }
 }
@@ -186,6 +208,26 @@ inline std::string extremumTypeToString(ExtremumType type) {
 
         default:                    return "Ошибка. неизвестный параметр";
     }
+}
+
+// Вспомогательные функции для конвертации строк в enum (добавьте в Common.hpp, если нужно, или оставьте здесь)
+AlgorithmType stringToAlgorithmType(const std::string& str) {
+    if (str == "BASIC_COORDINATE_DESCENT") return AlgorithmType::BASIC_COORDINATE_DESCENT;
+    if (str == "STEEPEST_COORDINATE_DESCENT") return AlgorithmType::STEEPEST_COORDINATE_DESCENT;
+    throw std::invalid_argument("Неверный тип алгоритма");
+}
+
+ExtremumType stringToExtremumType(const std::string& str) {
+    if (str == "MINIMUM") return ExtremumType::MINIMUM;
+    if (str == "MAXIMUM") return ExtremumType::MAXIMUM;
+    throw std::invalid_argument("Неверный тип экстремума");
+}
+
+StepType stringToStepType(const std::string& str) {
+    if (str == "CONSTANT") return StepType::CONSTANT;
+    if (str == "COEFFICIENT") return StepType::COEFFICIENT;
+    if (str == "ADAPTIVE") return StepType::ADAPTIVE;
+    throw std::invalid_argument("Неверный тип шага");
 }
 
 
