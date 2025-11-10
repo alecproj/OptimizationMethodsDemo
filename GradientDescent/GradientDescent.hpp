@@ -436,7 +436,7 @@ if (m_inputData && m_inputData->extended == 2) {
 
         auto start_time = std::chrono::steady_clock::now();
         int iter = 0;
-        constexpr double max_seconds = 60.0;
+        constexpr double max_seconds = 120.0;
 
         while (true) {
             auto current_time = std::chrono::steady_clock::now();
@@ -592,7 +592,10 @@ private:
     if (!std::isfinite(f2)) f2 = f1 + 1.0;
     if (!std::isfinite(f3)) f3 = f1 + 1.0;
 
-    for (;;) {
+    constexpr int max_iter = 10000;
+    int iter = 0;
+
+    while (iter < max_iter) {
         auto current_time = std::chrono::steady_clock::now();
         if (std::chrono::duration<double>(current_time - start_time).count() >= max_seconds)
             break;
@@ -602,7 +605,6 @@ private:
 
         double x_min;
         if (std::fabs(denominator) < 1e-12) {
-            // избегаем деления на ноль, делаем маленький безопасный шаг
             double step = 0.5 * (x2 - x3);
             if (std::fabs(step) < 1e-8) step = delta * 0.1;
             x_min = x1 - step;
@@ -610,20 +612,20 @@ private:
             x_min = x2 - numerator / denominator;
         }
 
-        // Ограничение по границам
         x_min = std::min(std::max(x_min, left_bound), right_bound);
-
         double f_min = func(x_min);
         if (!std::isfinite(f_min)) f_min = f1 + 1.0;
 
-        if (std::fabs(x_min - x1) < tol) {
+        // --- Останов по функции и координатам ---
+        if (std::fabs(f_min - f1) < tol * 0.5 || std::fabs(x_min - x1) < tol)
             return x_min;
-        }
 
         // Сдвигаем точки
         x3 = x2; f3 = f2;
         x2 = x1; f2 = f1;
         x1 = x_min; f1 = f_min;
+
+        iter++;
     }
 
     return x1;
