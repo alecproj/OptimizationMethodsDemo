@@ -2,6 +2,7 @@
 #include "InputData.hpp"
 #include "MainController.hpp"
 
+#include "Tests/TestReporter.hpp"
 #include <muParser.h>
 
 #include <QGuiApplication>
@@ -40,6 +41,8 @@ int main(int argc, char *argv[])
 
     {
         testMuparser();
+        TestReporter test;
+        // test.test();
     }
 
     /* ------------- /TEST ------------- */
