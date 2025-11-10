@@ -40,6 +40,7 @@ public:
         m_data.prepend(entry);
         endInsertRows();
     }
+    void deleteEntry(const QString &fileName);
     int count() const { return m_data.count(); }
 
 private:

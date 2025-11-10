@@ -20,6 +20,8 @@ ReportStatus::Status ReportReader::quickInfo(const QString &fileName, QuickInfo 
     switch (rv) {
         case ReportStatus::Ok:
         case ReportStatus::InvalidCRC:
+        case ReportStatus::NoSolution:
+        case ReportStatus::NoResult:
             break;
         default:
             return rv;
@@ -69,6 +71,8 @@ ReportStatus::Status ReportReader::inputData(const QString &fileName, InputData 
     switch (rv) {
         case ReportStatus::Ok:
         case ReportStatus::InvalidCRC:
+        case ReportStatus::NoSolution:
+        case ReportStatus::NoResult:
             break;
         default:
             return rv;
@@ -88,6 +92,7 @@ ReportStatus::Status ReportReader::reportData(const QString &fileName,
     switch (rv) {
         case ReportStatus::Ok:
         case ReportStatus::InvalidCRC:
+        case ReportStatus::NoResult:
             break;
         default:
             return rv;
@@ -293,6 +298,18 @@ ReportStatus::Status ReportReader::validateFile(const QString &fileName, FileDat
     }
     if (!FileManager::loadJsonFile(fileName, out->json)) {
         return ReportStatus::InvalidFile;
+    }
+    auto dataObj = out->json.value("data").toObject();
+    if (dataObj.isEmpty()) {
+        return ReportStatus::InvalidDataStruct;
+    }
+    auto solutionArr = dataObj.value("solution").toArray();
+    if (solutionArr.isEmpty()) {
+        return ReportStatus::NoSolution;
+    }
+    auto resultObj = dataObj.value("result").toObject();
+    if (resultObj.isEmpty()) {
+        return ReportStatus::NoResult;
     }
     ReportStatus::Status rv = validateCRC(out->json);
     return rv;

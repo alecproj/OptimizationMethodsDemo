@@ -48,3 +48,15 @@ bool QuickInfoListModel::exists(const QString &fileName) const
     return false;
 }
 
+void QuickInfoListModel::deleteEntry(const QString &fileName)
+{
+    const int len = m_data.count();
+    for (int i = 0; i < len; ++i) {
+        if (QString::compare(m_data[i]->name(), fileName) == 0) {
+            beginRemoveRows(QModelIndex(), i, i);
+            m_data.remove(i);
+            endRemoveRows();
+            return;
+        }
+    }
+}

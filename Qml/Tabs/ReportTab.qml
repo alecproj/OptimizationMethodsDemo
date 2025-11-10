@@ -267,12 +267,14 @@ Rectangle {
                 text: "Закрыть"
                 onReleased: {
                     controller.closeReport(root.report.fileName)
+                    AppStates.currentTabIndex = 1;
                 }
             }
 
             StyledButton {
                 id: deleteBtn
                 text: "Удалить"
+                bgcolor: AppPalette.warning
                 onReleased: {
                     controller.requestDeleteReport(root.report.fileName)
                 }

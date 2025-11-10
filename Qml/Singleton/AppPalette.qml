@@ -9,6 +9,7 @@ QtObject {
     property string selected: "#eaeaea"
     property string stroke: "#e0e0e0"
     property string accent: "#3889F2"
+    property string warning: "#ff0000"
 
     function withAlpha(col, alpha) {
         var hex = col.replace(/^#/, "")

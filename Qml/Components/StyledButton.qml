@@ -6,6 +6,7 @@ Button {
 
     font.pixelSize: 16
     property int margins: 5
+    property string bgcolor: AppPalette.accent
 
     contentItem: Text {
         id: content
@@ -28,12 +29,12 @@ Button {
         color: {
             if (root.enabled) {
                 if (root.hovered) {
-                    AppPalette.withAlpha(AppPalette.accent, 0.8)
+                    AppPalette.withAlpha(root.bgcolor, 0.8)
                 } else {
-                    AppPalette.accent
+                    root.bgcolor 
                 }
             } else {
-                AppPalette.withAlpha(AppPalette.accent, 0.4)
+                AppPalette.withAlpha(root.bgcolor, 0.4)
             }
         }
         radius: width * 0.15

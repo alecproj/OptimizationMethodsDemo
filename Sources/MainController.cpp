@@ -15,6 +15,8 @@ MainController::MainController(QObject *parent)
     , m_gdData{}
     , m_quickInfoModel{this}
     , m_openReports{}
+    , m_filePendingDeletion{}
+    , m_enumHelper{this}
 {
 }
 
@@ -28,13 +30,16 @@ Status MainController::setInputData(const InputData *data)
     m_currExtension = data->extensionId();
     if (m_currAlgorithm == AlgoType::CD) {
         if (m_cdAlgo.setInputData(&m_cdData) != CDResult::Success) {
+            askConfirm("Ошибка подготовки данных", "Что-то пошло не так");
             return Status::Fail;
         }
     } else if (m_currAlgorithm == AlgoType::GD) {
         if (m_gdAlgo.setInputData(&m_gdData) != GDResult::Success) {
+            askConfirm("Ошибка подготовки данных", "Что-то пошло не так");
             return Status::Fail;
         }
     } else {
+        askConfirm("Ошибка подготовки данных", "Алгоритм не поддерживается");
         return Status::Fail;
     }
     return Status::Success;
@@ -44,16 +49,19 @@ Status MainController::solve()
 {
     if (m_currAlgorithm == AlgoType::CD) {
         if (m_cdAlgo.solve() != CDResult::Success) {
+            askConfirm("Ошибка при решении", "Что-то пошло не так");
             return Status::Fail;
         }
     } else if (m_currAlgorithm == AlgoType::GD) {
         if (m_gdAlgo.solve() != GDResult::Success) {
+            askConfirm("Ошибка при решении", "Что-то пошло не так");
             return Status::Fail;
         }
     } else {
+        askConfirm("Ошибка при решении", "Алгоритм не поддерживается");
         return Status::Fail;
     }
-
+    openReport(m_writer.fileName());
     return Status::Success;
 }
 
@@ -99,6 +107,7 @@ Status MainController::openReport(const QString &fileName)
             model = nullptr;
             delete result;
             result = nullptr;
+            askConfirm("Ошибка открытия файла", m_enumHelper.reportStatusToString(rv));
             return Status::Fail;
         }
     }
@@ -120,21 +129,34 @@ void MainController::closeReport(const QString &fileName)
         if (m_openReports[i]->fileName() == fileName) {
             m_openReports.remove(i, 1);
             emit openReportsUpdated();
+            return;
         }
     }
 }
 
 void MainController::requestDeleteReport(const QString &fileName)
 {
+    m_filePendingDeletion = fileName;
+    QString text = "Файл " + fileName + " будет удален навсегда.";
+    askConfirm("Удалить файл?", text, true);
     return;
+}
+
+void MainController::deleteConfirmed()
+{
+    closeReport(m_filePendingDeletion);
+    m_quickInfoModel.deleteEntry(m_filePendingDeletion);
+    FileManager::deleteFile(m_filePendingDeletion);
+    askConfirm("Уведомление", "Файл " + m_filePendingDeletion + " успешно удалён");
 }
 
 Status MainController::inputDataFromFile(const QString &fileName, InputData *out)
 {
     auto rv = ReportReader::inputData(fileName, out);
-    if (rv == ReportStatus::Ok || rv == ReportStatus::InvalidCRC) {
+    if (rv == ReportStatus::Ok) {
         return Status::Success;
     }
+    askConfirm("Ошибка открытия файла", m_enumHelper.reportStatusToString(rv));
     return Status::Fail;
 }
 

@@ -10,6 +10,11 @@ ApplicationWindow {
     title: "Optimization Methods Demo App"
     color: AppPalette.surface
 
+    ConfirmDialog {
+        id: dialog
+        anchors.fill: parent
+    }
+
     RowLayout {
         anchors.fill: parent
         spacing: 0

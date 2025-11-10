@@ -39,12 +39,19 @@ public:
     Q_INVOKABLE void requestDeleteReport(const QString &fileName);
     Q_INVOKABLE int openReportsCount() { return m_openReports.count(); }
     QList<Report *> &openReports() { return m_openReports; }
+    Q_INVOKABLE void askConfirm(const QString &title, const QString &text, bool twoButtons = false) {
+        emit requestConfirm(title, text, twoButtons);
+    }
 
     QuickInfoListModel *quickInfoModel() { return &m_quickInfoModel; }
 
 signals:
     void quickInfoModelChanged();
     void openReportsUpdated();
+    void requestConfirm(const QString &title, const QString &text, bool twoButtons);
+
+public slots:
+    void deleteConfirmed();
 
 private:
     ReportWriter m_writer;
@@ -56,7 +63,8 @@ private:
     GradientInput m_gdData;
     QuickInfoListModel m_quickInfoModel;
     QList<Report *> m_openReports;
-
+    QString m_filePendingDeletion;
+    EnumHelper m_enumHelper;
 };
 
 #endif // SOURCES_MAINCONTROLLER_HPP_

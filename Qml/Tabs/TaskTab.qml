@@ -111,7 +111,10 @@ Rectangle {
             onReleased: {
                 inputParams.inputData.function = func.text;
                 var rv = controller.setInputData(inputParams.inputData.instance());
-                rv = controller.solve();
+                if (rv !== 0) {
+                    return;
+                }
+                controller.solve();
                 controller.updateQuickInfoModel();
             }
         }

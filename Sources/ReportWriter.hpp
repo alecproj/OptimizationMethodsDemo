@@ -53,6 +53,8 @@ public:
 
     int end();
 
+    const QString &fileName() const { return m_fileName; }
+
 private:
     const InputData *m_inputData;
     QString m_path;

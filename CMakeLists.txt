@@ -74,6 +74,7 @@ qt_add_qml_module(${PROJECT_NAME}App
         Qml/Components/ReportList.qml
         Qml/Components/StyledButton.qml
         Qml/Components/InputParams.qml
+        Qml/Components/ConfirmDialog.qml
         Qml/Singleton/AppPalette.qml
         Qml/Singleton/AppStates.qml
         Qml/Tabs/TaskTab.qml

@@ -234,7 +234,7 @@ public:
         }
     }
 
-    Q_INVOKABLE QString ReportStatusToString(ReportStatus::Status status)
+    Q_INVOKABLE QString reportStatusToString(ReportStatus::Status status)
     {
         switch (status) {
             case ReportStatus::NoSolution:
