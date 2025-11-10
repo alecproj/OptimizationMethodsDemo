@@ -29,7 +29,7 @@ void testMuparser()
 
 		for (std::size_t a=0; a<5; ++a)
 		{
-			var_a = a;  // Change value of variable a
+			var_a = a;
 			std::cout << p.Eval() << std::endl;
 		}
 	}
@@ -88,8 +88,12 @@ GradientInput getInputParameters() {
 	std::cout << "Введите правую границу Y: ";
 	input.rightBorderY = safeReadOrNaN<double>();
 
-	std::cout << "Введите правую границу расширение(0 или 1): ";
+	std::cout << "Введите правую расширение(от 0-2): ";
 	std::cin >> input.extended;
+
+
+	std::cout << "Введите поиск минимума или максимума(0 или 1): ";
+	std::cin >> input.minOrMax;
 
 	return input;
 }

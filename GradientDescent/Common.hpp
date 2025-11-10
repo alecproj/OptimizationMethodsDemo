@@ -5,7 +5,7 @@
 
 #ifndef GRADIENTDESCENT_COMMON_HPP_
 #define GRADIENTDESCENT_COMMON_HPP_
-
+#include <optional>
 // Структура для хранения всех входных параметров
 struct GradientInput {
     std::string function; // Строка с функцией
@@ -19,6 +19,7 @@ struct GradientInput {
     double leftBorderY;         // левая граница Y
     double rightBorderY;         // правая граница Y
     int extended = 0;
+    int minOrMax = -1;
 };
 
 enum class GDResult : int {
