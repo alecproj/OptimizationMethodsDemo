@@ -185,203 +185,188 @@ public:
                       << "(" << m_inputData->initialApproximationX_0 << ", " << m_inputData->initialApproximationY_0 << ")\n";
         }
 
-       if (m_inputData->extended == 0) {
-    try {
-        mu::Parser p;
-        double x = m_inputData->initialApproximationX_0;
-        double y = m_inputData->initialApproximationY_0;
-        p.DefineVar("x", &x);
-        p.DefineVar("y", &y);
-        p.SetExpr(m_inputData->function);
+        if (m_inputData->extended == 0) {
+            try {
+                mu::Parser p;
+                double x = m_inputData->initialApproximationX_0;
+                double y = m_inputData->initialApproximationY_0;
+                p.DefineVar("x", &x);
+                p.DefineVar("y", &y);
+                p.SetExpr(m_inputData->function);
 
-        double h = m_inputData->coefficientStep; // начальный шаг
-        constexpr double h_min = 1e-6;           // минимальный шаг
-        constexpr double h_decay = 0.9;          // коэффициент уменьшения шага
-        const double eps = m_inputData->resultAccuracy;
-        const double delta = m_inputData->calculationAccuracy;
+                const double h = m_inputData->coefficientStep;
+                const double eps = m_inputData->resultAccuracy;
+                const double delta = m_inputData->calculationAccuracy;
 
-        auto evalFunc = [&](double X, double Y) -> double {
-            double old_x = x, old_y = y;
-            x = X; y = Y;
-            double val = p.Eval();
-            x = old_x; y = old_y;
-            return val;
-        };
+                auto evalFunc = [&](double X, double Y) -> double {
+                    double old_x = x;
+                    double old_y = y;
+                    x = X; y = Y;
+                    double val = p.Eval();
+                    x = old_x; y = old_y;
+                    return val;
+                };
 
-        auto start_time = std::chrono::steady_clock::now();
-        constexpr double max_seconds = 60.0;
-        int iter = 0;
 
-        while (true) {
-            auto current_time = std::chrono::steady_clock::now();
-            double elapsed = std::chrono::duration<double>(current_time - start_time).count();
-            if (elapsed >= max_seconds) {
-                std::cerr << "[ERROR] Метод не сошелся за " << max_seconds << " секунд.\n";
+                auto start_time = std::chrono::steady_clock::now();
+                constexpr double max_seconds = 60.0;
+
+                int tmp = 0;
+                while (true) {
+                    auto current_time = std::chrono::steady_clock::now();
+                    double elapsed = std::chrono::duration<double>(current_time - start_time).count();
+                    if (elapsed >= max_seconds) {
+                        std::cerr << "[ERROR] Метод не сошелся за " << max_seconds << " секунд.\n";
+                        return GDResult::Fail;
+                    }
+
+                    // Численный градиент (частные производные первый способ)
+                    double fx = (evalFunc(x + delta, y) - evalFunc(x - delta, y)) / (2.0 * delta);
+                    double fy = (evalFunc(x, y + delta) - evalFunc(x, y - delta)) / (2.0 * delta);
+
+                    double grad_norm = std::sqrt(fx*fx + fy*fy);
+
+                    // Проверка NaN/Inf градиента
+                    if (!std::isfinite(grad_norm)) {
+                        std::cerr << "[ERROR] Градиент нечисловой (NaN или Inf) на итерации " << tmp << ". Прерывание цикла.\n";
+                        return GDResult::Fail;
+                    }
+
+                    // Отладочный вывод
+                    double f_val = evalFunc(x, y);
+                    std::cout << "[DEBUG] n = " << tmp
+                              << ", x=" << x
+                              << ", y=" << y
+                              << ", f(x,y)=" << f_val
+                              <<", df/dx=" << fx
+                              << ", df/dy=" << fy
+                              << ", |grad|=" << grad_norm << "\n";
+
+                    // Условие окончания по норме градиента
+                    if (grad_norm < eps) {
+                        std::cout << "[DEBUG] Модуль градиента < eps, выход из цикла.\n";
+                        return GDResult::Success;
+                    }
+
+                    // Обновление координат для минимума
+                    if (m_inputData->minOrMax == 0) {
+                        x -= h * fx;
+                        y -= h * fy;
+                    }
+
+                    // Обновление координат для максимума
+                    if (m_inputData->minOrMax == 1) {
+                        x += h * fx;
+                        y += h * fy;
+                    }
+
+                    // Ограничение по границам
+                    x = std::min(std::max(x, m_inputData->leftBorderX), m_inputData->rightBorderX);
+                    y = std::min(std::max(y, m_inputData->leftBorderY), m_inputData->rightBorderY);
+
+                    tmp++;
+                }
+
+            } catch (mu::Parser::exception_type &e) {
+                std::cerr << "Ошибка muParser во время решения: " << e.GetMsg() << "\n";
+                return GDResult::Fail;
+            } catch (...) {
+                std::cerr << "Неизвестная ошибка в GradientDescent::solve\n";
                 return GDResult::Fail;
             }
-
-            // Численный градиент
-            double fx = (evalFunc(x + delta, y) - evalFunc(x - delta, y)) / (2.0 * delta);
-            double fy = (evalFunc(x, y + delta) - evalFunc(x, y - delta)) / (2.0 * delta);
-            double grad_norm = std::sqrt(fx*fx + fy*fy);
-
-            if (!std::isfinite(grad_norm)) {
-                std::cerr << "[ERROR] Градиент нечисловой (NaN или Inf) на итерации " << iter << ".\n";
-                return GDResult::Fail;
-            }
-
-            double f_val = evalFunc(x, y);
-            std::cout << "[DEBUG] n=" << iter
-                      << ", x=" << x
-                      << ", y=" << y
-                      << ", f=" << f_val
-                      << ", df/dx=" << fx
-                      << ", df/dy=" << fy
-                      << ", |grad|=" << grad_norm
-                      << ", h=" << h << "\n";
-
-            // Условие окончания
-            if (grad_norm < eps) {
-                std::cout << "[DEBUG] Модуль градиента < eps, выход из цикла.\n";
-                return GDResult::Success;
-            }
-
-            double f_old = f_val;
-
-            // Обновление координат
-            if (m_inputData->minOrMax == 0) { // минимум
-                x -= h * fx;
-                y -= h * fy;
-            } else { // максимум
-                x += h * fx;
-                y += h * fy;
-            }
-
-            // Ограничение по границам
-            x = std::min(std::max(x, m_inputData->leftBorderX), m_inputData->rightBorderX);
-            y = std::min(std::max(y, m_inputData->leftBorderY), m_inputData->rightBorderY);
-
-            // Адаптивный шаг: если функция не улучшается, уменьшаем h
-            double f_new = evalFunc(x, y);
-            bool improve = (m_inputData->minOrMax == 0) ? (f_new < f_old) : (f_new > f_old);
-            if (!improve) {
-                h *= h_decay;
-                if (h < h_min) h = h_min;
-            }
-
-            iter++;
         }
-    }
-    catch (mu::Parser::exception_type &e) {
-        std::cerr << "Ошибка muParser: " << e.GetMsg() << "\n";
-        return GDResult::Fail;
-    }
-    catch (...) {
-        std::cerr << "Неизвестная ошибка в GradientDescent::solve\n";
-        return GDResult::Fail;
-    }
-}
-
 
         // ====== Метод наискорейшего спуска ======
-    // ====== Метод наискорейшего спуска с безопасными шагами ======
-if (m_inputData->extended == 1) {
-    try {
-        mu::Parser p;
-        double x = m_inputData->initialApproximationX_0;
-        double y = m_inputData->initialApproximationY_0;
-        p.DefineVar("x", &x);
-        p.DefineVar("y", &y);
-        p.SetExpr(m_inputData->function);
+    if (m_inputData->extended == 1) {
+        try {
+            mu::Parser p;
+            double x = m_inputData->initialApproximationX_0;
+            double y = m_inputData->initialApproximationY_0;
+            p.DefineVar("x", &x);
+            p.DefineVar("y", &y);
+            p.SetExpr(m_inputData->function);
 
-        const double eps = m_inputData->resultAccuracy;
-        const double delta = std::max(m_inputData->calculationAccuracy, 1e-8); // минимальная точность
-        constexpr double max_step = 1.0;
-        constexpr double max_seconds = 60.0;
+            const double eps = m_inputData->resultAccuracy;
+            const double delta = m_inputData->calculationAccuracy;
 
-        auto evalFunc = [&](double X, double Y) -> double {
-            x = X; y = Y;
-            return p.Eval();
-        };
-
-        auto start_time = std::chrono::steady_clock::now();
-        int iter = 0;
-
-        while (true) {
-            auto current_time = std::chrono::steady_clock::now();
-            double elapsed = std::chrono::duration<double>(current_time - start_time).count();
-            if (elapsed >= max_seconds) {
-                std::cerr << "[ERROR] Метод не сошелся за " << max_seconds << " секунд.\n";
-                return GDResult::Fail;
-            }
-
-            // численный градиент
-            double fx = (evalFunc(x + delta, y) - evalFunc(x - delta, y)) / (2.0 * delta);
-            double fy = (evalFunc(x, y + delta) - evalFunc(x, y - delta)) / (2.0 * delta);
-
-            // направление градиента для минимума или максимума
-            double dirX = (m_inputData->minOrMax == 0) ? -fx : fx;
-            double dirY = (m_inputData->minOrMax == 0) ? -fy : fy;
-
-            double grad_norm = std::sqrt(dirX*dirX + dirY*dirY);
-
-            // проверка завершения
-            if (grad_norm < eps) {
-                std::cout << "[INFO] Модуль градиента < eps, выход из метода.\n";
-                break;
-            }
-
-            // нормализация направления
-            dirX /= grad_norm;
-            dirY /= grad_norm;
-
-            // безопасный стартовый шаг для метода Пауэлла
-            double h0 = std::min(0.1, 1.0 / grad_norm);
-
-            // функция вдоль направления
-            auto phi = [&](double h_val) -> double {
-                return evalFunc(x + h_val * dirX, y + h_val * dirY);
+            auto evalFunc = [&](double X, double Y) -> double {
+                x = X; y = Y;
+                return p.Eval();
             };
 
-            // поиск оптимального шага методом Пауэлла
-            double h_opt = powell_method(phi, h0, delta, delta, 0.0, max_step, max_seconds);
+            auto start_time = std::chrono::steady_clock::now();
 
-            if (!std::isfinite(h_opt) || std::fabs(h_opt) < 1e-12) {
-                h_opt = std::min(0.01, h0); // минимальный безопасный шаг
+            while (true) {
+                constexpr double max_step = 1.0;
+                static int iter = 0;
+
+                constexpr double max_seconds = 60.0;
+                auto current_time = std::chrono::steady_clock::now();
+                double elapsed = std::chrono::duration<double>(current_time - start_time).count();
+                if (elapsed >= max_seconds) {
+                    std::cerr << "[ERROR] Метод не сошелся за " << max_seconds << " секунд.\n";
+                    return GDResult::Fail;
+                }
+
+                double fx = p.Diff(&x, x, delta);
+                double fy = p.Diff(&y, y, delta);
+                double grad_norm = std::sqrt(fx*fx + fy*fy);
+                double h0 = std::max(delta, 1e-2);
+
+                if (grad_norm < eps) {
+                    if (grad_norm < 1e-8) {
+                        h0 = std::max(h0, 1e-2); // увеличиваем шаг, чтобы выйти из плоской области
+                        std::cerr << "[INFO] Градиент почти нулевой, увеличиваем шаг h0=" << h0 << "\n";
+                    }
+                    double f_val = evalFunc(x, y);
+                    std::cout << "[DEBUG] iter=" << iter
+                              << ", x=" << x
+                              << ", y=" << y
+                              << ", f(x,y)=" << f_val
+                              << ", df/dx=" << fx
+                              << ", df/dy=" << fy
+                              << ", |grad|=" << grad_norm << "\n";
+                    std::cout << "[INFO] Модуль градиента < eps, выход из метода наискорейшего спуска.\n";
+                    break;
+                }
+
+                auto phi = [&](double h_val) -> double {
+                    if (m_inputData->minOrMax == 0) {
+                        // поиск минимума
+                        return evalFunc(x - h_val * fx, y - h_val * fy);
+                    }
+                    if (m_inputData->minOrMax == 1) {
+                        // поиск максимума
+                        return -evalFunc(x + h_val * fx, y + h_val * fy);
+                    }
+                };
+
+                double h_opt = powell_method(phi, h0, delta, m_inputData->calculationAccuracy, 0.0, max_step, max_seconds);
+
+                if (std::fabs(h_opt) < 1e-12) {
+                    std::cerr << "[WARN] Powell method вернул почти нулевой шаг: h_opt=" << h_opt << ". Возможна остановка на плоской области.\n";
+                }
+
+                if (m_inputData->minOrMax == 0) {
+                    x = x - h_opt * fx;
+                    y = y - h_opt * fy;
+                } if (m_inputData->minOrMax == 1) {
+                    x = x + h_opt * fx;
+                    y = y + h_opt * fy;
+                }
+
+                x = std::min(std::max(x, m_inputData->leftBorderX), m_inputData->rightBorderX);
+                y = std::min(std::max(y, m_inputData->leftBorderY), m_inputData->rightBorderY);
+
+                iter++;
             }
 
-            // обновление координат
-            x += h_opt * dirX;
-            y += h_opt * dirY;
-
-            // ограничение по границам
-            x = std::min(std::max(x, m_inputData->leftBorderX), m_inputData->rightBorderX);
-            y = std::min(std::max(y, m_inputData->leftBorderY), m_inputData->rightBorderY);
-
-            // дебаг
-            double f_val = evalFunc(x, y);
-            std::cout << "[DEBUG] iter=" << iter
-                      << ", x=" << x << ", y=" << y
-                      << ", f(x,y)=" << f_val
-                      << ", |grad|=" << grad_norm
-                      << ", h_opt=" << h_opt << "\n";
-
-            iter++;
+        } catch (mu::Parser::exception_type &e) {
+            std::cerr << "[ERROR] Ошибка muParser в методе наискорейшего спуска: " << e.GetMsg() << "\n";
+        } catch (...) {
+            std::cerr << "[ERROR] Неизвестная ошибка в методе наискорейшего спуска.\n";
         }
-
-        std::cout << "[RESULT] x=" << x << ", y=" << y
-                  << ", f(x,y)=" << evalFunc(x, y) << "\n";
-
-    } catch (mu::Parser::exception_type &e) {
-        std::cerr << "[ERROR] Ошибка muParser в методе наискорейшего спуска: " << e.GetMsg() << "\n";
-        return GDResult::Fail;
-    } catch (...) {
-        std::cerr << "[ERROR] Неизвестная ошибка в методе наискорейшего спуска.\n";
-        return GDResult::Fail;
     }
-}
-
-
 
 
 if (m_inputData && m_inputData->extended == 2) {
@@ -439,16 +424,6 @@ if (m_inputData && m_inputData->extended == 2) {
             double fx2 = (evalFunc(x2 + delta, y2) - evalFunc(x2 - delta, y2)) / (2.0 * delta);
             double fy2 = (evalFunc(x2, y2 + delta) - evalFunc(x2, y2 - delta)) / (2.0 * delta);
 
-            // --- DEBUG: вывод текущих значений ---
-            double f1_val = evalFunc(x1, y1);
-            double f2_val = evalFunc(x2, y2);
-            std::cout << "[DEBUG] iter=" << iter
-                      << ", x1=" << x1 << ", y1=" << y1 << ", f1=" << f1_val
-                      << ", df1/dx=" << fx1 << ", df1/dy=" << fy1
-                      << ", x2=" << x2 << ", y2=" << y2 << ", f2=" << f2_val
-                      << ", df2/dx=" << fx2 << ", df2/dy=" << fy2
-                      << "\n";
-
             // --- Обновление координат ---
             if (m_inputData->minOrMax == 0) {
                 x1 -= h * fx1; y1 -= h * fy1;
@@ -464,23 +439,27 @@ if (m_inputData && m_inputData->extended == 2) {
             x2 = std::min(std::max(x2, m_inputData->leftBorderX), m_inputData->rightBorderX);
             y2 = std::min(std::max(y2, m_inputData->leftBorderY), m_inputData->rightBorderY);
 
+            // --- Значения функции ---
+            double f1 = evalFunc(x1, y1);
+            double f2 = evalFunc(x2, y2);
+
             // --- Овражный шаг для минимума ---
-            if (m_inputData->minOrMax == 0 && f2_val < f1_val) {
+            if (m_inputData->minOrMax == 0 && f2 < f1) {
                 double x_next = x1 + std::max(d * (x2 - x1), 1e-3);
                 double y_next = y1 + std::max(d * (y2 - y1), 1e-3);
                 double f_next = evalFunc(x_next, y_next);
 
-                if (f_next > f2_val) d = std::max(d / 2.0, 1e-3);
+                if (f_next > f2) d = std::max(d / 2.0, 1e-3);
                 else { x1 = x_next; y1 = y_next; }
             }
 
             // --- Овражный шаг для максимума ---
-            if (m_inputData->minOrMax == 1 && f2_val > f1_val) {
+            if (m_inputData->minOrMax == 1 && f2 > f1) {
                 double x_next = x1 + std::max(d * (x2 - x1), 1e-3);
                 double y_next = y1 + std::max(d * (y2 - y1), 1e-3);
                 double f_next = evalFunc(x_next, y_next);
 
-                if (f_next < f2_val) d = std::max(d / 2.0, 1e-3);
+                if (f_next < f2) d = std::max(d / 2.0, 1e-3);
                 else { x1 = x_next; y1 = y_next; }
             }
 
@@ -510,7 +489,6 @@ if (m_inputData && m_inputData->extended == 2) {
         return GDResult::Fail;
     }
 }
-
 
 
         if (m_reporter->end() == 0) return GDResult::Success;
@@ -562,9 +540,9 @@ private:
 
     auto start_time = std::chrono::steady_clock::now();
 
-    double x1 = std::min(std::max(x0, left_bound), right_bound);
-    double x2 = std::min(std::max(x1 + delta, left_bound), right_bound);
-    double x3 = std::min(std::max(x1 - delta, left_bound), right_bound);
+    double x1 = x0;
+    double x2 = x1 + delta;
+    double x3 = x1 - delta;
 
     double f1 = func(x1);
     double f2 = func(x2);
@@ -582,27 +560,22 @@ private:
         double numerator = (x2 - x1)*(x2 - x1)*(f2 - f3) - (x2 - x3)*(x2 - x3)*(f2 - f1);
         double denominator = 2.0 * ((x2 - x1)*(f2 - f3) - (x2 - x3)*(f2 - f1));
 
-        double x_min;
         if (std::fabs(denominator) < 1e-12) {
-            // избегаем деления на ноль, делаем маленький безопасный шаг
-            double step = 0.5 * (x2 - x3);
-            if (std::fabs(step) < 1e-8) step = delta * 0.1;
-            x_min = x1 - step;
-        } else {
-            x_min = x2 - numerator / denominator;
+            double step = (x2 - x3) * 0.5;
+            if (step < 1e-8) step = 1e-2; // минимальный шаг для избегания h_opt=0
+            double x_min = x1 - step;
+            x_min = std::min(std::max(x_min, left_bound), right_bound);
+            return x_min;
         }
 
-        // Ограничение по границам
+        double x_min = x2 - numerator / denominator;
         x_min = std::min(std::max(x_min, left_bound), right_bound);
 
         double f_min = func(x_min);
         if (!std::isfinite(f_min)) f_min = f1 + 1.0;
 
-        if (std::fabs(x_min - x1) < tol) {
-            return x_min;
-        }
+        if (std::fabs(x_min - x1) < tol) return x_min;
 
-        // Сдвигаем точки
         x3 = x2; f3 = f2;
         x2 = x1; f2 = f1;
         x1 = x_min; f1 = f_min;
@@ -610,7 +583,6 @@ private:
 
     return x1;
 }
-
 
 
 };
