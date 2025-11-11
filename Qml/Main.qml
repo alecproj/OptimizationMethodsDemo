@@ -1,8 +1,58 @@
 import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 
-Window {
+ApplicationWindow {
+    id: root
     width: 640
-    height: 480
+    height: 400
     visible: true
-    title: qsTr("Hello World")
+    title: "Optimization Methods Demo App"
+    color: AppPalette.surface
+
+    ConfirmDialog {
+        id: dialog
+        anchors.fill: parent
+    }
+
+    RowLayout {
+        anchors.fill: parent
+        spacing: 0
+
+        VerticalTabBar {
+            id: verticalTabs
+            Layout.preferredWidth: contentWidth
+            Layout.fillHeight: true
+        }
+    
+        StackLayout {
+            id: tabs
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            currentIndex: AppStates.currentTabIndex
+    
+            TaskTab {
+                id: taskTab
+            }
+    
+            FolderTab {
+                id: folderTab
+            }
+
+            Repeater {
+                model: controller.openReportsCount
+
+                delegate: Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    ReportTab {
+                        anchors.fill: parent
+                        id: reportTab
+                        report: controller.openReports[index]
+                    }
+                }
+            }
+        }
+    }
 }

@@ -38,5 +38,8 @@ set_target_properties(app_sources PROPERTIES
 # Используем PUBLIC чтобы include dirs и прочее пропагировалось в исполняемый target при линке.
 find_package(Qt6 REQUIRED COMPONENTS Core)  # если уже найдено в корне — это быстро вернёт результат
 target_link_libraries(app_sources
-    PUBLIC Qt6::Core
+    PUBLIC 
+        Qt6::Core
+        CoordinateDescent
+        GradientDescent
 )

@@ -1,12 +1,13 @@
-#include "Reporter.hpp"
+#include "AppEnums.hpp"
+#include "InputData.hpp"
+#include "MainController.hpp"
 
-#include <CoordinateDescent/CoordinateDescent.hpp>
-#include <GradientDescent/GradientDescent.hpp>
-
+#include "Tests/TestReporter.hpp"
 #include <muParser.h>
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
 
 #include <iostream>
 
@@ -38,32 +39,31 @@ int main(int argc, char *argv[])
 {
     /* ------------- TEST -------------- */
 
-    testMuparser();
-
-    using GDAlgoType = GradientDescent<Reporter>;
-    using CDAlgoType = CoordinateDescent<Reporter>;
-    Reporter reporter{};
-
-    GDAlgoType gdAlgo{&reporter};
-    GradientInput gdData{};
-
-    auto gdRv = gdAlgo.setInputData(&gdData);
-    if (gdRv == GDResult::Success) {
-        gdRv = gdAlgo.solve();
-    }
-
-    CDAlgoType cdAlgo{&reporter};
-    CoordinateInput cdData{};
-
-    auto cdRv = cdAlgo.setInputData(&cdData);
-    if (cdRv == CDResult::Success) {
-        cdRv = cdAlgo.solve();
+    {
+        testMuparser();
+        TestReporter test;
+        // test.test();
     }
 
     /* ------------- /TEST ------------- */
     QGuiApplication app(argc, argv);
 
+    qmlRegisterUncreatableType<ExtremumType>("AppEnums", 1, 0, "ExtremumType", "Type of extremum");
+    qmlRegisterUncreatableType<AlgoType>("AppEnums", 1, 0, "AlgoType", "Algo type ID");
+    qmlRegisterUncreatableType<ExtensionType>("AppEnums", 1, 0, "ExtensionType", "Extension type ID");
+    qmlRegisterUncreatableType<FullAlgoType>("AppEnums", 1, 0, "FullAlgoType", "Full algo type ID");
+    qmlRegisterUncreatableType<CheckList>("AppEnums", 1, 0, "CheckList", "Input data check list");
+    qmlRegisterUncreatableType<Result>("AppEnums", 1, 0, "Result", "Result of MainController methods");
+    qmlRegisterType<EnumHelper>("AppEnums", 1, 0, "EnumHelper");
+    qmlRegisterType<InputData>("InputData", 1, 0, "InputData");
+
+    MainController controller{};
+    controller.updateQuickInfoModel();
+    qDebug() << "Files count: " << controller.quickInfoModel()->count();
+
     QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("controller", &controller);
+
     QObject::connect(
         &engine,
         &QQmlApplicationEngine::objectCreationFailed,
