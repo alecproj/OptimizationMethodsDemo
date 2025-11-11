@@ -16,7 +16,7 @@ using namespace CD;
 // Класс-заглушка - реализовывать не нужно!
 class MockReporter {
 public:
-	int begin() { return 1; } // Возвращаем 1, чтобы обойти проверку в solve() (предполагаем опечатку в условии ==0)
+	int begin() { return 0; } // Возвращаем 1, чтобы обойти проверку в solve() (предполагаем опечатку в условии ==0)
 	int end() { return 0; } // Возвращаем 0, чтобы solve() вернул Success при успешном завершении
 };
 double MySqr(double a_fVal) { return a_fVal * a_fVal; }

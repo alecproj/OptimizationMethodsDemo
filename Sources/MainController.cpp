@@ -30,8 +30,12 @@ Status MainController::setInputData(const InputData *data)
     m_currExtension = data->extensionId();
     if (m_currAlgorithm == AlgoType::CD) {
         fillCDData(data);
-        if (m_cdAlgo.setInputData(&m_cdData) != CD::Result::Success) {
-            askConfirm("Ошибка подготовки данных", "Что-то пошло не так");
+        auto rv = m_cdAlgo.setInputData(&m_cdData);
+        if (rv != CD::Result::Success) {
+            askConfirm(
+                "Ошибка подготовки данных",
+                QString::fromStdString(CD::resultToString(rv))
+            );
             return Status::Fail;
         }
     } else if (m_currAlgorithm == AlgoType::GD) {
@@ -164,7 +168,23 @@ Status MainController::inputDataFromFile(const QString &fileName, InputData *out
 
 void MainController::fillCDData(const InputData *data)
 {
-    return;
+    m_cdData.function = data->function().toStdString();
+    m_cdData.algorithm_type = static_cast<CD::AlgorithmType>(data->extensionId());
+    m_cdData.extremum_type = static_cast<CD::ExtremumType>(data->extremumId());
+    m_cdData.step_type = CD::StepType::CONSTANT;
+    m_cdData.step_type_x = CD::StepType::CONSTANT;
+    m_cdData.step_type_y = CD::StepType::CONSTANT;
+    m_cdData.initial_x = data->startX1();
+    m_cdData.initial_y = data->startY1();
+    m_cdData.x_left_bound = data->minX();
+    m_cdData.x_right_bound = data->maxX();
+    m_cdData.y_left_bound = data->minY();
+    m_cdData.y_right_bound = data->maxY();
+    m_cdData.constant_step_size_x = data->stepX();
+    m_cdData.constant_step_size_y = data->stepY();
+    m_cdData.result_precision = data->resultAccuracy();
+    m_cdData.computation_precision = data->calcAccuracy();
+    m_cdData.max_iterations = data->maxIterations();
 }
 
 void MainController::fillGDData(const InputData *data)
