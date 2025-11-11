@@ -36,6 +36,8 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.topMargin: 10
                 Layout.bottomMargin: 5
+                Layout.leftMargin: 10
+                Layout.rightMargin: 10
                 text: dlgTitle
                 font.pixelSize: 14
                 font.bold: true
@@ -47,6 +49,8 @@ Item {
         contentItem: Column {
             spacing: 8
             Text {
+                leftPadding: 10
+                rightPadding: 10
                 text: dlgText
                 font.pixelSize: 14
                 wrapMode: Text.WordWrap

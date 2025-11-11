@@ -27,21 +27,39 @@ Flickable {
     property bool valid: false
 
     function setInputData(data) {
+        inputData.algorithmId = AppStates.selectedAlgorithm;
+        inputData.extensionId = AppStates.selectedExtension;
+        inputData.fullAlgoId = AppStates.selectedFullAlgo;
         extremum.selected = data.extremumId;
+        inputData.extremumId = data.extremumId;
         iterations.text = data.maxIterationsAsString();
+        inputData.maxIterations = data.maxIterations;
         calcAccuracy.text = data.calcAccuracyAsString();
+        inputData.calcAccuracy = data.calcAccuracy;
         resultAccuracy.text = data.resultAccuracyAsString();
+        inputData.resultAccuracy = data.resultAccuracy;
         startX1.text = data.startX1AsString();
+        inputData.startX1 = data.startX1;
         startY1.text = data.startY1AsString();
+        inputData.startY1 = data.startY1;
         startX2.text = data.startX2AsString();
+        inputData.startX2 = data.startX2;
         startY2.text = data.startY2AsString();
+        inputData.startY2 = data.startY2;
         stepX.text = data.stepXAsString();
+        inputData.stepX = data.stepX;
         stepY.text = data.stepYAsString();
+        inputData.stepY = data.stepY;
         coefficientStep.text = data.coefficientStepAsString();
+        inputData.coefficientStep = data.coefficientStep;
         minX.text = data.minXAsString();
+        inputData.minX = data.minX;
         maxX.text = data.maxXAsString();
+        inputData.maxX = data.maxX;
         minY.text = data.minYAsString();
+        inputData.minY = data.minY;
         maxY.text = data.maxYAsString();
+        inputData.maxY = data.maxY;
         flags = helper.getCheckByFullType(AppStates.selectedFullAlgo);
         valid = true;
     }
