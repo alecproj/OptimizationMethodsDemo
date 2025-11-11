@@ -43,7 +43,7 @@ else()
     add_library(GradientDescent INTERFACE)
 endif()
 
-target_link_libraries(GradientDescent PRIVATE ${MUPARSER_TARGET_NAME})
+target_link_libraries(GradientDescent INTERFACE ${MUPARSER_TARGET_NAME})
 
 target_include_directories(GradientDescent
     INTERFACE

@@ -9,14 +9,65 @@
 #include <typeinfo>
 #include <string>
 
+using namespace GD;
 // Класс-заглушка - реализовывать не нужно!
 class MockReporter {
 public:
-    int begin() { return 1; } // Возвращаем 1, чтобы обойти проверку в solve() (предполагаем опечатку в условии ==0)
+    int begin() { return 0; } // Возвращаем 0
     int end() { return 0; } // Возвращаем 0, чтобы solve() вернул Success при успешном завершении
 };
 
 double MySqr(const double a_fVal) { return a_fVal * a_fVal; }
+
+// Конвертация типа шага в строку
+inline std::string stepTypeToString(StepType type) {
+    switch (type) {
+    case StepType::CONSTANT:    return "Постоянный шаг";
+    case StepType::COEFFICIENT: return "Коэффициентный шаг";
+    case StepType::ADAPTIVE:    return "Адаптивный шаг";
+    default:                    return "Ошибка. неизвестный тип шага";
+    }
+}
+
+// Конвертация типа алгоритма в строковое сообщение
+inline std::string algorithmTypeToString(AlgorithmType type) {
+    switch (type) {
+    case AlgorithmType::GRADIENT_DESCENT:    return "Базовый градиентный спуск";
+    case AlgorithmType::STEEPEST_DESCENT:    return "Наискорейший градиентный спуск";
+    case AlgorithmType::RAVINE_METHOD:       return "Овражный метод для градиентного спуска";
+    default:                                 return "Ошибка. Неизвестный алгоритм";
+    }
+}
+
+// Конвертация типа экстремума в строку
+inline std::string extremumTypeToString(ExtremumType type) {
+    switch (type) {
+    case ExtremumType::MINIMUM: return "Минимум";
+    case ExtremumType::MAXIMUM: return "Максимум";
+    default:                    return "Ошибка. неизвестный параметр";
+    }
+}
+
+// Вспомогательные функции для конвертации строк в enum
+AlgorithmType stringToAlgorithmType(const std::string& str) {
+    if (str == "GRADIENT_DESCENT") return AlgorithmType::GRADIENT_DESCENT;
+    if (str == "STEEPEST_DESCENT") return AlgorithmType::STEEPEST_DESCENT;
+    if (str == "RAVINE_METHOD") return AlgorithmType::RAVINE_METHOD;
+    throw std::invalid_argument("Неверный тип алгоритма");
+}
+
+ExtremumType stringToExtremumType(const std::string& str) {
+    if (str == "MINIMUM") return ExtremumType::MINIMUM;
+    if (str == "MAXIMUM") return ExtremumType::MAXIMUM;
+    throw std::invalid_argument("Неверный тип экстремума");
+}
+
+StepType stringToStepType(const std::string& str) {
+    if (str == "CONSTANT") return StepType::CONSTANT;
+    if (str == "COEFFICIENT") return StepType::COEFFICIENT;
+    if (str == "ADAPTIVE") return StepType::ADAPTIVE;
+    throw std::invalid_argument("Неверный тип шага");
+}
 
 int main()
 {
@@ -24,7 +75,7 @@ int main()
     using AlgoType = GradientDescent<MockReporter>;
     MockReporter reporter{};
     AlgoType algo{ &reporter };
-    GradientInput data{};
+    InputData data{};
 
     // Ввод данных от пользователя
     std::cout << "Введите функцию (например, x^2 + y^2): ";
@@ -141,7 +192,7 @@ int main()
 
     // Проверка и установка данных (вызовет ошибки из GradientDescent, если неверно)
     auto rv = algo.setInputData(&data);
-    if (rv != GDResult::Success) {
+    if (rv != Result::Success) {
         std::cout << "Ошибка установки данных: " << resultToString(rv) << std::endl;
         return 1;
     }

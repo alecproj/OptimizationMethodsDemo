@@ -41,8 +41,12 @@ Status MainController::setInputData(const InputData *data)
         }
     } else if (m_currAlgorithm == AlgoType::GD) {
         fillGDData(data);
-        if (m_gdAlgo.setInputData(&m_gdData) != GDResult::Success) {
-            askConfirm("Ошибка подготовки данных", "Что-то пошло не так");
+        auto rv = m_gdAlgo.setInputData(&m_gdData);
+        if (rv != GD::Result::Success) {
+            askConfirm(
+                "Ошибка подготовки данных",
+                QString::fromStdString(GD::resultToString(rv))
+            );
             return Status::Fail;
         }
     } else {
@@ -65,8 +69,12 @@ Status MainController::solve()
             return Status::Fail;
         }
     } else if (m_currAlgorithm == AlgoType::GD) {
-        if (m_gdAlgo.solve() != GDResult::Success) {
-            askConfirm("Ошибка при решении", "Что-то пошло не так");
+        auto rv = m_gdAlgo.solve();
+        if (rv != GD::Result::Success) {
+            askConfirm(
+                "Ошибка при решении",
+                QString::fromStdString(GD::resultToString(rv))
+            );
             return Status::Fail;
         }
     } else {
