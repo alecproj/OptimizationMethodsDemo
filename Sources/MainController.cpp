@@ -30,7 +30,7 @@ Status MainController::setInputData(const InputData *data)
     m_currExtension = data->extensionId();
     if (m_currAlgorithm == AlgoType::CD) {
         fillCDData(data);
-        if (m_cdAlgo.setInputData(&m_cdData) != CDResult::Success) {
+        if (m_cdAlgo.setInputData(&m_cdData) != CD::Result::Success) {
             askConfirm("Ошибка подготовки данных", "Что-то пошло не так");
             return Status::Fail;
         }
@@ -50,7 +50,7 @@ Status MainController::setInputData(const InputData *data)
 Status MainController::solve()
 {
     if (m_currAlgorithm == AlgoType::CD) {
-        if (m_cdAlgo.solve() != CDResult::Success) {
+        if (m_cdAlgo.solve() != CD::Result::Success) {
             askConfirm("Ошибка при решении", "Что-то пошло не так");
             return Status::Fail;
         }

@@ -45,7 +45,7 @@ else()
     add_library(CoordinateDescent INTERFACE)
 endif()
 
-target_link_libraries(CoordinateDescent PRIVATE ${MUPARSER_TARGET_NAME})
+target_link_libraries(CoordinateDescent INTERFACE ${MUPARSER_TARGET_NAME})
 
 # #include <CoordinateDescent/Common.hpp>
 target_include_directories(CoordinateDescent

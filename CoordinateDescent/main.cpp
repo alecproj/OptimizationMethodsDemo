@@ -9,7 +9,10 @@
 #include <typeinfo>
 #include <locale>
 #include <string>
-#include <windows.h>
+// #include <windows.h>
+
+
+using namespace CD;
 // Класс-заглушка - реализовывать не нужно!
 class MockReporter {
 public:
@@ -37,16 +40,66 @@ void testMuparser()
 		std::cout << e.GetMsg() << std::endl;
 	}
 }
+
+// Конвертация типа шага в строку
+inline std::string stepTypeToString(StepType type) {
+    switch (type) {
+        case StepType::CONSTANT:    return "Постоянный шаг";
+        case StepType::COEFFICIENT: return "Коэффициентный шаг";
+        case StepType::ADAPTIVE:    return "Адаптивный шаг";
+        default:                    return "Ошибка. неизвестный тип шага";
+    }
+}
+
+// Конвертация типа алгоритма в строковое сообщение
+inline std::string algorithmTypeToString(AlgorithmType type) {
+    switch (type) {
+        case AlgorithmType::BASIC_COORDINATE_DESCENT:    return "Базовый Алгоритм покоординатного спуска";
+        case AlgorithmType::STEEPEST_COORDINATE_DESCENT: return "Алгоритм покоординатного спуска с расишрением (наискорейший спуск)";
+        
+        default:                                         return "Ошибка. Неизвестный алгоритм";
+    }
+}
+
+// Конвертация типа экстремума в строку
+inline std::string extremumTypeToString(ExtremumType type) {
+    switch (type) {
+        case ExtremumType::MINIMUM: return "Минимум";
+        case ExtremumType::MAXIMUM: return "Максимум";
+
+        default:                    return "Ошибка. неизвестный параметр";
+    }
+}
+
+AlgorithmType stringToAlgorithmType(const std::string& str) {
+    if (str == "BASIC_COORDINATE_DESCENT") return AlgorithmType::BASIC_COORDINATE_DESCENT;
+    if (str == "STEEPEST_COORDINATE_DESCENT") return AlgorithmType::STEEPEST_COORDINATE_DESCENT;
+    throw std::invalid_argument("Неверный тип алгоритма");
+}
+
+ExtremumType stringToExtremumType(const std::string& str) {
+    if (str == "MINIMUM") return ExtremumType::MINIMUM;
+    if (str == "MAXIMUM") return ExtremumType::MAXIMUM;
+    throw std::invalid_argument("Неверный тип экстремума");
+}
+
+StepType stringToStepType(const std::string& str) {
+    if (str == "CONSTANT") return StepType::CONSTANT;
+    if (str == "COEFFICIENT") return StepType::COEFFICIENT;
+    if (str == "ADAPTIVE") return StepType::ADAPTIVE;
+    throw std::invalid_argument("Неверный тип шага");
+}
+
 int main()
 {
-	SetConsoleOutputCP(1251);
-	SetConsoleCP(1251);
-	setlocale(LC_ALL, "Russian");
+	// SetConsoleOutputCP(1251);
+	// SetConsoleCP(1251);
+	// setlocale(LC_ALL, "Russian");
 	// testMuparser(); // Можно закомментировать, если не нужен
 	using AlgoType = CoordinateDescent<MockReporter>;
 	MockReporter reporter{};
 	AlgoType algo{ &reporter };
-	CoordinateInput data{};
+	InputData data{};
 	// Ввод данных от пользователя
 	std::cout << "Введите функцию (например, x^2 + y^2): ";
 	std::getline(std::cin, data.function);
@@ -126,7 +179,7 @@ int main()
 	}
 	// Проверка и установка данных (вызовет ошибки из CoordinateDescent, если неверно)
 	auto rv = algo.setInputData(&data);
-	if (rv != CDResult::Success) {
+	if (rv != Result::Success) {
 		std::cout << "Ошибка установки данных: " << resultToString(rv) << std::endl;
 		return 1;
 	}

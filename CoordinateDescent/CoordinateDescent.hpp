@@ -9,7 +9,6 @@
 #include <CoordinateDescent/Common.hpp>
 #include <muParser.h>
 #include <vector>
-#include <functional>
 #include <cmath>
 #include <algorithm>
 
@@ -17,6 +16,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+namespace CD {
 template <typename Reporter>
 class CoordinateDescent {
 
@@ -45,92 +45,92 @@ public:
     double getOptimumValue()     { return evaluateFunction(m_x, m_y); } // Вычисление значение функции в финальной точке
 
 
-    CDResult setInputData(const CoordinateInput *data)
+    Result setInputData(const InputData *data)
     {
         if (!data) {
-            return CDResult::InvalidInput; // проверка на nullptr
+            return Result::InvalidInput; // проверка на nullptr
         }
 
         // ВАЛИДАЦИЯ ВХОДНЫХ ДАННЫХ
         // Проверка функции
         if (data->function.empty()) {
-            return CDResult::EmptyFunction;
+            return Result::EmptyFunction;
         }
 
         // Проверка синтаксиса функции
-        CDResult syntax_check = validateFunctionSyntax(data->function);
-        if (syntax_check != CDResult::Success) {
-            return CDResult::ParseError;
+        Result syntax_check = validateFunctionSyntax(data->function);
+        if (syntax_check != Result::Success) {
+            return Result::ParseError;
         }
 
         // Проверка на дифференцируемость
-        CDResult differentiability_check = checkFunctionDifferentiability(data->function);
-        if (differentiability_check != CDResult::Success) {
+        Result differentiability_check = checkFunctionDifferentiability(data->function);
+        if (differentiability_check != Result::Success) {
             return differentiability_check;
         }
 
         // Проверка типа алгоритма
         if (data->algorithm_type != AlgorithmType::BASIC_COORDINATE_DESCENT &&
             data->algorithm_type != AlgorithmType::STEEPEST_COORDINATE_DESCENT) {
-            return CDResult::InvalidAlgorithmType;
+            return Result::InvalidAlgorithmType;
         }
 
         // Проверка типа экстремума
         if (data->extremum_type != ExtremumType::MINIMUM &&
             data->extremum_type != ExtremumType::MAXIMUM) {
-            return CDResult::InvalidExtremumType;
+            return Result::InvalidExtremumType;
         }
 
         // Проверка типа шага
         if (data->step_type != StepType::CONSTANT &&
             data->step_type != StepType::COEFFICIENT &&
             data->step_type != StepType::ADAPTIVE) {
-            return CDResult::InvalidStepType;
+            return Result::InvalidStepType;
         }
 
         // Проверка типа шага X
         if (data->step_type_x != StepType::CONSTANT &&
             data->step_type_x != StepType::COEFFICIENT &&
             data->step_type_x != StepType::ADAPTIVE) {
-            return CDResult::InvalidStepTypeX;
+            return Result::InvalidStepTypeX;
         }
 
         // Проверка типа шага Y
         if (data->step_type_y != StepType::CONSTANT &&
             data->step_type_y != StepType::COEFFICIENT &&
             data->step_type_y != StepType::ADAPTIVE) {
-            return CDResult::InvalidStepTypeY;
+            return Result::InvalidStepTypeY;
         }
 
         // Проверка корректности границ X (вопрос про равенство)
         if ((data->x_left_bound >= data->x_right_bound)) {
-            return CDResult::InvalidXBound;
+            return Result::InvalidXBound;
         }
         
 
         // Проверка корректности границ Y (вопрос про равенство)
         if ((data->y_left_bound >= data->y_right_bound)) {
-            return CDResult::InvalidYBound;
+            return Result::InvalidYBound;
         }
 
         // Проверка начального приближения X
         if (data->initial_x < data->x_left_bound || data->initial_x > data->x_right_bound) {
-            return CDResult::InvalidInitialX;
+            return Result::InvalidInitialX;
         }
 
         // Проверка начального приближения Y
         if (data->initial_y < data->y_left_bound || data->initial_y > data->y_right_bound) {
-            return CDResult::InvalidInitialY;
+            return Result::InvalidInitialY;
         }
 
         // Проверка точности результата
         if (data->result_precision <= 0.0 || data->result_precision > 1.0) {
-            return CDResult::InvalidResultPrecision;
+            return Result::InvalidResultPrecision;
         }
 
         // Проверка точности вычислений
         if (data->computation_precision <= 0.0 || data->computation_precision > 1.0) {
-            return CDResult::InvalidComputationPrecision;
+            return Result::InvalidComputationPrecision;
         }
 
      /* // Проверка соотношения точностей (точность вычислений должно быть в 10 раз точнее результата)
@@ -141,56 +141,56 @@ public:
 
         // Проверка что точность вычислений меньше точности результата
         if (data->computation_precision > data->result_precision) {
-            return CDResult::InvalidLogicPrecision;
+            return Result::InvalidLogicPrecision;
         }
 
         // --- ВАЛИДАЦИЯ ПАРАМЕТРОВ ШАГА ---
         
         // Проверка постоянного шага
         if (data->constant_step_size <= 0.0) {
-            return CDResult::InvalidConstantStepSize;
+            return Result::InvalidConstantStepSize;
         }
 
         // Проверка коэффициента шага
         if (data->coefficient_step_size <= 0.0) {
-            return CDResult::InvalidCoefficientStepSize;
+            return Result::InvalidCoefficientStepSize;
         }
 
         // Проверка типов шагов для X
         if (data->constant_step_size_x <= 0.0) {
-            return CDResult::InvalidConstantStepSizeX;
+            return Result::InvalidConstantStepSizeX;
         }
         if (data->coefficient_step_size_x <= 0.0) {
-            return CDResult::InvalidCoefficientStepSizeX;
+            return Result::InvalidCoefficientStepSizeX;
         }
 
         // Проверка типов шагов для Y
         if (data->constant_step_size_y <= 0.0) {
-            CDResult::InvalidConstantStepSizeY;
+            Result::InvalidConstantStepSizeY;
         }
         if (data->coefficient_step_size_y <= 0.0) {
-            CDResult::InvalidCoefficientStepSizeY;
+            Result::InvalidCoefficientStepSizeY;
         }
 
         // Сначала проверить все поля на корректность
         m_inputData = data;
-        return CDResult::Success;
+        return Result::Success;
     }
 
-    CDResult solve()
+    Result solve()
     {
         if (!m_inputData || !m_reporter || m_reporter->begin() == 0) {
-            return CDResult::Fail;
+            return Result::Fail;
         }
 
-        CDResult result = CDResult::Success;
+        Result result = Result::Success;
 
         try {
             // Инициализация Парсера
             initializeParser();
 
             if (!isFunctionDifferentiableAtStart()) {
-                return CDResult::NonDifferentiableFunction;
+                return Result::NonDifferentiableFunction;
             }
 
             // Выбор алгоритма
@@ -202,26 +202,26 @@ public:
                     result = steepestCoordinateDescent();
                     break;
                 default:
-                    result = CDResult::InvalidAlgorithmType;
+                    result = Result::InvalidAlgorithmType;
                     break;
             }
         } catch (const mu::Parser::exception_type& e) {
-            result = CDResult::ParseError;
+            result = Result::ParseError;
         } catch (const std::exception& e) {
-            result = CDResult::ComputeError; // Может и поставить сюда Fail
+            result = Result::ComputeError; // Может и поставить сюда Fail
         }
 
         // Процесс решения и записи отчета (разбить на приватные функции)
 
         if (m_reporter->end() == 0) {
-            return CDResult::Success;
+            return Result::Success;
         }
-        return CDResult::Fail;
+        return Result::Fail;
     }
 
 private:
 
-    const CoordinateInput *m_inputData; // Настройки алгоритма
+    const InputData *m_inputData; // Настройки алгоритма
     Reporter* m_reporter; // Указатель на систему отчётности
     mu::Parser m_parser; // Система вычисления
     double m_x, m_y; // Текущие переменные для парсера
@@ -238,7 +238,7 @@ private:
     }
 
     // Провернка синтаксиса функции
-    CDResult validateFunctionSyntax(const std::string& function) {
+    Result validateFunctionSyntax(const std::string& function) {
         try {
             mu::Parser test_parser;
             double test_x = 0.0;
@@ -250,11 +250,11 @@ private:
             // Пробуем вычислить в тестовой точке
             test_parser.Eval();
 
-            return CDResult::Success;
+            return Result::Success;
         } catch (const mu::Parser::exception_type& e) {
-            return CDResult::ParseError;
+            return Result::ParseError;
         } catch (...) {
-            return CDResult::ParseError;
+            return Result::ParseError;
         }
     }
 
@@ -277,7 +277,7 @@ private:
         }
     }
 
-    CDResult checkFunctionDifferentiability(const std::string& function) {
+    Result checkFunctionDifferentiability(const std::string& function) {
         try {
             
             // Предварительная проверка на известные недифференцируемые функции
@@ -296,7 +296,7 @@ private:
                 if (func_lower.find(non_diff_lower) != std::string::npos) {
                     std::cout << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func << std::endl;
                     std::cout << "Функция содержит: " << function << std::endl;
-                    return CDResult::NonDifferentiableFunction;
+                    return Result::NonDifferentiableFunction;
                 }
             } 
             
@@ -348,27 +348,27 @@ private:
                         std::isnan(deriv_y2) || std::isinf(deriv_y2)) {
                         std::cout << "Производная не определена в точке ("
                             << test_x << ", " << test_y << ")" << std::endl;
-                        return CDResult::NonDifferentiableFunction;
+                        return Result::NonDifferentiableFunction;
                     }
                 } catch (const mu::Parser::exception_type& e) {
                     std::cout << "Функция не дифференцируема в точке ("
                         << test_x << ", " << test_y << "): " << e.GetMsg() << std::endl;
-                    return CDResult::NonDifferentiableFunction;
+                    return Result::NonDifferentiableFunction;
                 } catch (const std::exception& e) {
                     std::cout << "Ошибка дифференцирования в точке ("
                         << test_x << ", " << test_y << "): " << e.what() << std::endl;
-                    return CDResult::NonDifferentiableFunction;
+                    return Result::NonDifferentiableFunction;
                 }
             }
             std::cout << "Функция прошла проверку дифференцируемости" << std::endl;
-            return CDResult::Success;
+            return Result::Success;
 
         } catch (const mu::Parser::exception_type& e) {
             std::cout << "Ошибка парсера при проверке дифференцируемости: " << e.GetMsg() << std::endl;
-            return CDResult::ParseError;
+            return Result::ParseError;
         } catch (const std::exception& e) {
             std::cout << "Общая ошибка при проверке дифференцируемости: " << e.what() << std::endl;
-            return CDResult::ComputeError;
+            return Result::ComputeError;
         }
     }
 
@@ -598,7 +598,7 @@ private:
 // ============================================================================
 
  // Базовый алгоритм покоординатного спуска
-CDResult basicCoordinateDescent() {
+Result basicCoordinateDescent() {
     double x = m_inputData->initial_x;
     double y = m_inputData->initial_y;
     double f_current = evaluateFunction(x, y);
@@ -647,14 +647,14 @@ CDResult basicCoordinateDescent() {
                 m_x = best_x;
                 m_y = best_y;
                 f_current = best_f;
-                return CDResult::Success;
+                return Result::Success;
             }
 
             // Проверка границ
             if (!isWithinBounds(x, y)) {
                 m_x = best_x;
                 m_y = best_y;
-                return CDResult::OutOfBounds;
+                return Result::OutOfBounds;
             }
             std::cout << "Итерация " << m_iterations
                 << ": x=" << x << ", y=" << y
@@ -670,7 +670,7 @@ CDResult basicCoordinateDescent() {
     }
     
     // Алгоритм наискорейшего покоординатного спуска
-    CDResult steepestCoordinateDescent() {
+    Result steepestCoordinateDescent() {
         double x = m_inputData->initial_x;
         double y = m_inputData->initial_y;
         double f_current = evaluateFunction(x, y);
@@ -723,14 +723,14 @@ CDResult basicCoordinateDescent() {
                 m_x = best_x;
                 m_y = best_y;
                 f_current = best_f;
-                return CDResult::Success;
+                return Result::Success;
             }
 
             // Проверка границ
             if (!isWithinBounds(x, y)) {
                 m_x = best_x;
                 m_y = best_y;
-                return CDResult::OutOfBounds;
+                return Result::OutOfBounds;
             }
             std::cout << "Итерация " << m_iterations
                 << ": x=" << x << ", y=" << y
@@ -752,17 +752,17 @@ CDResult basicCoordinateDescent() {
     }
 
     // Проверка условий завершения
-    CDResult checkTerminationCondition() {
+    Result checkTerminationCondition() {
         if (m_iterations >= m_inputData->max_iterations) {
-            return CDResult::MaxIterations;
+            return Result::MaxIterations;
         }
         if (m_function_calls >= m_inputData->max_function_calls) {
-            return CDResult::MaxFunctionsCalls;
+            return Result::MaxFunctionsCalls;
         }
-        return CDResult::Success;
+        return Result::Success;
     }
 };
 
-
+} // namespace CD
 
 #endif // COORDINATEDESCENT_COORDINATEDESCENT_HPP_ 
