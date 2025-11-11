@@ -65,6 +65,9 @@ private:
     QList<Report *> m_openReports;
     QString m_filePendingDeletion;
     EnumHelper m_enumHelper;
+
+    void fillCDData(const InputData *data);
+    void fillGDData(const InputData *data);
 };
 
 #endif // SOURCES_MAINCONTROLLER_HPP_

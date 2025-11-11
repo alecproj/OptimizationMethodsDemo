@@ -29,11 +29,13 @@ Status MainController::setInputData(const InputData *data)
     m_currAlgorithm = data->algorithmId();
     m_currExtension = data->extensionId();
     if (m_currAlgorithm == AlgoType::CD) {
+        fillCDData(data);
         if (m_cdAlgo.setInputData(&m_cdData) != CDResult::Success) {
             askConfirm("Ошибка подготовки данных", "Что-то пошло не так");
             return Status::Fail;
         }
     } else if (m_currAlgorithm == AlgoType::GD) {
+        fillGDData(data);
         if (m_gdAlgo.setInputData(&m_gdData) != GDResult::Success) {
             askConfirm("Ошибка подготовки данных", "Что-то пошло не так");
             return Status::Fail;
@@ -160,3 +162,12 @@ Status MainController::inputDataFromFile(const QString &fileName, InputData *out
     return Status::Fail;
 }
 
+void MainController::fillCDData(const InputData *data)
+{
+    return;
+}
+
+void MainController::fillGDData(const InputData *data)
+{
+    return;
+}
