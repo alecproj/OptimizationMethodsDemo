@@ -6,25 +6,227 @@
 #ifndef GRADIENTDESCENT_COMMON_HPP_
 #define GRADIENTDESCENT_COMMON_HPP_
 
-// Структура для хранения всех входных параметров
-struct GradientInput {
-    std::string function; // Строка с функцией
-    double initialApproximationX_0;            // начальное приближение X
-    double initialApproximationY_0;            // начальное приближение Y
-    double coefficientStep;             // коэффициентный шаг
-    double resultAccuracy;           // точность результата
-    double calculationAccuracy;      // точность вычислений
-    double leftBorderX;         // левая граница X
-    double rightBorderX;         // правая граница X
-    double leftBorderY;         // левая граница Y
-    double rightBorderY;         // правая граница Y
-    int extended = 0;
+#include <string>
+#include <vector>
+#include <stdexcept>
+
+// ============================================================================
+// Перечисления состояний и ошибок
+// ============================================================================
+
+// Результат выполнения алгоритма
+enum class GDResult : int {
+    Success = 0,            // Успешное выполнение
+    Fail = -1,            // Общая ошибка
+    InvalidInput = -2,            // Неверные входные данные
+    NoConvergence = -3,            // Нет сходимости
+    OutOfBounds = -4,            // Выход за границы
+    MaxIterations = -5,            // Превышение макс. числа итераций
+    MaxFunctionsCalls = -6,            // Превышение макс. числа вызовов функции
+    ParseError = -7,            // Ошибка парсинга функции
+    ComputeError = -8,            // Вычислительная ошибка
+    NonDifferentiableFunction = -9,    // Функция не явл. дифференцируемой
+    EmptyFunction = -10,           // Функция пустая
+    InvalidAlgorithmType = -11,        // Неверный ввод типа алгоритма
+    InvalidExtremumType = -12,         // Неверный ввод типа экстремума
+    InvalidStepType = -13,             // Неверный ввод типа шага
+    InvalidXBound = -14,               // Неверный ввод границ X
+    InvalidYBound = -15,               // Неверный ввод границ Y
+    InvalidInitialX = -16,             // Неверный ввод начального приближения X
+    InvalidInitialY = -17,             // Неверный ввод начального приближения Y
+    InvalidResultPrecision = -18,      // Неверный ввод точности результата
+    InvalidComputationPrecision = -19, // Неверный ввод точности вычислений
+    InvalidLogicPrecision = -20,       // Неверный ввод точностей
+    InvalidConstantStepSize = -21,     // Неверный ввод постоянного шага
+    InvalidCoefficientStepSize = -22,  // Неверный ввод коэффициентного шага
+    InvalidConstantStepSizeX = -23,    // Неверный ввод постоянного шага X
+    InvalidCoefficientStepSizeX = -24, // Неверный ввод коэффициентного шага X
+    InvalidConstantStepSizeY = -25,    // Неверный ввод постоянного шага Y
+    InvalidCoefficientStepSizeY = -26, // Неверный ввод коэффициентного шага Y
+    InvalidStepTypeX = -27,            // Неверный тип шага для X
+    InvalidStepTypeY = -28             // Неверный тип шага для Y
 };
 
-enum class GDResult : int {
-    InvalidInput    = -2,
-    Fail            = -1,
-    Success         = 0
+// Тип алгоритма оптимизации
+enum class AlgorithmType {
+    GRADIENT_DESCENT,
+    STEEPEST_DESCENT,
+    RAVINE_METHOD
 };
+
+// Тип экстремума
+enum class ExtremumType {
+    MINIMUM, // Минимум
+    MAXIMUM  // Максимум
+};
+
+// Тип шага в алгоритме
+enum class StepType {
+    CONSTANT,    // Постоянный шаг:     step = const;
+    COEFFICIENT, // Коэффициентный шаг: step = k * производная
+    ADAPTIVE     // Адаптивный шаг:     step подбирается автоматически на каждой итерации
+};
+
+// Состояние выполнения алгоритма
+enum class AlgorithmState {
+    NOT_STARTED,  // Алгоритм не запущен
+    INITIALIZING, // Инициализация алгоритма
+    RUNNING,      // Алгоритм выполняется
+    CONVERGED,    // Алгоритм сходится
+    STOPPED,      // Алгоритм завершил работу успешно
+    FAILED        // Алгоритм завершил работу с ошибкой
+};
+
+// ============================================================================
+// Структуры входных данных
+// ============================================================================
+double gradient_epsilon = 1e-8;     // Точность вычисления градиента
+
+// Основные входные параметры для алгоритма
+struct GradientInput {
+
+    // --- ОБЯЗАТЕЛЬНЫЕ ПАРАМЕТРЫ ---
+    std::string function;         // Функция для оптимизации
+    AlgorithmType algorithm_type; // Тип алгоритма
+    ExtremumType extremum_type;   // Тип экстремума
+    StepType step_type;           // Тип шага
+
+    // РАЗДЕЛЬНЫЕ ТИПЫ ШАГОВ ДЛЯ X И Y
+    StepType step_type_x;    // Тип шага для координаты X
+    StepType step_type_y;    // Тип шага для координаты Y
+
+    // --- НАЧАЛЬНЫЕ УСЛОВИЯ ---
+    double initial_x = 0.0; // Начальное приближение X
+    double initial_y = 0.0; // Начальное приближение Y
+
+    // --- ГРАНИЦЫ ПОИСКА ---
+    double x_left_bound = -1000.0; // Левая граница диапазона X
+    double x_right_bound = 1000.0; // Правая граница диапазона X
+    double y_left_bound = -1000.0; // Левая граница диапазона Y
+    double y_right_bound = 1000.0; // Правая граница диапазона Y
+
+    // --- РАЗНЫЕ ШАГИ ДЛЯ X И Y ---
+    double constant_step_size_x = 0.1;    // Постоянный шаг для X
+    double constant_step_size_y = 0.1;    // Постоянный шаг для Y
+    double coefficient_step_size_x = 0.1; // Коэффициентный шаг для X
+    double coefficient_step_size_y = 0.1; // Коэффициентный шаг для Y
+
+    // --- ПАРАМЕТРЫ ТОЧНОСТИ ---
+    double result_precision = 1e-06;     // Точность результата
+    double computation_precision = 1e-8; // Точность вычислений
+
+    // --- ПАРАМЕТРЫ ШАГА ---
+    double constant_step_size = 0.1;     // Размер постоянного шага
+    double coefficient_step_size = 0.01; // Коэффициент шага
+
+    // --- ОГРАНИЧЕНИЯ ---
+    int max_iterations = 1000;       // Макс. число итераций
+    int max_function_calls = 10000;  // Макс. число вызовов функции
+
+};
+
+// ============================================================================
+// Структура выходных данных
+// ============================================================================
+
+// Результат оптимизации
+struct GradientResult {
+    GDResult status = GDResult::Success;    // Статус выполнения
+    std::vector<double> optimum_point; // Точка экстремума [X, Y]
+    double optimum_value;              // Значение функции в точке экстремума
+    int iterations = 0;                     // Кол-во выполненных итераций
+    int function_calls = 0;                 // Кол-во вызовов функции
+    std::string message;                    // Сообщение о результате
+};
+
+// ============================================================================
+// Вспомогательные функции
+// ============================================================================
+
+// Конвертация результата алгоритма в строковое сообщение
+inline std::string resultToString(GDResult result) {
+    switch (result) {
+    case GDResult::Success:                     return "Успешно";
+    case GDResult::Fail:                        return "Ошибка: Произошла ошибка";
+    case GDResult::InvalidInput:                return "Ошибка: Некорректные входные данные";
+    case GDResult::NoConvergence:               return "Ошибка: Алгоритм не сходится";
+    case GDResult::OutOfBounds:                 return "Ошибка: Выход за границы";
+    case GDResult::MaxIterations:               return "Ошибка: Достигнут максимум итераций";
+    case GDResult::MaxFunctionsCalls:           return "Ошибка: Достигнут максимум вызовов функции";
+    case GDResult::ParseError:                  return "Ошибка: Ошибка обработки функции";
+    case GDResult::ComputeError:                return "Ошибка: Вычислительная ошибка";
+    case GDResult::NonDifferentiableFunction:   return "Ошибка: Функция не является дифференцируемой";
+    case GDResult::EmptyFunction:               return "Ошибка: Функция простая";
+    case GDResult::InvalidAlgorithmType:        return "Ошибка: Неверный ввод типа алгоритма";
+    case GDResult::InvalidExtremumType:         return "Ошибка: Неверный ввод типа экстремума";
+    case GDResult::InvalidStepType:             return "Ошибка: Неверный ввод типа шага";
+    case GDResult::InvalidXBound:               return "Ошибка: Неверный ввод границ X";
+    case GDResult::InvalidYBound:               return "Ошибка: Неверный ввод границ Y";
+    case GDResult::InvalidInitialX:             return "Ошибка: Неверный ввод начального приближения X";
+    case GDResult::InvalidInitialY:             return "Ошибка: Неверный ввод начального приближения Y";
+    case GDResult::InvalidResultPrecision:      return "Ошибка: Неверный ввод точности результата";
+    case GDResult::InvalidComputationPrecision: return "Ошибка: Неверный ввод точности вычислений";
+    case GDResult::InvalidLogicPrecision:       return "Ошибка: Неверный ввод точностей";
+    case GDResult::InvalidConstantStepSize:     return "Ошибка: Неверный ввод постоянного шага";
+    case GDResult::InvalidCoefficientStepSize:  return "Ошибка: Неверный ввод коэффициентного шага";
+    case GDResult::InvalidConstantStepSizeX:    return "Ошибка: Неверный ввод постоянного шага X";
+    case GDResult::InvalidCoefficientStepSizeX: return "Ошибка: Неверный ввод коэффициентного шага X";
+    case GDResult::InvalidConstantStepSizeY:    return "Ошибка: Неверный ввод постоянного шага Y";
+    case GDResult::InvalidCoefficientStepSizeY: return "Ошибка: Неверный ввод коэффициентного шага Y";
+    case GDResult::InvalidStepTypeX:            return "Ошибка: Неверный тип шага для X";
+    case GDResult::InvalidStepTypeY:            return "Ошибка: Неверный тип шага для Y";
+    default:                                    return "Unknown result";
+    }
+}
+
+// Конвертация типа шага в строку
+inline std::string stepTypeToString(StepType type) {
+    switch (type) {
+    case StepType::CONSTANT:    return "Постоянный шаг";
+    case StepType::COEFFICIENT: return "Коэффициентный шаг";
+    case StepType::ADAPTIVE:    return "Адаптивный шаг";
+    default:                    return "Ошибка. неизвестный тип шага";
+    }
+}
+
+// Конвертация типа алгоритма в строковое сообщение
+inline std::string algorithmTypeToString(AlgorithmType type) {
+    switch (type) {
+    case AlgorithmType::GRADIENT_DESCENT:    return "Базовый градиентный спуск";
+    case AlgorithmType::STEEPEST_DESCENT:    return "Наискорейший градиентный спуск";
+    case AlgorithmType::RAVINE_METHOD:       return "Овражный метод для градиентного спуска";
+    default:                                 return "Ошибка. Неизвестный алгоритм";
+    }
+}
+
+// Конвертация типа экстремума в строку
+inline std::string extremumTypeToString(ExtremumType type) {
+    switch (type) {
+    case ExtremumType::MINIMUM: return "Минимум";
+    case ExtremumType::MAXIMUM: return "Максимум";
+    default:                    return "Ошибка. неизвестный параметр";
+    }
+}
+
+// Вспомогательные функции для конвертации строк в enum
+AlgorithmType stringToAlgorithmType(const std::string& str) {
+    if (str == "GRADIENT_DESCENT") return AlgorithmType::GRADIENT_DESCENT;
+    if (str == "STEEPEST_DESCENT") return AlgorithmType::STEEPEST_DESCENT;
+    if (str == "RAVINE_METHOD") return AlgorithmType::RAVINE_METHOD;
+    throw std::invalid_argument("Неверный тип алгоритма");
+}
+
+ExtremumType stringToExtremumType(const std::string& str) {
+    if (str == "MINIMUM") return ExtremumType::MINIMUM;
+    if (str == "MAXIMUM") return ExtremumType::MAXIMUM;
+    throw std::invalid_argument("Неверный тип экстремума");
+}
+
+StepType stringToStepType(const std::string& str) {
+    if (str == "CONSTANT") return StepType::CONSTANT;
+    if (str == "COEFFICIENT") return StepType::COEFFICIENT;
+    if (str == "ADAPTIVE") return StepType::ADAPTIVE;
+    throw std::invalid_argument("Неверный тип шага");
+}
 
 #endif // GRADIENTDESCENT_COMMON_HPP_
