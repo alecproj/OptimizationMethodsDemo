@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ConjugateDescent VERSION 0.1 LANGUAGES CXX)
+project(ConjugateGradient VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Создаёт цель CoordinateDescent.
+# Создаёт цель ConjugateGradient.
 # - Если в папке есть .cpp (кроме main.cpp) — создаётся STATIC library.
 # - Если .cpp отсутствуют (header-only) — создаётся INTERFACE library.
 # - Если есть main.cpp и опция BUILD_STANDALONE=ON — создаётся исполняемый файл.
-option(CONJUGATEDESCENT_BUILD_STANDALONE "Build ConjugateDescent standalone exe" ${CONJUGATEDESCENT_BUILD_STANDALONE})
+option(CONJUGATEGRADIENT_BUILD_STANDALONE "Build ConjugateGradient standalone exe" ${CONJUGATEGRADIENT_BUILD_STANDALONE})
 
 file(GLOB_RECURSE CD_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp" "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 file(GLOB_RECURSE CD_SOURCES_ALL CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/*.cxx" "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
@@ -39,28 +39,28 @@ endif()
 
 # Если после удаления main.cpp не осталось cpp — значит header-only
 if(CD_SOURCES_ALL)
-    add_library(ConjugateDescent STATIC ${CD_SOURCES_ALL} ${CD_HEADERS})
+    add_library(ConjugateGradient STATIC ${CD_SOURCES_ALL} ${CD_HEADERS})
 else()
-    add_library(ConjugateDescent INTERFACE)
+    add_library(ConjugateGradient INTERFACE)
 endif()
 
-target_link_libraries(ConjugateDescent PRIVATE ${MUPARSER_TARGET_NAME})
+target_link_libraries(ConjugateGradient PRIVATE ${MUPARSER_TARGET_NAME})
 
-# #include <ConjugateDescent/Common.hpp>
-target_include_directories(ConjugateDescent
+# #include <ConjugateGradient/Common.hpp>
+target_include_directories(ConjugateGradient
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
 )
 
-target_compile_features(ConjugateDescent INTERFACE cxx_std_20)
+target_compile_features(ConjugateGradient INTERFACE cxx_std_20)
 
 # Standalone exe (использует main.cpp в этой папке)
-if(CONJUGATEDESCENT_BUILD_STANDALONE AND EXISTS ${CD_MAIN})
-    add_executable(ConjugateDescent_app ${CD_MAIN})
-    target_link_libraries(ConjugateDescent_app
+if(CONJUGATEGRADIENT_BUILD_STANDALONE AND EXISTS ${CD_MAIN})
+    add_executable(ConjugateGradient_app ${CD_MAIN})
+    target_link_libraries(ConjugateGradient_app
         PRIVATE 
             ${MUPARSER_TARGET_NAME}
-            ConjugateDescent
+            ConjugateGradient
     )
     # при желании - добавить RUNTIME_OUTPUT_DIRECTORY и т.д.
 endif()
