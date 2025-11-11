@@ -17,7 +17,7 @@
 #include <QObject>
 
 using Status = Result::Type;
-using GDAlgoType = GradientDescent<ReportWriter>;
+using GDAlgoType = GD::GradientDescent<ReportWriter>;
 using CDAlgoType = CoordinateDescent<ReportWriter>;
 
 class MainController : public QObject {
@@ -60,7 +60,7 @@ private:
     CDAlgoType m_cdAlgo;
     CoordinateInput m_cdData;
     GDAlgoType m_gdAlgo;
-    GradientInput m_gdData;
+    GD::InputData m_gdData;
     QuickInfoListModel m_quickInfoModel;
     QList<Report *> m_openReports;
     QString m_filePendingDeletion;

@@ -4,13 +4,14 @@
 #include <GradientDescent/Common.hpp>
 #include <muParser.h>
 #include <vector>
-#include <functional>
 #include <cmath>
 #include <algorithm>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+namespace GD {
 
 template <typename Reporter>
 class GradientDescent {
@@ -40,27 +41,27 @@ public:
     double getOptimumValue() { return evaluateFunction(m_x, m_y); } // Вычисление значение функции в финальной точке
 
 
-    GDResult setInputData(const GradientInput* data)
+    Result setInputData(const InputData* data)
     {
         if (!data) {
-            return GDResult::InvalidInput; // проверка на nullptr
+            return Result::InvalidInput; // проверка на nullptr
         }
 
         // ВАЛИДАЦИЯ ВХОДНЫХ ДАННЫХ
         // Проверка функции
         if (data->function.empty()) {
-            return GDResult::EmptyFunction;
+            return Result::EmptyFunction;
         }
 
         // Проверка синтаксиса функции
-        GDResult syntax_check = validateFunctionSyntax(data->function);
-        if (syntax_check != GDResult::Success) {
-            return GDResult::ParseError;
+        Result syntax_check = validateFunctionSyntax(data->function);
+        if (syntax_check != Result::Success) {
+            return Result::ParseError;
         }
 
         // Проверка на дифференцируемость
-        GDResult differentiability_check = checkFunctionDifferentiability(data->function);
-        if (differentiability_check != GDResult::Success) {
+        Result differentiability_check = checkFunctionDifferentiability(data->function);
+        if (differentiability_check != Result::Success) {
             return differentiability_check;
         }
 
@@ -68,118 +69,118 @@ public:
         if (data->algorithm_type != AlgorithmType::GRADIENT_DESCENT &&
             data->algorithm_type != AlgorithmType::STEEPEST_DESCENT &&
             data->algorithm_type != AlgorithmType::RAVINE_METHOD) {
-            return GDResult::InvalidAlgorithmType;
+            return Result::InvalidAlgorithmType;
         }
 
         // Проверка типа экстремума
         if (data->extremum_type != ExtremumType::MINIMUM &&
             data->extremum_type != ExtremumType::MAXIMUM) {
-            return GDResult::InvalidExtremumType;
+            return Result::InvalidExtremumType;
         }
 
         // Проверка типа шага
         if (data->step_type != StepType::CONSTANT &&
             data->step_type != StepType::COEFFICIENT &&
             data->step_type != StepType::ADAPTIVE) {
-            return GDResult::InvalidStepType;
+            return Result::InvalidStepType;
         }
 
         // Проверка типа шага X
         if (data->step_type_x != StepType::CONSTANT &&
             data->step_type_x != StepType::COEFFICIENT &&
             data->step_type_x != StepType::ADAPTIVE) {
-            return GDResult::InvalidStepTypeX;
+            return Result::InvalidStepTypeX;
         }
 
         // Проверка типа шага Y
         if (data->step_type_y != StepType::CONSTANT &&
             data->step_type_y != StepType::COEFFICIENT &&
             data->step_type_y != StepType::ADAPTIVE) {
-            return GDResult::InvalidStepTypeY;
+            return Result::InvalidStepTypeY;
         }
 
         // Проверка корректности границ X (вопрос про равенство)
         if ((data->x_left_bound >= data->x_right_bound)) {
-            return GDResult::InvalidXBound;
+            return Result::InvalidXBound;
         }
 
         // Проверка корректности границ Y (вопрос про равенство)
         if ((data->y_left_bound >= data->y_right_bound)) {
-            return GDResult::InvalidYBound;
+            return Result::InvalidYBound;
         }
 
         // Проверка начального приближения X
         if (data->initial_x < data->x_left_bound || data->initial_x > data->x_right_bound) {
-            return GDResult::InvalidInitialX;
+            return Result::InvalidInitialX;
         }
 
         // Проверка начального приближения Y
         if (data->initial_y < data->y_left_bound || data->initial_y > data->y_right_bound) {
-            return GDResult::InvalidInitialY;
+            return Result::InvalidInitialY;
         }
 
         // Проверка точности результата
         if (data->result_precision <= 0.0 || data->result_precision > 1.0) {
-            return GDResult::InvalidResultPrecision;
+            return Result::InvalidResultPrecision;
         }
 
         // Проверка точности вычислений
         if (data->computation_precision <= 0.0 || data->computation_precision > 1.0) {
-            return GDResult::InvalidComputationPrecision;
+            return Result::InvalidComputationPrecision;
         }
 
         // Проверка, что точность вычислений меньше точности результата
         if (data->computation_precision > data->result_precision) {
-            return GDResult::InvalidLogicPrecision;
+            return Result::InvalidLogicPrecision;
         }
 
         // --- ВАЛИДАЦИЯ ПАРАМЕТРОВ ШАГА ---
 
         // Проверка постоянного шага
         if (data->constant_step_size <= 0.0) {
-            return GDResult::InvalidConstantStepSize;
+            return Result::InvalidConstantStepSize;
         }
 
         // Проверка коэффициента шага
         if (data->coefficient_step_size <= 0.0) {
-            return GDResult::InvalidCoefficientStepSize;
+            return Result::InvalidCoefficientStepSize;
         }
 
         // Проверка типов шагов для X
         if (data->constant_step_size_x <= 0.0) {
-            return GDResult::InvalidConstantStepSizeX;
+            return Result::InvalidConstantStepSizeX;
         }
         if (data->coefficient_step_size_x <= 0.0) {
-            return GDResult::InvalidCoefficientStepSizeX;
+            return Result::InvalidCoefficientStepSizeX;
         }
 
         // Проверка типов шагов для Y
         if (data->constant_step_size_y <= 0.0) {
-            return GDResult::InvalidConstantStepSizeY;
+            return Result::InvalidConstantStepSizeY;
         }
         if (data->coefficient_step_size_y <= 0.0) {
-            return GDResult::InvalidCoefficientStepSizeY;
+            return Result::InvalidCoefficientStepSizeY;
         }
 
         // Сначала проверить все поля на корректность
         m_inputData = data;
-        return GDResult::Success;
+        return Result::Success;
     }
 
-    GDResult solve()
+    Result solve()
     {
-        if (!m_inputData || !m_reporter || m_reporter->begin() == 0) {
-            return GDResult::Fail;
+        if (!m_inputData || !m_reporter || m_reporter->begin() != 0) {
+            return Result::Fail;
         }
 
-        GDResult result = GDResult::Success;
+        Result result = Result::Success;
 
         try {
             // Инициализация Парсера
             initializeParser();
 
             if (!isFunctionDifferentiableAtStart()) {
-                return GDResult::NonDifferentiableFunction;
+                return Result::NonDifferentiableFunction;
             }
 
             // Выбор алгоритма
@@ -194,15 +195,15 @@ public:
                 result = ravineMethod();
                 break;
             default:
-                result = GDResult::InvalidAlgorithmType;
+                result = Result::InvalidAlgorithmType;
                 break;
             }
         }
         catch (const mu::Parser::exception_type& e) {
-            result = GDResult::ParseError;
+            result = Result::ParseError;
         }
         catch (const std::exception& e) {
-            result = GDResult::ComputeError;
+            result = Result::ComputeError;
         }
         /*
         if (m_reporter->end() == 0) {
@@ -213,14 +214,14 @@ public:
         if (m_reporter->end() == 0) {
             return result;
         }else {
-            if (result == GDResult::Success) return GDResult::Fail;
+            if (result == Result::Success) return Result::Fail;
             else return result;
         }
     }
 
 private:
 
-    const GradientInput* m_inputData; // Настройки алгоритма
+    const InputData* m_inputData; // Настройки алгоритма
     Reporter* m_reporter; // Указатель на систему отчётности
     mu::Parser m_parser; // Система вычисления
     double m_x, m_y; // Текущие переменные для парсера
@@ -237,7 +238,7 @@ private:
     }
 
     // Проверка синтаксиса функции
-    GDResult validateFunctionSyntax(const std::string& function) {
+    Result validateFunctionSyntax(const std::string& function) {
         try {
             mu::Parser test_parser;
             double test_x = 0.0;
@@ -249,13 +250,13 @@ private:
             // Пробуем вычислить в тестовой точке
             test_parser.Eval();
 
-            return GDResult::Success;
+            return Result::Success;
         }
         catch (const mu::Parser::exception_type& e) {
-            return GDResult::ParseError;
+            return Result::ParseError;
         }
         catch (...) {
-            return GDResult::ParseError;
+            return Result::ParseError;
         }
     }
 
@@ -278,7 +279,7 @@ private:
         }
     }
 
-    GDResult checkFunctionDifferentiability(const std::string& function) {
+    Result checkFunctionDifferentiability(const std::string& function) {
         try {
 
             // Предварительная проверка на известные недифференцируемые функции
@@ -297,7 +298,7 @@ private:
                 if (func_lower.find(non_diff_lower) != std::string::npos) {
                     std::cout << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func << std::endl;
                     std::cout << "Функция содержит: " << function << std::endl;
-                    return GDResult::NonDifferentiableFunction;
+                    return Result::NonDifferentiableFunction;
                 }
             }
 
@@ -349,31 +350,31 @@ private:
                         std::isnan(deriv_y2) || std::isinf(deriv_y2)) {
                         std::cout << "Производная не определена в точке ("
                             << test_x << ", " << test_y << ")" << std::endl;
-                        return GDResult::NonDifferentiableFunction;
+                        return Result::NonDifferentiableFunction;
                     }
                 }
                 catch (const mu::Parser::exception_type& e) {
                     std::cout << "Функция не дифференцируема в точке ("
                         << test_x << ", " << test_y << "): " << e.GetMsg() << std::endl;
-                    return GDResult::NonDifferentiableFunction;
+                    return Result::NonDifferentiableFunction;
                 }
                 catch (const std::exception& e) {
                     std::cout << "Ошибка дифференцирования в точке ("
                         << test_x << ", " << test_y << "): " << e.what() << std::endl;
-                    return GDResult::NonDifferentiableFunction;
+                    return Result::NonDifferentiableFunction;
                 }
             }
             std::cout << "Функция прошла проверку дифференцируемости" << std::endl;
-            return GDResult::Success;
+            return Result::Success;
 
         }
         catch (const mu::Parser::exception_type& e) {
             std::cout << "Ошибка парсера при проверке дифференцируемости: " << e.GetMsg() << std::endl;
-            return GDResult::ParseError;
+            return Result::ParseError;
         }
         catch (const std::exception& e) {
             std::cout << "Общая ошибка при проверке дифференцируемости: " << e.what() << std::endl;
-            return GDResult::ComputeError;
+            return Result::ComputeError;
         }
     }
 
@@ -527,14 +528,14 @@ private:
     }
 
     // Проверка условий завершения
-    GDResult checkTerminationCondition() {
+    Result checkTerminationCondition() {
         if (m_iterations >= m_inputData->max_iterations) {
-            return GDResult::MaxIterations;
+            return Result::MaxIterations;
         }
         if (m_function_calls >= m_inputData->max_function_calls) {
-            return GDResult::MaxFunctionsCalls;
+            return Result::MaxFunctionsCalls;
         }
-        return GDResult::Success;
+        return Result::Success;
     }
 
     // ============================================================================
@@ -542,7 +543,7 @@ private:
     // ============================================================================
 
     // Базовый градиентный спуск
-    GDResult gradientDescent() {
+    Result gradientDescent() {
         double x = m_inputData->initial_x;
         double y = m_inputData->initial_y;
         double f_current = evaluateFunction(x, y);
@@ -602,7 +603,7 @@ private:
                 m_x = best_x;
                 m_y = best_y;
                 std::cout << "=== GRADIENT DESCENT ЗАВЕРШЕН ===" << std::endl;
-                return GDResult::Success;
+                return Result::Success;
             }
 
             // Проверка границ
@@ -610,7 +611,7 @@ private:
                 m_x = best_x;
                 m_y = best_y;
                 std::cout << "=== GRADIENT DESCENT: ВЫХОД ЗА ГРАНИЦЫ ===" << std::endl;
-                return GDResult::OutOfBounds;
+                return Result::OutOfBounds;
             }
 
             // Проверка на слишком маленький градиент
@@ -618,7 +619,7 @@ private:
                 std::cout << "=== GRADIENT DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
                 m_x = best_x;
                 m_y = best_y;
-                return GDResult::Success;
+                return Result::Success;
             }
         }
 
@@ -629,7 +630,7 @@ private:
     }
 
     // Наискорейший спуск с подбором шага
-    GDResult steepestDescent() {
+    Result steepestDescent() {
         double x = m_inputData->initial_x;
         double y = m_inputData->initial_y;
         double f_current = evaluateFunction(x, y);
@@ -689,7 +690,7 @@ private:
                 m_x = best_x;
                 m_y = best_y;
                 std::cout << "=== STEEPEST DESCENT ЗАВЕРШЕН ===" << std::endl;
-                return GDResult::Success;
+                return Result::Success;
             }
 
             // Проверка границ
@@ -697,7 +698,7 @@ private:
                 m_x = best_x;
                 m_y = best_y;
                 std::cout << "=== STEEPEST DESCENT: ВЫХОД ЗА ГРАНИЦЫ ===" << std::endl;
-                return GDResult::OutOfBounds;
+                return Result::OutOfBounds;
             }
 
             // Проверка на слишком маленький градиент
@@ -705,7 +706,7 @@ private:
                 std::cout << "=== STEEPEST DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
                 m_x = best_x;
                 m_y = best_y;
-                return GDResult::Success;
+                return Result::Success;
             }
         }
 
@@ -716,7 +717,7 @@ private:
     }
 
     // Основная реализация овражного метода
-    GDResult ravineMethod() {
+    Result ravineMethod() {
         double x = m_inputData->initial_x;
         double y = m_inputData->initial_y;
         double f_current = evaluateFunction(x, y);
@@ -815,7 +816,7 @@ private:
                 m_x = best_x;
                 m_y = best_y;
                 std::cout << "=== RAVINE METHOD ЗАВЕРШЕН ===" << std::endl;
-                return GDResult::Success;
+                return Result::Success;
             }
 
             // Проверка границ
@@ -823,7 +824,7 @@ private:
                 m_x = best_x;
                 m_y = best_y;
                 std::cout << "=== RAVINE METHOD: ВЫХОД ЗА ГРАНИЦЫ ===" << std::endl;
-                return GDResult::OutOfBounds;
+                return Result::OutOfBounds;
             }
         }
 
@@ -1276,5 +1277,7 @@ private:
         }
     }
 };
+
+} // namespace GD
 
 #endif // GRADIENTDESCENT_GRADIENTDESCENT_HPP_
