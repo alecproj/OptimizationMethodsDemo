@@ -110,6 +110,9 @@ Rectangle {
 
             onReleased: {
                 inputParams.inputData.function = func.text;
+                inputParams.inputData.algorithmId = AppStates.selectedAlgorithm;
+                inputParams.inputData.extensionId = AppStates.selectedExtension;
+                inputParams.inputData.fullAlgoId = AppStates.selectedFullAlgo;
                 var rv = controller.setInputData(inputParams.inputData.instance());
                 if (rv !== 0) {
                     return;
