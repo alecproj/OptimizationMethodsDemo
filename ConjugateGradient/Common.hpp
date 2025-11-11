@@ -3,8 +3,8 @@
 //  by alecproj
 //
 
-#ifndef CONJUGATEDESCENT_COMMON_HPP_
-#define CONJUGATEDESCENT_COMMON_HPP_
+#ifndef CONJUGATEGRADIENT_COMMON_HPP_
+#define CONJUGATEGRADIENT_COMMON_HPP_
 
 struct ConjugateInput {
     long double approximation;
@@ -17,4 +17,4 @@ enum class CDResult : int {
     Success         = 0
 };
 
-#endif // CONJUGATEDESCENT_COMMON_HPP_
+#endif // CONJUGATEGRADIENT_COMMON_HPP_

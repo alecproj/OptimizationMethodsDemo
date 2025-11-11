@@ -3,7 +3,7 @@
 //  by alecproj
 //
 
-#include <ConjugateDescent/ConjugateDescent.hpp>
+#include <ConjugateGradient/ConjugateGradient.hpp>
 #include <muParser.h>
 #include <iostream>
 
@@ -42,7 +42,7 @@ int main()
 {
     testMuparser();
 
-    using AlgoType = ConjugateDescent<MockReporter>;
+    using AlgoType = ConjugateGradient<MockReporter>;
 
     MockReporter reporter{};
     AlgoType algo{&reporter};
