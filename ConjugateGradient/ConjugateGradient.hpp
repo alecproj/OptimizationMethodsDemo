@@ -3,20 +3,20 @@
 //  by alecproj
 //
 
-#ifndef CONJUGATEDESCENT_COORDINATEDESCENT_HPP_
-#define CONJUGATEDESCENT_COORDINATEDESCENT_HPP_
+#ifndef CONJUGATEGRADIENT_COORDINATEGRADIENT_HPP_
+#define CONJUGATEGRADIENT_COORDINATEGRADIENT_HPP_
 
-#include <ConjugateDescent/Common.hpp>
+#include <ConjugateGradient/Common.hpp>
 
 template <typename Reporter>
-class ConjugateDescent {
+class ConjugateGradient {
 
     // Пример объявления и инициализации констант
     static constexpr auto CONST_VALUE_EXAMLE{0};
 
 public:
 
-    ConjugateDescent(Reporter *reporter) :
+    ConjugateGradient(Reporter *reporter) :
         m_inputData{nullptr},
         m_reporter{reporter}
     {
@@ -57,4 +57,4 @@ private:
 
 };
 
-#endif // CONJUGATEDESCENT_CONJUGATEDESCENT_HPP_ 
+#endif // CONJUGATEGRADIENT_CONJUGATEGRADIENT_HPP_ 
