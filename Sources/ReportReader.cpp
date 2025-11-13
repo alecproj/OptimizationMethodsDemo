@@ -155,8 +155,20 @@ ReportStatus::Status ReportReader::readInputData(const QJsonObject &obj, InputDa
         return ReportStatus::InvalidDataStruct;
     }
 
+    if (inputObj.contains("stepId") && !inputObj.value("stepId").isNull()) {
+        out->setStepId(inputObj.value("stepId").toInt(out->extremumId()));
+    } else {
+        return ReportStatus::InvalidDataStruct;
+    }
+
     if (inputObj.contains("maxIterations") && !inputObj.value("maxIterations").isNull()) {
         out->setMaxIterations(inputObj.value("maxIterations").toInt(out->maxIterations()));
+    } else {
+        return ReportStatus::InvalidDataStruct;
+    }
+
+    if (inputObj.contains("maxFuncCalls") && !inputObj.value("maxFuncCalls").isNull()) {
+        out->setMaxFuncCalls(inputObj.value("maxFuncCalls").toInt(out->maxFuncCalls()));
     } else {
         return ReportStatus::InvalidDataStruct;
     }
@@ -209,8 +221,8 @@ ReportStatus::Status ReportReader::readInputData(const QJsonObject &obj, InputDa
         return ReportStatus::InvalidDataStruct;
     }
 
-    if (inputObj.contains("coefficientStep") && !inputObj.value("coefficientStep").isNull()) {
-        out->setCoefficientStep(inputObj.value("coefficientStep").toDouble(out->coefficientStep()));
+    if (inputObj.contains("step") && !inputObj.value("step").isNull()) {
+        out->setStep(inputObj.value("step").toDouble(out->step()));
     } else {
         return ReportStatus::InvalidDataStruct;
     }

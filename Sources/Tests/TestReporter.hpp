@@ -53,6 +53,7 @@ private:
         data.setExtensionId(ExtensionType::B);
         data.setFullAlgoId(FullAlgoType::CDB);
         data.setExtremumId(ExtremumType::MAXIMUM);
+        data.setStepId(StepType::COEFFICIENT);
         data.setStartX1(0.0);
         data.setStartY1(0.0);
         data.setMinX(-10.0);
@@ -64,6 +65,7 @@ private:
         data.setStepX(0.1);
         data.setStepY(0.1);
         data.setMaxIterations(100);
+        data.setMaxFuncCalls(1000);
     }
 };
 

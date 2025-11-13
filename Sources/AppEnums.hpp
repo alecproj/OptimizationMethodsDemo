@@ -41,6 +41,19 @@ public:
     explicit Result(QObject *parent = nullptr) : QObject(parent) {}
 };
 
+class StepType : public QObject {
+    Q_OBJECT
+public:
+    enum Type {
+        CONSTANT    = 0,
+        COEFFICIENT = 1,
+        ADAPTIVE    = 2
+    };
+    Q_ENUM(Type)
+
+    explicit StepType(QObject *parent = nullptr) : QObject(parent) {}
+};
+
 class ExtremumType : public QObject {
     Q_OBJECT
 public:
@@ -104,22 +117,23 @@ public:
         ResultAccuracy      = (1 << 1),  // CDB,CDS,GDB,GDS,GDR
         StartX1             = (1 << 2),  // CDB,CDS,GDB,GDS,GDR 
         StartY1             = (1 << 3),  // CDB,CDS,GDB,GDS,GDR 
-        StartX2             = (1 << 4),  //    ,   ,   ,   ,GDR
-        StartY2             = (1 << 5),  //                ,GDR
-        StepX               = (1 << 6),  // CDB,   ,   ,   ,
-        StepY               = (1 << 7),  // CDB,   ,   ,   ,
-        CoefficientStep     = (1 << 8),  //    ,   ,GDB,   ,GDR
+        StartX2             = (1 << 4),  //    ,   ,   ,   ,
+        StartY2             = (1 << 5),  //                ,
+        StepX               = (1 << 6),  // CDB,CDS,   ,   ,
+        StepY               = (1 << 7),  // CDB,CDS,   ,   ,
+        Step                = (1 << 8),  //    ,   ,GDB,   ,
         MinX                = (1 << 9),  // CDB,CDS,GDB,GDS,GDR
         MaxX                = (1 << 10), // CDB,CDS,GDB,GDS,GDR
         MinY                = (1 << 11), // CDB,CDS,GDB,GDS,GDR
         MaxY                = (1 << 12), // CDB,CDS,GDB,GDS,GDR
         Iterations          = (1 << 13), // CDB,CDS,GDB,GDS,GDR 
+        FuncCalls           = (1 << 14), // CDB,CDS,GDB,GDS,GDR
 
-        CDBCheck            = 16079,
-        CDSCheck            = 15887,
-        GDBCheck            = 16143,
-        GDSCheck            = 15887,
-        GDRCheck            = 16191
+        CDBCheck            = 32463,
+        CDSCheck            = 32463,
+        GDBCheck            = 32527,
+        GDSCheck            = 32271,
+        GDRCheck            = 32271
     };
     Q_ENUM(Check)
 
@@ -127,28 +141,26 @@ public:
         static_assert(CDBCheck == (
             CalcAccuracy + ResultAccuracy + StartX1 + StartY1 +
             StepX        + StepY          + MinX    + MaxX    + 
-            MinY         + MaxY           + Iterations
+            MinY         + MaxY           + Iterations + FuncCalls
         ), "Invalid CDBCheck");
         static_assert(CDSCheck == (
             CalcAccuracy + ResultAccuracy + StartX1 + StartY1 +
-            MinX         + MaxX           + MinY    + MaxY    +
-            Iterations
+            StepX + StepY + MinX + MaxX + MinY + MaxY +
+            Iterations + FuncCalls
         ), "Invalid CDSCheck");
         static_assert(GDBCheck == (
             CalcAccuracy    + ResultAccuracy + StartX1 + StartY1 +
-            CoefficientStep + MinX           + MaxX    + MinY    +
-            MaxY            + Iterations
+            Step + MinX           + MaxX    + MinY    +
+            MaxY            + Iterations     + FuncCalls
         ), "Invalid GDBCheck");
         static_assert(GDSCheck == (
             CalcAccuracy + ResultAccuracy + StartX1 + StartY1 +
             MinX         + MaxX           + MinY    + MaxY    +
-            Iterations
+            Iterations   + FuncCalls
         ), "Invalid GDSCheck");
         static_assert(GDRCheck == (
             CalcAccuracy + ResultAccuracy + StartX1 + StartY1 +
-            StartX2      + StartY2        + CoefficientStep   +
-            MinX         + MaxX           + MinY    + MaxY    +
-            Iterations
+             + MinX  + MaxX + MinY + MaxY + Iterations + FuncCalls
         ), "Invalid GDRCheck");
     }
 
@@ -217,6 +229,20 @@ public:
                 return "Метод наискорейшего спуска";
             case ExtensionType::R:
                 return "Овражный метод";
+            default:
+                return "";
+        }
+    }
+
+    Q_INVOKABLE QString stepTypeToString(StepType::Type type)
+    {
+        switch (type) {
+            case StepType::CONSTANT:
+                return "Константный";
+            case StepType::COEFFICIENT:
+                return "Коэффициентный";
+            case StepType::ADAPTIVE:
+                return "Адаптивный";
             default:
                 return "";
         }
