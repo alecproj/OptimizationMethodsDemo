@@ -9,7 +9,7 @@ Flickable {
 
     contentWidth: column.implicitWidth
     contentHeight: column.implicitHeight
-    flickableDirection: Flickable.HorizontalAndVerticalFlick
+    flickableDirection: Flickable.VerticalFlick
     clip: true
 
     property alias inputData: inputData
