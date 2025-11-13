@@ -22,7 +22,9 @@ class InputData : public QObject
     Q_PROPERTY(int extensionId READ extensionId WRITE setExtensionId NOTIFY extensionIdChanged)
     Q_PROPERTY(int fullAlgoId READ fullAlgoId WRITE setFullAlgoId NOTIFY fullAlgoIdChanged)
     Q_PROPERTY(int extremumId READ extremumId WRITE setExtremumId NOTIFY extremumIdChanged)
+    Q_PROPERTY(int stepId READ stepId WRITE setStepId NOTIFY stepIdChanged)
     Q_PROPERTY(int maxIterations READ maxIterations WRITE setMaxIterations NOTIFY maxIterationsChanged)
+    Q_PROPERTY(int maxFuncCalls READ maxFuncCalls WRITE setMaxFuncCalls NOTIFY maxFuncCallsChanged)
 
     // double
     Q_PROPERTY(double calcAccuracy READ calcAccuracy WRITE setCalcAccuracy NOTIFY calcAccuracyChanged)
@@ -33,7 +35,7 @@ class InputData : public QObject
     Q_PROPERTY(double startY2 READ startY2 WRITE setStartY2 NOTIFY startY2Changed)
     Q_PROPERTY(double stepX READ stepX WRITE setStepX NOTIFY stepXChanged)
     Q_PROPERTY(double stepY READ stepY WRITE setStepY NOTIFY stepYChanged)
-    Q_PROPERTY(double coefficientStep READ coefficientStep WRITE setCoefficientStep NOTIFY coefficientStepChanged)
+    Q_PROPERTY(double step READ step WRITE setStep NOTIFY stepChanged)
     Q_PROPERTY(double minX READ minX WRITE setMinX NOTIFY minXChanged)
     Q_PROPERTY(double maxX READ maxX WRITE setMaxX NOTIFY maxXChanged)
     Q_PROPERTY(double minY READ minY WRITE setMinY NOTIFY minYChanged)
@@ -47,7 +49,9 @@ public:
         , m_extensionId(ExtensionType::B)
         , m_fullAlgoId(FullAlgoType::CDB)
         , m_extremumId(ExtremumType::MINIMUM)
+        , m_stepId(StepType::CONSTANT)
         , m_maxIterations(0)
+        , m_maxFuncCalls(0)
         , m_calcAccuracy(0.0)
         , m_resultAccuracy(0.0)
         , m_startX1(0.0)
@@ -56,7 +60,7 @@ public:
         , m_startY2(0.0)
         , m_stepX(0.0)
         , m_stepY(0.0)
-        , m_coefficientStep(0.0)
+        , m_step(0.0)
         , m_minX(0.0)
         , m_maxX(0.0)
         , m_minY(0.0)
@@ -70,7 +74,9 @@ public:
     ExtensionType::Type extensionId() const { return m_extensionId; }
     FullAlgoType::Type fullAlgoId() const { return m_fullAlgoId; }
     ExtremumType::Type extremumId() const { return m_extremumId; }
+    StepType::Type stepId() const { return m_stepId; }
     int maxIterations() const { return m_maxIterations; }
+    int maxFuncCalls() const { return m_maxFuncCalls; }
 
     double calcAccuracy() const { return m_calcAccuracy; }
     double resultAccuracy() const { return m_resultAccuracy; }
@@ -80,7 +86,7 @@ public:
     double startY2() const { return m_startY2; }
     double stepX() const { return m_stepX; }
     double stepY() const { return m_stepY; }
-    double coefficientStep() const { return m_coefficientStep; }
+    double step() const { return m_step; }
     double minX() const { return m_minX; }
     double maxX() const { return m_maxX; }
     double minY() const { return m_minY; }
@@ -89,6 +95,7 @@ public:
     Q_INVOKABLE InputData *instance() { return this; }
 
     Q_INVOKABLE QString maxIterationsAsString() const { return QString::number(m_maxIterations); }
+    Q_INVOKABLE QString maxFuncCallsAsString() const { return QString::number(m_maxFuncCalls); }
 
     static QString formatDoubleWithDot(double v) {
         QString s = QString::number(v, 'f', 15);
@@ -111,7 +118,7 @@ public:
     Q_INVOKABLE QString startY2AsString() const { return formatDoubleWithDot(m_startY2); }
     Q_INVOKABLE QString stepXAsString() const { return formatDoubleWithDot(m_stepX); }
     Q_INVOKABLE QString stepYAsString() const { return formatDoubleWithDot(m_stepY); }
-    Q_INVOKABLE QString coefficientStepAsString() const { return formatDoubleWithDot(m_coefficientStep); }
+    Q_INVOKABLE QString stepAsString() const { return formatDoubleWithDot(m_step); }
     Q_INVOKABLE QString minXAsString() const { return formatDoubleWithDot(m_minX); }
     Q_INVOKABLE QString maxXAsString() const { return formatDoubleWithDot(m_maxX); }
     Q_INVOKABLE QString minYAsString() const { return formatDoubleWithDot(m_minY); }
@@ -159,11 +166,27 @@ public slots:
             emit extremumIdChanged();
         }
     }
+    void setStepId(int v)
+    {
+        auto value = static_cast<StepType::Type>(v);
+        if (m_stepId != value) {
+            m_stepId = value;
+            emit stepIdChanged();
+        }
+    }
     void setMaxIterations(int v)
     {
         if (m_maxIterations != v) {
             m_maxIterations = v;
             emit maxIterationsChanged();
+        }
+    }
+
+    void setMaxFuncCalls(int v)
+    {
+        if (m_maxFuncCalls != v) {
+            m_maxFuncCalls = v;
+            emit maxFuncCallsChanged();
         }
     }
 
@@ -223,11 +246,11 @@ public slots:
             emit stepYChanged();
         }
     }
-    void setCoefficientStep(double v)
+    void setStep(double v)
     {
-        if (!qFuzzyCompare(m_coefficientStep, v)) {
-            m_coefficientStep = v;
-            emit coefficientStepChanged();
+        if (!qFuzzyCompare(m_step, v)) {
+            m_step = v;
+            emit stepChanged();
         }
     }
     void setMinX(double v)
@@ -268,6 +291,16 @@ public:
         int v = s.toInt(&ok);
         if (ok) {
             setMaxIterations(v);
+        }
+        return ok;
+    }
+
+    Q_INVOKABLE bool setMaxFuncCallsFromString(const QString& s)
+    {
+        bool ok = false;
+        int v = s.toInt(&ok);
+        if (ok) {
+            setMaxFuncCalls(v);
         }
         return ok;
     }
@@ -344,12 +377,12 @@ public:
         }
         return rv;
     }
-    Q_INVOKABLE bool setCoefficientStepFromString(const QString& s)
+    Q_INVOKABLE bool setStepFromString(const QString& s)
     {
         bool rv = false;
         double v = s.toDouble(&rv);
         if (rv) {
-            setCoefficientStep(v);
+            setStep(v);
         }
         return rv;
     }
@@ -397,7 +430,9 @@ signals:
     void extensionIdChanged();
     void fullAlgoIdChanged();
     void extremumIdChanged();
+    void stepIdChanged();
     void maxIterationsChanged();
+    void maxFuncCallsChanged();
 
     void calcAccuracyChanged();
     void resultAccuracyChanged();
@@ -407,7 +442,7 @@ signals:
     void startY2Changed();
     void stepXChanged();
     void stepYChanged();
-    void coefficientStepChanged();
+    void stepChanged();
     void minXChanged();
     void maxXChanged();
     void minYChanged();
@@ -420,7 +455,9 @@ private:
     ExtensionType::Type m_extensionId;
     FullAlgoType::Type m_fullAlgoId;
     ExtremumType::Type m_extremumId;
+    StepType::Type m_stepId;
     int m_maxIterations;
+    int m_maxFuncCalls;
 
     double m_calcAccuracy;
     double m_resultAccuracy;
@@ -430,7 +467,7 @@ private:
     double m_startY2;
     double m_stepX;
     double m_stepY;
-    double m_coefficientStep;
+    double m_step;
     double m_minX;
     double m_maxX;
     double m_minY;

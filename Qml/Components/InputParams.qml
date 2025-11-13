@@ -23,6 +23,8 @@ Flickable {
 
     EnumHelper { id: helper }
 
+    property int checkMask: helper.getCheckByFullType(inputData.fullAlgoId)
+
     property int flags: 0
     property bool valid: false
 
@@ -32,8 +34,12 @@ Flickable {
         inputData.fullAlgoId = AppStates.selectedFullAlgo;
         extremum.selected = data.extremumId;
         inputData.extremumId = data.extremumId;
+        stepType.selected = data.stepId;
+        inputData.stepId = data.stepId;
         iterations.text = data.maxIterationsAsString();
         inputData.maxIterations = data.maxIterations;
+        funcCalls.text = data.maxFuncCallsAsString();
+        inputData.maxFuncCalls = data.maxFuncCalls;
         calcAccuracy.text = data.calcAccuracyAsString();
         inputData.calcAccuracy = data.calcAccuracy;
         resultAccuracy.text = data.resultAccuracyAsString();
@@ -50,8 +56,8 @@ Flickable {
         inputData.stepX = data.stepX;
         stepY.text = data.stepYAsString();
         inputData.stepY = data.stepY;
-        coefficientStep.text = data.coefficientStepAsString();
-        inputData.coefficientStep = data.coefficientStep;
+        step.text = data.stepAsString();
+        inputData.step = data.step;
         minX.text = data.minXAsString();
         inputData.minX = data.minX;
         maxX.text = data.maxXAsString();
@@ -98,7 +104,7 @@ Flickable {
                 id: extremum
                 Layout.preferredWidth: 100
         
-                property int selected: 0
+                property int selected: ExtremumType.MINIMUM
         
                 model: [
                     { value: ExtremumType.MINIMUM, text: "Минимум" },
@@ -111,6 +117,37 @@ Flickable {
                 onActivated: {
                     extremum.selected = currentValue;
                     inputData.extremumId = currentValue;
+                }
+            }
+        }
+
+        RowLayout {
+            spacing: 10
+
+            Text {
+                text: "Укажите тип шага"
+            }
+        
+            Item { Layout.fillWidth: true }
+        
+            StyledComboBox {
+                id: stepType
+                Layout.preferredWidth: 100
+        
+                property int selected: StepType.CONSTANT
+        
+                model: [
+                    { value: StepType.CONSTANT, text: "Константный" },
+                    { value: StepType.COEFFICIENT, text: "Коэффициентный" },
+                    { value: StepType.ADAPTIVE, text: "Адаптивный" }
+                ]
+        
+                textRole: "text"
+                valueRole: "value"
+                currentValue: stepType.selected
+                onActivated: {
+                    stepType.selected = currentValue;
+                    inputData.stepId = currentValue;
                 }
             }
         }
@@ -159,6 +196,7 @@ Flickable {
 
         // CalcAccuracy = (1 << 0)
         RowLayout {
+            visible: (root.checkMask & CheckList.CalcAccuracy)
             spacing: 10
 
             Text {
@@ -193,6 +231,7 @@ Flickable {
         
         // ResultAccuracy = (1 << 1)
         RowLayout {
+            visible: (root.checkMask & CheckList.ResultAccuracy)
             Layout.fillWidth: true
             spacing: 10
 
@@ -229,13 +268,12 @@ Flickable {
         // StartX1 = (1 << 2)
         // StartY1 = (1 << 3)
         RowLayout {
+            visible: (root.checkMask & CheckList.StartY1) && (root.checkMask & CheckList.StartY1)
             Layout.fillWidth: true
             spacing: 10
 
             Text {
-                text: (AppStates.selectedExtension === ExtensionType.R)
-                ? "Укажите первую стартовую координату (x1, y1)"
-                : "Укажите начальное приближение по координатам x, y"
+                text: "Укажите начальное приближение по координатам x, y"
             }
 
             Item { Layout.fillWidth: true }
@@ -290,7 +328,7 @@ Flickable {
         // StartX2 = (1 << 4)
         // StartY2 = (1 << 5)
         RowLayout {
-            visible: (AppStates.selectedFullAlgo === FullAlgoType.GDR) 
+            visible: (root.checkMask & CheckList.StartY2) && (root.checkMask & CheckList.startX2)
             Layout.fillWidth: true
             spacing: 10
 
@@ -350,12 +388,14 @@ Flickable {
         // StepX = (1 << 6)
         // StepY = (1 << 7)
         RowLayout {
-            visible: (AppStates.selectedFullAlgo === FullAlgoType.CDB)
+            visible: (root.checkMask & CheckList.StepY) && (root.checkMask & CheckList.StepX)
             Layout.fillWidth: true
             spacing: 10
 
             Text {
-                text: "Укажите значение шага по координатам x, y"
+                text: stepType.selected == StepType.COEFFICIENT
+                ? "Укажите значение коэффициентного шага по координатам x, y"
+                : "Укажите значение константного шага по координатам x, y"
             }
 
             Item { Layout.fillWidth: true }
@@ -407,21 +447,22 @@ Flickable {
             }
         } 
 
-        // CoefficientStep = (1 << 8)
+        // Step = (1 << 8)
         RowLayout {
-            visible: (AppStates.selectedFullAlgo === FullAlgoType.GDB) ||
-                     (AppStates.selectedFullAlgo === FullAlgoType.GDR)
+            visible: (root.checkMask & CheckList.Step)
             Layout.fillWidth: true
             spacing: 10
 
             Text {
-                text: "Укажите значение коэффициентного шага"
+                text: (stepType.selected == StepType.COEFFICIENT)
+                ? "Укажите значение коэффициентного шага"
+                : "Укажите значение константного шага"
             }
 
             Item { Layout.fillWidth: true }
 
             StyledTextField {
-                id: coefficientStep
+                id: step
                 Layout.preferredWidth: 150
                 boxed: true
                 placeholderText: "1.0"
@@ -432,12 +473,12 @@ Flickable {
 
                 onActiveFocusChanged: {
                     if (acceptableInput
-                        && inputData.setCoefficientStepFromString(text)) {
-                        coefficientStep.valid = true
-                        root.setFlag(CheckList.CoefficientStep)
+                        && inputData.setStepFromString(text)) {
+                        step.valid = true
+                        root.setFlag(CheckList.Step)
                     } else {
-                        coefficientStep.valid = false
-                        root.clearFlag(CheckList.CoefficientStep)
+                        step.valid = false
+                        root.clearFlag(CheckList.Step)
                     }
                     root.valid = root.validate()
                 }
@@ -447,6 +488,7 @@ Flickable {
         // MinX = (1 << 9)
         // MaxX = (1 << 10)
         RowLayout {
+            visible: (root.checkMask & CheckList.MinX) && (root.checkMask & CheckList.MaxX)
             Layout.fillWidth: true
             spacing: 10
 
@@ -507,6 +549,7 @@ Flickable {
         // MinY = (1 << 11)
         // MaxY = (1 << 12)
         RowLayout {
+            visible: (root.checkMask & CheckList.MaxY) && (root.checkMask & CheckList.MinY)
             Layout.fillWidth: true
             spacing: 10
 
@@ -565,6 +608,7 @@ Flickable {
 
         // Iterations = (1 << 13)
         RowLayout {
+            visible: (root.checkMask & CheckList.Iterations)
             Layout.fillWidth: true
             spacing: 10
 
@@ -581,7 +625,7 @@ Flickable {
                 placeholderText: "200"
 
                 validator: RegularExpressionValidator {
-                    regularExpression: /^[1-9]\d{0,2}$/i
+                    regularExpression: /^[1-9]\d{0,3}$/i
                 }
 
                 onActiveFocusChanged: {
@@ -598,6 +642,41 @@ Flickable {
             }
         }
 
+        // FuncCalls = (1 << 14)
+        RowLayout {
+            visible: (root.checkMask & CheckList.FuncCalls)
+            Layout.fillWidth: true
+            spacing: 10
+
+            Text {
+                text: "Укажите максимальное количество вызовов исследуемой функции"
+            }
+
+            Item { Layout.fillWidth: true }
+
+            StyledTextField {
+                id: funcCalls 
+                Layout.preferredWidth: 150
+                boxed: true
+                placeholderText: "200"
+
+                validator: RegularExpressionValidator {
+                    regularExpression: /^[1-9]\d{0,4}$/i
+                }
+
+                onActiveFocusChanged: {
+                    if (acceptableInput
+                        && inputData.setMaxFuncCallsFromString(text)) {
+                        funcCalls.valid = true
+                        root.setFlag(CheckList.FuncCalls)
+                    } else {
+                        funcCalls.valid = false
+                        root.clearFlag(CheckList.FuncCalls)
+                    }
+                    root.valid = root.validate()
+                }
+            }
+        }
     } // Column
 
     ScrollBar.vertical: ScrollBar{ 

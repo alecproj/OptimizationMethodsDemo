@@ -38,11 +38,16 @@ Rectangle {
         return "Найти " + extremum + " функции " + fn +
                ", применяя " + (algo || "") + extensionPart +
                ", за не более чем " + report.inputData.maxIterations +
-               " шагов, с точностью вычислений, равной " +
+               " шагов и не более чем " + report.inputData.maxFuncCalls +
+               " вызовов функции, с точностью вычислений, равной " +
                report.inputData.calcAccuracy +
                ", и с учетом заданного набора параметров: ";
     }
-
+    
+    function stepTypeDescription() {
+        var stepstr = helper.stepTypeToString(report.inputData.stepId);
+        return "— тип шага — " + stepstr.toLowerCase() + ";";
+    }
 
     function buildAnswerDescription() {
         if (report && report.resultData) {
@@ -108,6 +113,14 @@ Rectangle {
                 Text {
                     visible: (root.checkMask & CheckList.StartX1)
                     Layout.preferredWidth: flickable.width
+                    text: stepTypeDescription()
+                    font.pixelSize: root.fontSize
+                    wrapMode: Text.WordWrap
+                }
+
+                Text {
+                    visible: (root.checkMask & CheckList.StartX1)
+                    Layout.preferredWidth: flickable.width
                     text: "— начальное приближение по X — " + root.report.inputData.startX1 + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
@@ -151,8 +164,8 @@ Rectangle {
                 }
 
                 Text {
-                    visible: (root.checkMask & CheckList.CoefficientStep)
-                    text: "— коэффициентный шаг — " + root.report.inputData.coefficientStep + ";"
+                    visible: (root.checkMask & CheckList.Step)
+                    text: "— шаг — " + root.report.inputData.step + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }

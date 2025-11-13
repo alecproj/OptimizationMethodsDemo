@@ -158,7 +158,9 @@ void ReportWriter::writeInputData()
     inputData.insert("extensionId", m_inputData->extensionId());
     inputData.insert("fullAlgoId", m_inputData->fullAlgoId());
     inputData.insert("extremumId", m_inputData->extremumId());
+    inputData.insert("stepId", m_inputData->stepId());
     inputData.insert("maxIterations", m_inputData->maxIterations());
+    inputData.insert("maxFuncCalls", m_inputData->maxFuncCalls());
     inputData.insert("calcAccuracy", m_inputData->calcAccuracy());
     inputData.insert("resultAccuracy", m_inputData->resultAccuracy());
     inputData.insert("startX1", m_inputData->startX1());
@@ -167,7 +169,7 @@ void ReportWriter::writeInputData()
     inputData.insert("startY2", m_inputData->startY2());
     inputData.insert("stepX", m_inputData->stepX());
     inputData.insert("stepY", m_inputData->stepY());
-    inputData.insert("coefficientStep", m_inputData->coefficientStep());
+    inputData.insert("step", m_inputData->step());
     inputData.insert("minX", m_inputData->minX());
     inputData.insert("maxX", m_inputData->maxX());
     inputData.insert("minY", m_inputData->minY());
