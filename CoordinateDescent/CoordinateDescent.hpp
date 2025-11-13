@@ -669,7 +669,6 @@ Result basicCoordinateDescent() {
 
     }
     
-    // Алгоритм наискорейшего покоординатного спуска
     Result steepestCoordinateDescent() {
         double x = m_inputData->initial_x;
         double y = m_inputData->initial_y;
@@ -678,9 +677,13 @@ Result basicCoordinateDescent() {
         double best_x = x, best_y = y, best_f = f_current;
         m_iterations = 0;
 
+        // Для отслеживания застревания
+        int consecutive_same_coordinate = 0;
+        bool last_was_x = false;
+
         while (m_iterations < m_inputData->max_iterations &&
-               m_function_calls < m_inputData->max_function_calls) {
-           
+            m_function_calls < m_inputData->max_function_calls) {
+
             double x_old = x, y_old = y;
             double f_old = f_current;
 
@@ -688,59 +691,101 @@ Result basicCoordinateDescent() {
             double grad_x = partialDerivativeX(x, y);
             double grad_y = partialDerivativeY(x, y);
 
-            // Выбираем направление с наибольшей производной (наискорейший спуск)
-            if (std::abs(grad_x) > std::abs(grad_y)) {
-                // Движение по X
-                double step_x = getStepSize(x, y, grad_x, true);
-                x = updateCoordinate(x, step_x, m_inputData->x_left_bound, m_inputData->x_right_bound);
-            } else {
-                // Двигаемся по Y
-                double step_y = getStepSize(x, y, grad_y, false);
-                y = updateCoordinate(y, step_y, m_inputData->y_left_bound, m_inputData->y_right_bound);
+            // ИСПРАВЛЕНИЕ: Для наискорейшего спуска используем АБСОЛЮТНЫЕ значения градиентов
+            double abs_grad_x = std::abs(grad_x);
+            double abs_grad_y = std::abs(grad_y);
+
+            // Определяем, какую координату оптимизировать
+            bool optimize_x;
+
+            // Если одна координата сильно доминирует - выбираем её
+            if (abs_grad_x > 1.5 * abs_grad_y) {
+                optimize_x = true;
+                consecutive_same_coordinate = last_was_x ? consecutive_same_coordinate + 1 : 1;
+            }
+            else if (abs_grad_y > 1.5 * abs_grad_x) {
+                optimize_x = false;
+                consecutive_same_coordinate = last_was_x ? 1 : consecutive_same_coordinate + 1;
+            }
+            else {
+                // Градиенты близки - чередуем координаты чтобы избежать застревания
+                optimize_x = !last_was_x;
+                consecutive_same_coordinate = 0;
             }
 
+            // Если долго оптимизируем одну координату - принудительно переключаемся
+            if (consecutive_same_coordinate > 5) {
+                optimize_x = !optimize_x;
+                consecutive_same_coordinate = 0;
+                std::cout << "*** FORCED SWITCH due to consecutive optimizations ***" << std::endl;
+            }
+
+            // Выполняем оптимизацию выбранной координаты
+            if (optimize_x) {
+                double step_x = getStepSize(x, y, grad_x, true);
+                double x_new = updateCoordinate(x, step_x, m_inputData->x_left_bound, m_inputData->x_right_bound);
+
+                // Проверяем, что шаг действительно изменил координату
+                if (std::abs(x_new - x) > m_inputData->computation_precision) {
+                    x = x_new;
+                }
+                else {
+                    // Шаг слишком маленький - переключаемся на другую координату
+                    optimize_x = false;
+                    consecutive_same_coordinate = 0;
+                }
+            }
+
+            if (!optimize_x) {
+                double step_y = getStepSize(x, y, grad_y, false);
+                double y_new = updateCoordinate(y, step_y, m_inputData->y_left_bound, m_inputData->y_right_bound);
+
+                // Проверяем, что шаг действительно изменил координату
+                if (std::abs(y_new - y) > m_inputData->computation_precision) {
+                    y = y_new;
+                }
+            }
+
+            last_was_x = optimize_x;
             f_current = evaluateFunction(x, y);
             m_iterations++;
 
+            // Обновление лучшей точки
             bool improvement = (m_inputData->extremum_type == ExtremumType::MINIMUM)
                 ? (f_current < best_f)
                 : (f_current > best_f);
-            
+
             if (improvement) {
                 best_x = x;
                 best_y = y;
                 best_f = f_current;
             }
 
-            // Отчет
-           /* if (m_reporter) {
-                m_reporter->reportIteration(iterations, x, y, f_current);
-            }*/
+            // Отладочный вывод
+            std::cout << "Итерация " << m_iterations
+                << ": grad_x=" << grad_x << " (abs=" << abs_grad_x
+                << "), grad_y=" << grad_y << " (abs=" << abs_grad_y
+                << "), выбрана " << (optimize_x ? "X" : "Y")
+                << ", x=" << x << ", y=" << y << ", f=" << f_current
+                << std::endl;
 
             // Проверка сходимости
             if (checkConvergence(x_old, y_old, x, y, f_old, f_current,
-                                 best_x, best_y, best_f)) {
+                best_x, best_y, best_f)) {
                 m_x = best_x;
                 m_y = best_y;
-                f_current = best_f;
                 return Result::Success;
             }
 
-            // Проверка границ
             if (!isWithinBounds(x, y)) {
                 m_x = best_x;
                 m_y = best_y;
                 return Result::OutOfBounds;
             }
-            std::cout << "Итерация " << m_iterations
-                << ": x=" << x << ", y=" << y
-                << ", f=" << f_current << std::endl
-                << ", ЛУЧШАЯ f=" << best_f << std::endl;
         }
-        
+
         m_x = best_x;
         m_y = best_y;
-        f_current = best_f;
         return checkTerminationCondition();
     }
 
