@@ -150,7 +150,7 @@ public:
         if (!m_inputData || !m_reporter || m_reporter->begin() != 0) {
             return Result::Fail;
         }
-
+        m_reporter->insertMessage("Начало заполнения отчета.");
         Result result = Result::Success;
 
         try {
@@ -251,8 +251,8 @@ private:
             return true;
         }
         catch (...) {
-            std::cout << "Функция не дифференцируема в начальной точке ("
-                << m_inputData->initial_x << ", " << m_inputData->initial_y << ")" << std::endl;
+            //m_reporter->insertMessage("Функция не дифференцируема в начальной точке (" + std::to_string(m_inputData->initial_x) + ", " + std::to_string(m_inputData->initial_y) + ")");
+            std::cout << "Функция не дифференцируема в начальной точке (" << m_inputData->initial_x << ", " << m_inputData->initial_y << ")" << std::endl;
             return false;
         }
     }
@@ -529,6 +529,9 @@ private:
         double best_x = x, best_y = y, best_f = f_current;
         m_iterations = 0;
 
+        m_reporter->insertMessage("Запуск базового градиентного алгоритма");
+        m_reporter->insertMessage("Начальная точка: (" + std::to_string(x) + ", " + std::to_string(y) + "), f = " + std::to_string(f_current));
+
         std::cout << "=== ЗАПУСК GRADIENT DESCENT ===" << std::endl;
         std::cout << "Начальная точка: (" << x << ", " << y << "), f = " << f_current << std::endl;
 
@@ -567,6 +570,8 @@ private:
                 best_f = f_current;
             }
 
+
+
             // Отладочный вывод
             std::cout << "Итерация " << m_iterations
                 << ": x=" << x << ", y=" << y
@@ -580,7 +585,11 @@ private:
                 best_x, best_y, best_f)) {
                 m_x = best_x;
                 m_y = best_y;
+
+                m_reporter->insertMessage("Базовый градиентный метод завершен.");
+                m_reporter->insertResult(best_x, best_y, best_f);
                 std::cout << "=== GRADIENT DESCENT ЗАВЕРШЕН ===" << std::endl;
+
                 return Result::Success;
             }
 
@@ -588,12 +597,16 @@ private:
             if (!isWithinBounds(x, y)) {
                 m_x = best_x;
                 m_y = best_y;
+
+                m_reporter->insertMessage("Базовый градиентный метод не завершен выход за границы.");
                 std::cout << "=== GRADIENT DESCENT: ВЫХОД ЗА ГРАНИЦЫ ===" << std::endl;
+
                 return Result::OutOfBounds;
             }
 
             // Проверка на слишком маленький градиент
             if (grad_norm < m_inputData->computation_precision) {
+                m_reporter->insertMessage("Базовый градиентный метод - градиент слишком мал.");
                 std::cout << "=== GRADIENT DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
                 m_x = best_x;
                 m_y = best_y;
@@ -603,6 +616,7 @@ private:
 
         m_x = best_x;
         m_y = best_y;
+        m_reporter->insertMessage("Базовый градиентный метод - достигнуты ограничения.");
         std::cout << "=== GRADIENT DESCENT: ДОСТИГНУТЫ ОГРАНИЧЕНИЯ ===" << std::endl;
         return checkTerminationCondition();
     }
