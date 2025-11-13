@@ -23,7 +23,7 @@ Flickable {
 
     EnumHelper { id: helper }
 
-    property int checkMask: helper.getCheckByFullType(inputData.fullAlgoId)
+    property int checkMask: helper.getCheckByFullType(AppStates.selectedFullAlgo)
 
     property int flags: 0
     property bool valid: false
