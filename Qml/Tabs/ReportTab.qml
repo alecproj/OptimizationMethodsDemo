@@ -73,6 +73,7 @@ Rectangle {
             contentWidth: column.implicitWidth
             contentHeight: column.implicitHeight
             flickableDirection: Flickable.HorizontalAndVerticalFlick
+            flickDeceleration: 0.0000001
 
             clip: true
 

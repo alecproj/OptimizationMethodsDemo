@@ -143,7 +143,10 @@ Rectangle {
                 if (rv === Result.Success) {
                     AppStates.selectedAlgorithm = sourceInputData.algorithmId;
                     AppStates.selectedExtension = sourceInputData.extensionId;
-                    AppStates.selectedfullAlgo = sourceInputData.fullAlgoId;
+                    AppStates.selectedFullAlgo = helper.calculateFullType(
+                        AppStates.selectedAlgorithm,
+                        AppStates.selectedExtension
+                    );
                     func.text = sourceInputData.function;
                     if (func.text !== "") {
                         func.valid = true;

@@ -9,7 +9,7 @@ Flickable {
 
     contentWidth: column.implicitWidth
     contentHeight: column.implicitHeight
-    flickableDirection: Flickable.HorizontalAndVerticalFlick
+    flickableDirection: Flickable.VerticalFlick
     clip: true
 
     property alias inputData: inputData
@@ -23,7 +23,7 @@ Flickable {
 
     EnumHelper { id: helper }
 
-    property int checkMask: helper.getCheckByFullType(inputData.fullAlgoId)
+    property int checkMask: helper.getCheckByFullType(AppStates.selectedFullAlgo)
 
     property int flags: 0
     property bool valid: false
@@ -122,6 +122,8 @@ Flickable {
         }
 
         RowLayout {
+            visible: ((AppStates.selectedFullAlgo !== FullAlgoType.GDS)
+                && (AppStates.selectedFullAlgo !== FullAlgoType.GDR))
             spacing: 10
 
             Text {
@@ -132,7 +134,7 @@ Flickable {
         
             StyledComboBox {
                 id: stepType
-                Layout.preferredWidth: 100
+                Layout.preferredWidth: 160
         
                 property int selected: StepType.CONSTANT
         
