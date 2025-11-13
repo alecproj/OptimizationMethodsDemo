@@ -150,6 +150,11 @@ public:
         if (!m_inputData || !m_reporter || m_reporter->begin() != 0) {
             return Result::Fail;
         }
+
+        m_digitResultPrecision = countDecimals(m_inputData->result_precision);
+        m_digitComputationPrecision = countDecimals(m_inputData->computation_precision);
+
+
         m_reporter->insertMessage("Начало заполнения отчета.");
         Result result = Result::Success;
 
@@ -205,6 +210,8 @@ private:
     double m_x, m_y; // Текущие переменные для парсера
     int m_function_calls; // Счётчик вызовов функции
     int m_iterations; // Счётчик итераций
+    int m_digitResultPrecision; //Количество знаков после запятой для результата
+    int m_digitComputationPrecision; //Количество знаков после запятой для вычислений
 
     // Инициализация парсера
     void initializeParser() {
@@ -528,12 +535,14 @@ private:
 
         double best_x = x, best_y = y, best_f = f_current;
         m_iterations = 0;
-
         m_reporter->insertMessage("Запуск базового градиентного алгоритма");
         m_reporter->insertMessage("Начальная точка: (" + std::to_string(x) + ", " + std::to_string(y) + "), f = " + std::to_string(f_current));
 
         std::cout << "=== ЗАПУСК GRADIENT DESCENT ===" << std::endl;
         std::cout << "Начальная точка: (" << x << ", " << y << "), f = " << f_current << std::endl;
+
+        auto iterationTable = m_reporter->beginTable("Шаги запуска", {"Номер итерации i", "x_i", "y_i", "f_i", "Градиент", "Шаг"});
+
 
         while (m_iterations < m_inputData->max_iterations &&
             m_function_calls < m_inputData->max_function_calls) {
@@ -571,7 +580,7 @@ private:
             }
 
 
-
+            m_reporter->insertRow(iterationTable,{m_iterations, x, y, f_current, grad_norm, step});
             // Отладочный вывод
             std::cout << "Итерация " << m_iterations
                 << ": x=" << x << ", y=" << y
@@ -586,6 +595,8 @@ private:
                 m_x = best_x;
                 m_y = best_y;
 
+
+                m_reporter->endTable(iterationTable);
                 m_reporter->insertMessage("Базовый градиентный метод завершен.");
                 m_reporter->insertResult(best_x, best_y, best_f);
                 std::cout << "=== GRADIENT DESCENT ЗАВЕРШЕН ===" << std::endl;
@@ -598,6 +609,7 @@ private:
                 m_x = best_x;
                 m_y = best_y;
 
+                m_reporter->endTable(iterationTable);
                 m_reporter->insertMessage("Базовый градиентный метод не завершен выход за границы.");
                 std::cout << "=== GRADIENT DESCENT: ВЫХОД ЗА ГРАНИЦЫ ===" << std::endl;
 
@@ -606,6 +618,8 @@ private:
 
             // Проверка на слишком маленький градиент
             if (grad_norm < m_inputData->computation_precision) {
+
+                m_reporter->endTable(iterationTable);
                 m_reporter->insertMessage("Базовый градиентный метод - градиент слишком мал.");
                 std::cout << "=== GRADIENT DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
                 m_x = best_x;
@@ -1267,6 +1281,22 @@ private:
             dir_x /= norm;
             dir_y /= norm;
         }
+    }
+
+    //Считает количество знаков после запятой
+    static int countDecimals(double value) {
+        std::string s = std::to_string(value);
+        size_t pos = s.find('.');
+        if (pos == std::string::npos) return 0;
+
+        while (!s.empty() && s.back() == '0') s.pop_back();
+        return s.size() - pos - 1;
+    }
+
+    //Округляет число до указанного количества знаков после запятой
+    double roundTo(double value, int digits) {
+        double factor = pow(10.0, digits);
+        return round(value * factor) / factor;
     }
 };
 
