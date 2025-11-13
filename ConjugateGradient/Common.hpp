@@ -1,4 +1,4 @@
-//
+﻿//
 // Created on 25 Oct, 2025
 //  by alecproj
 //
@@ -39,12 +39,6 @@ namespace CG {
         InvalidLogicPrecision = -20,       // Неверный ввод точностей
         InvalidConstantStepSize = -21,     // Неверный ввод постоянного шага
         InvalidCoefficientStepSize = -22,  // Неверный ввод коэффициентного шага
-        InvalidConstantStepSizeX = -23,    // Неверный ввод постоянного шага X
-        InvalidCoefficientStepSizeX = -24, // Неверный ввод коэффициентного шага X
-        InvalidConstantStepSizeY = -25,    // Неверный ввод постоянного шага Y
-        InvalidCoefficientStepSizeY = -26, // Неверный ввод коэффициентного шага Y
-        InvalidStepTypeX = -27,            // Неверный тип шага для X
-        InvalidStepTypeY = -28             // Неверный тип шага для Y
     };
 
     // Тип алгоритма оптимизации
@@ -79,10 +73,6 @@ namespace CG {
         ExtremumType extremum_type;   // Тип экстремума
         StepType step_type;           // Тип шага
 
-        // РАЗДЕЛЬНЫЕ ТИПЫ ШАГОВ ДЛЯ X И Y
-        StepType step_type_x;    // Тип шага для координаты X
-        StepType step_type_y;    // Тип шага для координаты Y
-
         // --- НАЧАЛЬНЫЕ УСЛОВИЯ ---
         double initial_x = 0.0; // Начальное приближение X
         double initial_y = 0.0; // Начальное приближение Y
@@ -93,11 +83,6 @@ namespace CG {
         double y_left_bound = -1000.0; // Левая граница диапазона Y
         double y_right_bound = 1000.0; // Правая граница диапазона Y
 
-        // --- РАЗНЫЕ ШАГИ ДЛЯ X И Y ---
-        double constant_step_size_x = 0.1;    // Постоянный шаг для X
-        double constant_step_size_y = 0.1;    // Постоянный шаг для Y
-        double coefficient_step_size_x = 0.1; // Коэффициентный шаг для X  
-        double coefficient_step_size_y = 0.1; // Коэффициентный шаг для Y
 
         // --- ПАРАМЕТРЫ ТОЧНОСТИ ---
         double result_precision = 1e-06;     // Точность результата
@@ -157,13 +142,7 @@ namespace CG {
         case Result::InvalidLogicPrecision:       return "Неверный ввод точностей";
         case Result::InvalidConstantStepSize:     return "Неверный ввод постоянного шага";
         case Result::InvalidCoefficientStepSize:  return "Неверный ввод коэффициентного шага";
-        case Result::InvalidConstantStepSizeX:    return "Неверный ввод постоянного шага X";
-        case Result::InvalidCoefficientStepSizeX: return "Неверный ввод коэффициентного шага X";
-        case Result::InvalidConstantStepSizeY:    return "Неверный ввод постоянного шага Y";
-        case Result::InvalidCoefficientStepSizeY: return "Неверный ввод коэффициентного шага Y";
-        case Result::InvalidStepTypeX:            return "Неверный тип шага для X";
-        case Result::InvalidStepTypeY:            return "Неверный тип шага для Y";
-        default:                                    return "Unknown result";
+        default:                                  return "Unknown result";
         }
     }
 
@@ -173,7 +152,7 @@ namespace CG {
         case StepType::CONSTANT:    return "Постоянный шаг";
         case StepType::COEFFICIENT: return "Коэффициентный шаг";
         case StepType::ADAPTIVE:    return "Адаптивный шаг";
-        default:                    return "Ошибка. неизвестный тип шага";
+        default:                    return "Неизвестный тип шага";
         }
     }
 
@@ -181,7 +160,7 @@ namespace CG {
     inline std::string algorithmTypeToString(AlgorithmType type) {
         switch (type) {
         case AlgorithmType::CONJUGATE_GRADIENT:    return "Метод сопряженных градиентов";
-        default:                                         return "Ошибка. Неизвестный алгоритм";
+        default:                                   return "Неизвестный алгоритм";
         }
     }
 
@@ -191,7 +170,7 @@ namespace CG {
         case ExtremumType::MINIMUM: return "Минимум";
         case ExtremumType::MAXIMUM: return "Максимум";
 
-        default:                    return "Ошибка. неизвестный параметр";
+        default:                    return "Неизвестный параметр";
         }
     }
 
@@ -208,9 +187,9 @@ namespace CG {
     }
 
     inline StepType stringToStepType(const std::string& str) {
-        if (str == "CONSTANT") return StepType::CONSTANT;
+        if (str == "CONSTANT")    return StepType::CONSTANT;
         if (str == "COEFFICIENT") return StepType::COEFFICIENT;
-        if (str == "ADAPTIVE") return StepType::ADAPTIVE;
+        if (str == "ADAPTIVE")    return StepType::ADAPTIVE;
         throw std::invalid_argument("Неверный тип шага");
     }
 }
