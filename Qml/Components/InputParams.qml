@@ -122,6 +122,8 @@ Flickable {
         }
 
         RowLayout {
+            visible: ((AppStates.selectedFullAlgo !== FullAlgoType.GDS)
+                && (AppStates.selectedFullAlgo !== FullAlgoType.GDR))
             spacing: 10
 
             Text {
@@ -132,7 +134,7 @@ Flickable {
         
             StyledComboBox {
                 id: stepType
-                Layout.preferredWidth: 100
+                Layout.preferredWidth: 160
         
                 property int selected: StepType.CONSTANT
         
