@@ -602,7 +602,7 @@ Result basicCoordinateDescent() {
     double x = m_inputData->initial_x;
     double y = m_inputData->initial_y;
     double f_current = evaluateFunction(x, y);
-
+    auto iterationTable = m_reporter->beginTable("Шаги запуска", { "Номер итерации i", "x_i", "y_i", "f_i", "Градиент", "Шаг" });
     double best_x = x, best_y = y, best_f = f_current;
     m_iterations = 0;
 
