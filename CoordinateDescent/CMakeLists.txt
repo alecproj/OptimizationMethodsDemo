@@ -53,7 +53,7 @@ target_include_directories(CoordinateDescent
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
 )
 
-target_compile_features(CoordinateDescent INTERFACE cxx_std_20)
+target_compile_features(CoordinateDescent INTERFACE cxx_std_17)
 
 # Standalone exe (использует main.cpp в этой папке)
 if(COORDINATEDESCENT_BUILD_STANDALONE AND EXISTS ${CD_MAIN})
