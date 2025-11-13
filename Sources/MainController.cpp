@@ -213,16 +213,20 @@ void MainController::fillGDData(const InputData *data)
     m_gdData.algorithm_type = static_cast<GD::AlgorithmType>(data->extensionId());
     m_gdData.extremum_type = static_cast<GD::ExtremumType>(data->extremumId());
     m_gdData.step_type = GD::StepType::CONSTANT;
-    m_gdData.step_type_x = GD::StepType::CONSTANT;
-    m_gdData.step_type_y = GD::StepType::CONSTANT;
     m_gdData.initial_x = data->startX1();
     m_gdData.initial_y = data->startY1();
     m_gdData.x_left_bound = data->minX();
     m_gdData.x_right_bound = data->maxX();
     m_gdData.y_left_bound = data->minY();
     m_gdData.y_right_bound = data->maxY();
-    m_gdData.constant_step_size_x = data->stepX();
-    m_gdData.constant_step_size_y = data->stepY();
+    //После добавления выбора типа шагов (CONST, COEFFICIENT, ADDAPTIVE)
+    //m_gdData.constant_step_size = data->constStep();
+    //m_gdData.constant_step_size = data->adaptiveStep();
+    //m_gdData.coefficient_step_size = data->coefficientStep();
+
+    m_gdData.constant_step_size = data->coefficientStep();
+    m_gdData.coefficient_step_size = data->coefficientStep();
+
     m_gdData.result_precision = data->resultAccuracy();
     m_gdData.computation_precision = data->calcAccuracy();
     m_gdData.max_iterations = data->maxIterations();
