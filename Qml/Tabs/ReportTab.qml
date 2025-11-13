@@ -265,6 +265,11 @@ Rectangle {
                     wrapMode: Text.WordWrap
                 }
             } // column
+
+            ScrollBar.vertical: ScrollBar{ 
+                id: vScroll
+                policy: (flickable.contentHeight > flickable.height) ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+            }
         } // flickable
 
 
