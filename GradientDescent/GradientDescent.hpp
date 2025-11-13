@@ -349,6 +349,7 @@ private:
                     return Result::NonDifferentiableFunction;
                 }
             }
+            //m_reporter->insertMessage("Функция прошла проверку дифференцируемости");
             std::cout << "Функция прошла проверку дифференцируемости" << std::endl;
             return Result::Success;
 
@@ -596,7 +597,8 @@ private:
 
                 m_reporter->endTable(iterationTable);
                 m_reporter->insertMessage("Базовый градиентный метод завершен.");
-                m_reporter->insertResult(best_x, best_y, best_f);
+                ReporterResult(best_x, best_y, best_f,m_function_calls, m_iterations);
+
                 std::cout << "=== GRADIENT DESCENT ЗАВЕРШЕН ===" << std::endl;
 
                 return Result::Success;
@@ -619,6 +621,8 @@ private:
 
                 m_reporter->endTable(iterationTable);
                 m_reporter->insertMessage("Базовый градиентный метод - градиент слишком мал.");
+                ReporterResult(best_x, best_y, best_f,m_function_calls, m_iterations);
+
                 std::cout << "=== GRADIENT DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
                 m_x = best_x;
                 m_y = best_y;
@@ -695,8 +699,9 @@ private:
                 m_x = best_x;
                 m_y = best_y;
                 m_reporter->endTable(iterationTable);
-                m_reporter->insertResult(best_x, best_y, best_f);
+
                 m_reporter->insertMessage("Метод наискорейшего спуска для градиентного метода завершен.");
+                ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
                 std::cout << "=== STEEPEST DESCENT ЗАВЕРШЕН ===" << std::endl;
                 return Result::Success;
             }
@@ -718,7 +723,10 @@ private:
                 m_y = best_y;
 
                 m_reporter->endTable(iterationTable);
+
                 m_reporter->insertMessage("Метод наискорейшего спуска для градиентного метода завершен - градиент слишком мал.");
+                ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
+
                 std::cout << "=== STEEPEST DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
                 return Result::Success;
             }
@@ -750,6 +758,8 @@ private:
         double ravine_factor = 0.0; // 0 - нет оврага, 1 - сильный овраг
         const int history_size = 5;
 
+        auto iterationTable = m_reporter->beginTable("Шаги запуска", {"Номер итерации i", "x_i", "y_i", "f_i", "Градиент норм", "Ravine factor"});
+
         while (m_iterations < m_inputData->max_iterations &&
             m_function_calls < m_inputData->max_function_calls) {
 
@@ -762,7 +772,14 @@ private:
             double grad_norm = std::sqrt(grad_x * grad_x + grad_y * grad_y);
 
             if (grad_norm < m_inputData->computation_precision) {
-                break; // Достигнут экстремум
+                m_x = best_x;
+                m_y = best_y;
+
+                std::cout << "=== RAVINE METHOD ЗАВЕРШЕН (экстремум найден) ===" << std::endl;
+                m_reporter->insertMessage("Овражный метод завершён — достигнут экстремум.");
+                ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
+                return Result::Success;
+
             }
 
             gradient_history.push_back({ grad_x, grad_y });
@@ -819,7 +836,8 @@ private:
                 best_f = f_current;
             }
 
-            // Отладочный вывод
+            m_reporter->insertRow(iterationTable,{m_iterations, x, y, f_current, grad_norm, ravine_factor});
+             // Отладочный вывод
             std::cout << "Итерация " << m_iterations
                 << ": x=" << x << ", y=" << y
                 << ", f=" << f_current
@@ -832,6 +850,10 @@ private:
                 m_x = best_x;
                 m_y = best_y;
                 std::cout << "=== RAVINE METHOD ЗАВЕРШЕН ===" << std::endl;
+
+                m_reporter->insertMessage("Овражное расширение градиентного спуска завершено.");
+                ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
+
                 return Result::Success;
             }
 
@@ -840,12 +862,16 @@ private:
                 m_x = best_x;
                 m_y = best_y;
                 std::cout << "=== RAVINE METHOD: ВЫХОД ЗА ГРАНИЦЫ ===" << std::endl;
+
+                m_reporter->insertMessage("Овражное расширение градиентного спуска завершено - выход за границы.");
+
                 return Result::OutOfBounds;
             }
         }
 
         m_x = best_x;
         m_y = best_y;
+        m_reporter->insertMessage("Овражное расширение градиентного спуска завершено - достигнуты ограничения.");
         std::cout << "=== RAVINE METHOD: ДОСТИГНУТЫ ОГРАНИЧЕНИЯ ===" << std::endl;
         return checkTerminationCondition();
     }
@@ -1293,8 +1319,15 @@ private:
         }
     }
 
+    void ReporterResult(double best_x, double best_y, double best_f, int m_function_calls, int m_iterations) {
+        m_reporter->insertMessage("Итог:");
+        m_reporter->insertMessage("Количество итераций: " + std::to_string(m_iterations));
+        m_reporter->insertMessage("Количество вызовов функции: " + std::to_string(m_function_calls));
+        m_reporter->insertResult(best_x, best_y, best_f);
+    }
+
     //Считает количество знаков после запятой
-    static int countDecimals(double value) {
+    static int countDecimals(const double value) {
         std::string s = std::to_string(value);
         size_t pos = s.find('.');
         if (pos == std::string::npos) return 0;
@@ -1304,7 +1337,7 @@ private:
     }
 
     //Округляет число до указанного количества знаков после запятой
-    double roundTo(double value, int digits) {
+    double roundTo(const double value, const int digits) {
         double factor = pow(10.0, digits);
         return round(value * factor) / factor;
     }
