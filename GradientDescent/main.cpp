@@ -99,39 +99,32 @@ int main()
         if (data.algorithm_type == AlgorithmType::STEEPEST_DESCENT) {
             std::cout << "Для STEEPEST_DESCENT шаг подбирается автоматически методом золотого сечения" << std::endl;
             // Устанавливаем дефолтные значения (не используются в алгоритме)
-            data.step_type_x = StepType::CONSTANT;
-            data.step_type_y = StepType::CONSTANT;
-            data.constant_step_size_x = 0.1; // Начальное значение для поиска
-            data.constant_step_size_y = 0.1;
+            data.step_type = StepType::CONSTANT;
+            data.constant_step_size = 0.1; // Начальное значение для поиска
         }
         else if (data.algorithm_type == AlgorithmType::RAVINE_METHOD) {
             std::cout << "Для RAVINE_METHOD шаг подбирается адаптивно для работы с овражными функциями" << std::endl;
             std::cout << "Метод автоматически детектирует овражные участки и меняет стратегию" << std::endl;
             // Устанавливаем дефолтные значения
-            data.step_type_x = StepType::CONSTANT;
-            data.step_type_y = StepType::CONSTANT;
-            data.constant_step_size_x = 0.1; // Базовый шаг
-            data.constant_step_size_y = 0.1;
+            data.step_type = StepType::CONSTANT;
+            data.constant_step_size = 0.1; // Базовый шаг
         }
         else {
             // Для GRADIENT_DESCENT запрашиваем тип шага
             std::cout << "Введите тип шага (CONSTANT, COEFFICIENT или ADAPTIVE): ";
             std::cin >> input_str;
-            data.step_type_x = stringToStepType(input_str);
-            data.step_type_y = data.step_type_x; // Для градиентных методов шаг одинаковый
+            data.step_type = stringToStepType(input_str);
 
             // Запрашиваем параметры шага
-            if (data.step_type_x == StepType::CONSTANT || data.step_type_x == StepType::ADAPTIVE) {
+            if (data.step_type == StepType::CONSTANT || data.step_type == StepType::ADAPTIVE) {
                 std::cout << "Введите постоянный шаг (используется для "
-                    << (data.step_type_x == StepType::CONSTANT ? "CONSTANT" : "ADAPTIVE как начальный")
+                    << (data.step_type == StepType::CONSTANT ? "CONSTANT" : "ADAPTIVE как начальный")
                     << "): ";
-                std::cin >> data.constant_step_size_x;
-                data.constant_step_size_y = data.constant_step_size_x;
+                std::cin >> data.constant_step_size;
             }
-            if (data.step_type_x == StepType::COEFFICIENT) {
+            if (data.step_type == StepType::COEFFICIENT) {
                 std::cout << "Введите коэффициент шага (для COEFFICIENT метода): ";
-                std::cin >> data.coefficient_step_size_x;
-                data.coefficient_step_size_y = data.coefficient_step_size_x;
+                std::cin >> data.coefficient_step_size;
             }
         }
 

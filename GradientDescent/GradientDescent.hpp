@@ -85,20 +85,6 @@ public:
             return Result::InvalidStepType;
         }
 
-        // Проверка типа шага X
-        if (data->step_type_x != StepType::CONSTANT &&
-            data->step_type_x != StepType::COEFFICIENT &&
-            data->step_type_x != StepType::ADAPTIVE) {
-            return Result::InvalidStepTypeX;
-        }
-
-        // Проверка типа шага Y
-        if (data->step_type_y != StepType::CONSTANT &&
-            data->step_type_y != StepType::COEFFICIENT &&
-            data->step_type_y != StepType::ADAPTIVE) {
-            return Result::InvalidStepTypeY;
-        }
-
         // Проверка корректности границ X (вопрос про равенство)
         if ((data->x_left_bound >= data->x_right_bound)) {
             return Result::InvalidXBound;
@@ -147,19 +133,11 @@ public:
         }
 
         // Проверка типов шагов для X
-        if (data->constant_step_size_x <= 0.0) {
+        if (data->constant_step_size <= 0.0) {
             return Result::InvalidConstantStepSizeX;
         }
-        if (data->coefficient_step_size_x <= 0.0) {
+        if (data->coefficient_step_size <= 0.0) {
             return Result::InvalidCoefficientStepSizeX;
-        }
-
-        // Проверка типов шагов для Y
-        if (data->constant_step_size_y <= 0.0) {
-            return Result::InvalidConstantStepSizeY;
-        }
-        if (data->coefficient_step_size_y <= 0.0) {
-            return Result::InvalidCoefficientStepSizeY;
         }
 
         // Сначала проверить все поля на корректность
@@ -841,27 +819,27 @@ private:
     // Выбор шага для градиентного метода
     double getGradientStepSize(double x, double y, double grad_x, double grad_y, double grad_norm) {
         // Используем шаг для X как основной
-        StepType step_type = m_inputData->step_type_x;
+        StepType step_type = m_inputData->step_type;
 
         switch (step_type) {
         case StepType::CONSTANT:
-            return m_inputData->constant_step_size_x;
+            return m_inputData->constant_step_size;
 
         case StepType::COEFFICIENT:
-            return m_inputData->coefficient_step_size_x * grad_norm;
+            return m_inputData->coefficient_step_size * grad_norm;
 
         case StepType::ADAPTIVE:
             return getAdaptiveGradientStep(x, y, grad_x, grad_y, grad_norm);
 
         default:
-            return m_inputData->constant_step_size_x;
+            return m_inputData->constant_step_size;
         }
     }
 
     // Адаптивный шаг для градиентного метода
     double getAdaptiveGradientStep(double x, double y, double grad_x, double grad_y, double grad_norm) {
         double direction = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
-        double initial_step = m_inputData->constant_step_size_x;
+        double initial_step = m_inputData->constant_step_size;
         double step = initial_step;
 
         double current_value = evaluateFunction(x, y);
@@ -914,7 +892,7 @@ private:
         double b = findInitialStepBoundForGradient(x, y, grad_x, grad_y);
 
         if (b <= a) {
-            return m_inputData->constant_step_size_x; // fallback
+            return m_inputData->constant_step_size; // fallback
         }
 
         double h1 = b - (b - a) * golden_ratio;
@@ -1022,7 +1000,7 @@ private:
         double b = findInitialStepBoundForDirection(x, y, dir_x, dir_y);
 
         if (b <= a) {
-            return m_inputData->constant_step_size_x; // fallback на дефолтный шаг
+            return m_inputData->constant_step_size; // fallback на дефолтный шаг
         }
 
         double h1 = b - (b - a) * golden_ratio;
