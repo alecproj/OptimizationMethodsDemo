@@ -535,8 +535,6 @@ private:
 
         double best_x = x, best_y = y, best_f = f_current;
         m_iterations = 0;
-        m_reporter->insertMessage("Запуск базового градиентного алгоритма");
-        m_reporter->insertMessage("Начальная точка: (" + std::to_string(x) + ", " + std::to_string(y) + "), f = " + std::to_string(f_current));
 
         std::cout << "=== ЗАПУСК GRADIENT DESCENT ===" << std::endl;
         std::cout << "Начальная точка: (" << x << ", " << y << "), f = " << f_current << std::endl;
@@ -647,6 +645,8 @@ private:
         std::cout << "=== ЗАПУСК STEEPEST DESCENT ===" << std::endl;
         std::cout << "Начальная точка: (" << x << ", " << y << "), f = " << f_current << std::endl;
 
+        auto iterationTable = m_reporter->beginTable("Шаги запуска", {"Номер итерации i", "x_i", "y_i", "f_i", "Градиент", "Оптимальный шаг"});
+
         while (m_iterations < m_inputData->max_iterations &&
             m_function_calls < m_inputData->max_function_calls) {
 
@@ -681,20 +681,22 @@ private:
                 best_y = y;
                 best_f = f_current;
             }
-
+            m_reporter->insertRow(iterationTable,{m_iterations, x, y, f_current, grad_norm, optimal_step});
             // Отладочный вывод
             std::cout << "Итерация " << m_iterations
                 << ": x=" << x << ", y=" << y
                 << ", f=" << f_current
                 << ", grad_norm=" << grad_norm
-                << ", optimal_step=" << optimal_step
-                << ", ЛУЧШАЯ f=" << best_f << std::endl;
+                << ", optimal_step=" << optimal_step << std::endl;
 
             // Проверка сходимости
             if (checkConvergence(x_old, y_old, x, y, f_old, f_current,
                 best_x, best_y, best_f)) {
                 m_x = best_x;
                 m_y = best_y;
+                m_reporter->endTable(iterationTable);
+                m_reporter->insertResult(best_x, best_y, best_f);
+                m_reporter->insertMessage("Метод наискорейшего спуска для градиентного метода завершен.");
                 std::cout << "=== STEEPEST DESCENT ЗАВЕРШЕН ===" << std::endl;
                 return Result::Success;
             }
@@ -703,21 +705,29 @@ private:
             if (!isWithinBounds(x, y)) {
                 m_x = best_x;
                 m_y = best_y;
+                m_reporter->endTable(iterationTable);
+                m_reporter->insertMessage("Метод наискорейшего спуска для градиентного метода завершен - выход за границы.");
                 std::cout << "=== STEEPEST DESCENT: ВЫХОД ЗА ГРАНИЦЫ ===" << std::endl;
                 return Result::OutOfBounds;
             }
 
             // Проверка на слишком маленький градиент
             if (grad_norm < m_inputData->computation_precision) {
-                std::cout << "=== STEEPEST DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
+
                 m_x = best_x;
                 m_y = best_y;
+
+                m_reporter->endTable(iterationTable);
+                m_reporter->insertMessage("Метод наискорейшего спуска для градиентного метода завершен - градиент слишком мал.");
+                std::cout << "=== STEEPEST DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
                 return Result::Success;
             }
         }
 
         m_x = best_x;
         m_y = best_y;
+        m_reporter->endTable(iterationTable);
+        m_reporter->insertMessage("Метод наискорейшего спуска для градиентного метода завершен - достигнуты ограничения.");
         std::cout << "=== STEEPEST DESCENT: ДОСТИГНУТЫ ОГРАНИЧЕНИЯ ===" << std::endl;
         return checkTerminationCondition();
     }
