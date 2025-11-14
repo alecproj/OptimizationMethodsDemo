@@ -22,7 +22,7 @@ Rectangle {
             fn = report.inputData.function;
         }
 
-        var extremum = helper.extremumTypeToString(report.inputData.extensionId)
+        var extremum = helper.extremumTypeToString(report.inputData.extremumId)
         if (extremum) extremum = extremum.toLowerCase()
 
         var algo = helper.algoTypeToString(report.inputData.algorithmId);
@@ -112,7 +112,8 @@ Rectangle {
                 }
 
                 Text {
-                    visible: (root.checkMask & CheckList.StartX1)
+                    visible: ((root.checkMask !== CheckList.GDSCheck)
+                        && (root.checkMask !== CheckList.GDRCheck))
                     Layout.preferredWidth: flickable.width
                     text: stepTypeDescription()
                     font.pixelSize: root.fontSize
