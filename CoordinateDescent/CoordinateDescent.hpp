@@ -34,8 +34,11 @@ public:
         m_x{0.0},
         m_y{0.0},
         m_function_calls{0},
-        m_iterations{0}
+        m_iterations{0},
+        m_digitResultPrecision{0},
+        m_digitComputationPrecision{0}
     {
+        resetAlgorithmState();
     }
 
     double getX() const          { return m_x; }                        // Получить X
@@ -183,6 +186,12 @@ public:
             return Result::Fail;
         }
 
+        resetAlgorithmState();
+        // Округляем результат
+
+        m_digitResultPrecision = countDecimals(m_inputData->result_precision);
+        m_digitComputationPrecision = countDecimals(m_inputData->computation_precision);
+        
         Result result = Result::Success;
 
         try {
@@ -224,12 +233,17 @@ public:
 
 private:
 
+    std::vector<std::pair<double, double>> m_recent_points;
+    int m_oscillation_count;
+    std::vector<std::string> m_non_diff_functions;
     const InputData *m_inputData; // Настройки алгоритма
     Reporter* m_reporter; // Указатель на систему отчётности
     mu::Parser m_parser; // Система вычисления
     double m_x, m_y; // Текущие переменные для парсера
     int m_function_calls; // Счётчик вызовов функции
     int m_iterations; // Счётчик итераций
+    int m_digitResultPrecision; // Количество знаков после запятой для результата
+    int m_digitComputationPrecision; // Количество знаков после запятой для вычислений
 
     // Инициализация парсера
     void initializeParser() {
@@ -238,6 +252,22 @@ private:
         m_parser.DefineVar("y", &m_y); // Связывание переменной Y с полем m_y
         m_function_calls = 0;
         m_iterations = 0;
+    }
+
+    // Метод для сброса состояния алгоритма
+    void resetAlgorithmState() {
+        m_function_calls = 0;
+        m_iterations = 0;
+        m_x = 0.0;
+        m_y = 0.0;
+        m_recent_points.clear();
+        m_oscillation_count = 0;
+
+        // Инициализация списка недифференцируемых функций
+        m_non_diff_functions = {
+            "abs(", "|", "sign(", "floor(", "ceil(", "round(",
+            "fmod(", "mod(", "rand(", "max(", "min(", "random"
+        };
     }
 
     // Провернка синтаксиса функции
@@ -284,27 +314,17 @@ private:
 
     Result checkFunctionDifferentiability(const std::string& function) {
         try {
-
-            // Предварительная проверка на известные недифференцируемые функции
-            std::vector<std::string> non_diff_functions = {
-                "abs(", "|", "sign(", "floor(", "ceil(", "round(",
-                "fmod(", "mod(", "rand(", "max(", "min(", "random"
-            };
-
+            // ИСПОЛЬЗУЕМ m_non_diff_functions ВМЕСТО СТАТИЧЕСКОЙ ПЕРЕМЕННОЙ
             std::string func_lower = function;
             std::transform(func_lower.begin(), func_lower.end(), func_lower.begin(), ::tolower);
 
-            for (const auto& non_diff_func : non_diff_functions) {
+            for (const auto& non_diff_func : m_non_diff_functions) {
                 std::string non_diff_lower = non_diff_func;
                 std::transform(non_diff_lower.begin(), non_diff_lower.end(), non_diff_lower.begin(), ::tolower);
 
                 if (func_lower.find(non_diff_lower) != std::string::npos) {
                     std::cout << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func << std::endl;
-                    std::cout << "Функция содержит: " << function << std::endl;
-
-                    m_reporter->insertMessage("Обнаружена потенциально недифференцируемая функция: " 
-                    + non_diff_func);
-                    m_reporter->insertMessage("Функция содержит: " + function);
+                    m_reporter->insertMessage("Обнаружена потенциально недифференцируемая функция: " + non_diff_func);
                     return Result::NonDifferentiableFunction;
                 }
             }
@@ -441,35 +461,31 @@ private:
     Result checkConvergence(double x_old, double y_old,
         double x_new, double y_new,
         double f_old, double f_new,
-        double& best_x, double& best_y, double& best_f) { // передаем по ссылке!
+        double& best_x, double& best_y, double& best_f) {
 
         double dx = std::abs(x_new - x_old);
         double dy = std::abs(y_new - y_old);
         double df = std::abs(f_new - f_old);
-
         double coordinate_norm = std::sqrt(dx * dx + dy * dy);
 
-        // УЛУЧШЕННЫЙ ДЕТЕКТОР ОСЦИЛЛЯЦИЙ
-        static std::vector<std::pair<double, double>> recent_points;
-        static int oscillation_count = 0;
-
+        // ИСПОЛЬЗУЕМ ЧЛЕНЫ КЛАССА ВМЕСТО СТАТИЧЕСКИХ ПЕРЕМЕННЫХ
         // Сохраняем последние 5 точек
-        recent_points.push_back({ x_new, y_new });
-        if (recent_points.size() > 5) {
-            recent_points.erase(recent_points.begin());
+        m_recent_points.push_back({ x_new, y_new });
+        if (m_recent_points.size() > 5) {
+            m_recent_points.erase(m_recent_points.begin());
         }
 
         // Проверяем все возможные циклы в последних точках
-        if (recent_points.size() >= 4) {
+        if (m_recent_points.size() >= 4) {
             bool found_cycle = false;
-            for (size_t i = 0; i < recent_points.size() - 2; ++i) {
-                for (size_t j = i + 1; j < recent_points.size() - 1; ++j) {
+            for (size_t i = 0; i < m_recent_points.size() - 2; ++i) {
+                for (size_t j = i + 1; j < m_recent_points.size() - 1; ++j) {
                     double dist = std::sqrt(
-                        std::pow(recent_points[i].first - recent_points[j].first, 2) +
-                        std::pow(recent_points[i].second - recent_points[j].second, 2)
+                        std::pow(m_recent_points[i].first - m_recent_points[j].first, 2) +
+                        std::pow(m_recent_points[i].second - m_recent_points[j].second, 2)
                     );
                     if (dist < m_inputData->computation_precision) {
-                        oscillation_count++;
+                        m_oscillation_count++;
                         found_cycle = true;
                         break;
                     }
@@ -477,16 +493,15 @@ private:
                 if (found_cycle) break;
             }
 
-            if (oscillation_count > 3) { // уменьшил порог для более раннего обнаружения
+            if (m_oscillation_count > 3) {
                 std::cout << "*** STOP: Oscillation detected after "
-                    << oscillation_count << " cycles ***" << std::endl;
-                m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(oscillation_count) + " циклов");
+                    << m_oscillation_count << " cycles ***" << std::endl;
+                m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(m_oscillation_count) + " циклов");
 
                 // ПРИНУДИТЕЛЬНО УСТАНАВЛИВАЕМ ЛУЧШУЮ ТОЧКУ
                 if (m_inputData->extremum_type == ExtremumType::MAXIMUM) {
-                    // Для максимума ищем точку с наибольшим значением функции
                     double max_f = best_f;
-                    for (const auto& point : recent_points) {
+                    for (const auto& point : m_recent_points) {
                         double f_val = evaluateFunction(point.first, point.second);
                         if (f_val > max_f) {
                             max_f = f_val;
@@ -497,9 +512,8 @@ private:
                     }
                 }
                 else {
-                    // Для минимума ищем точку с наименьшим значением функции
                     double min_f = best_f;
-                    for (const auto& point : recent_points) {
+                    for (const auto& point : m_recent_points) {
                         double f_val = evaluateFunction(point.first, point.second);
                         if (f_val < min_f) {
                             min_f = f_val;
@@ -513,15 +527,14 @@ private:
             }
 
             if (!found_cycle) {
-                oscillation_count = 0; // сбрасываем счетчик если цикл прервался
+                m_oscillation_count = 0; // сбрасываем счетчик если цикл прервался
             }
         }
 
-        // ОСНОВНОЙ КРИТЕРИЙ СХОДИМОСТИ - с учетом лучшей точки
+        // ОСНОВНОЙ КРИТЕРИЙ СХОДИМОСТИ
         if (coordinate_norm < m_inputData->result_precision &&
             df < m_inputData->result_precision) {
 
-            // ПЕРЕД ВОЗВРАТОМ УБЕДИТЕСЬ, ЧТО ИСПОЛЬЗУЕМ ЛУЧШУЮ ТОЧКУ
             double current_f = evaluateFunction(x_new, y_new);
             if ((m_inputData->extremum_type == ExtremumType::MAXIMUM && current_f > best_f) ||
                 (m_inputData->extremum_type == ExtremumType::MINIMUM && current_f < best_f)) {
@@ -550,61 +563,94 @@ private:
 
     // Постоянный шаг
     double getConstantStep(double gradient, bool is_x) {
-        // Если ищем минимум -> движемся вниз, максимум -> вверх
+        // Для минимума: двигаемся ПРОТИВ градиента
+        // Для максимума: двигаемся ПО градиенту
         double direction = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
-        double sign_gradient = (gradient >= 0) ? 1.0 : -1.0;
 
         double constant_step_size = is_x ? m_inputData->constant_step_size_x
-                                : m_inputData->constant_step_size_y;
-        return constant_step_size * direction * sign_gradient;
+            : m_inputData->constant_step_size_y;
+
+        // Просто умножаем шаг на направление - знак градиента уже учтен в самом градиенте
+        return constant_step_size * direction;
     }
 
     // Коэффициентный шаг (зависимость от градиента)
     double getCoefficientStep(double gradient, bool is_x) {
-        // Если ищем минимум -> движемся вниз, максимум -> вверх
+        // Для минимума: двигаемся ПРОТИВ градиента  
+        // Для максимума: двигаемся ПО градиенту
         double direction = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
+
         double coefficient_step_size = is_x ? m_inputData->coefficient_step_size_x
-                                            : m_inputData->coefficient_step_size_y;
+            : m_inputData->coefficient_step_size_y;
+
+        // Градиент уже содержит правильный знак, просто умножаем на направление
         return coefficient_step_size * gradient * direction;
     }
+
     // Адаптивный шаг
     double getAdaptiveStep(double x, double y, double gradient, bool is_x) {
-        // Если ищем минимум -> движемся вниз, максимум -> вверх
-        double direction = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
+        // Определяем направление движения
+        double direction_sign = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
 
         double initial_step = is_x ? m_inputData->constant_step_size_x
             : m_inputData->constant_step_size_y;
 
-        double step = initial_step;
         double current_value = evaluateFunction(x, y);
-        double best_delta = 0.0;
+        double best_step = 0.0;
         double best_value = current_value;
 
-        // Пробуем уменьшить шаг, пока не найдём улучшение
-        for (int i = 0; i < 15; i++) {
-            double delta = step * direction * gradient;
+        // Пробуем разные размеры шага в правильном направлении
+        std::vector<double> step_sizes = {
+            initial_step * 2.0,    // Попробовать увеличить шаг
+            initial_step,          // Исходный шаг
+            initial_step * 0.5,    // Уменьшить шаг
+            initial_step * 0.1,    // Сильно уменьшить шаг
+            initial_step * 0.01    // Очень маленький шаг
+        };
+
+        for (double step : step_sizes) {
+            // Вычисляем дельту с правильным знаком
+            double delta = direction_sign * step;
+
+            // Учитываем знак градиента для выбора направления
+            if (gradient < 0) {
+                delta = -delta;
+            }
+
             double x_new = is_x ? x + delta : x;
             double y_new = is_x ? y : y + delta;
 
             if (!isWithinBounds(x_new, y_new)) {
-                step *= STEP_REDUCTION;
                 continue;
             }
 
             double new_value = evaluateFunction(x_new, y_new);
-            // Проверка улучшения
             bool improvement = (m_inputData->extremum_type == ExtremumType::MINIMUM)
                 ? (new_value < best_value)
                 : (new_value > best_value);
 
             if (improvement) {
                 best_value = new_value;
-                best_delta = delta;
+                best_step = step;
             }
-            step *= STEP_REDUCTION;
-            if (step < MIN_STEP) break;
         }
-        return best_delta;
+
+        // Возвращаем дельту, а не просто шаг
+        if (best_step != 0.0) {
+            double final_delta = direction_sign * best_step;
+            if (gradient < 0) {
+                final_delta = -final_delta;
+            }
+            return final_delta;
+        }
+
+        // Если не нашли улучшения, возвращаем маленький шаг в правильном направлении
+        double small_step = initial_step * 0.001;
+        double small_delta = direction_sign * small_step;
+        if (gradient < 0) {
+            small_delta = -small_delta;
+        }
+        return small_delta;
     }
 
     double getStepSize(double x, double y, double gradient, bool is_x) {
@@ -667,7 +713,15 @@ private:
                 best_x = x; best_y = y; best_f = f_current;
             }
             //m_reporter->insertRow(iterationTable, { m_iterations, x, y, f_current, grad_x, grad_y, step_x, step_y});
-            m_reporter->insertRow(iterationTable, { m_iterations, best_x, best_y, best_f, grad_x, grad_y, step_x, step_y });
+            m_reporter->insertRow(iterationTable, { m_iterations, 
+                                                    roundTo(best_x, m_digitComputationPrecision), 
+                                                    roundTo(best_y, m_digitComputationPrecision), 
+                                                    roundTo(best_f, m_digitComputationPrecision),
+                                                    roundTo(grad_x, m_digitComputationPrecision),
+                                                    roundTo(grad_y, m_digitComputationPrecision),
+                                                    roundTo(step_x, m_digitComputationPrecision),
+                                                    roundTo(step_y, m_digitComputationPrecision)});
+
             // Проверка границ
             if (!isWithinBounds(x, y)) {
                 m_x = best_x; m_y = best_y;
@@ -695,7 +749,9 @@ private:
                 }
 
                 ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
-                m_reporter->insertResult(best_x, best_y, best_f);
+                m_reporter->insertResult(roundTo(best_x, m_digitResultPrecision),
+                                         roundTo(best_y, m_digitResultPrecision),
+                                         roundTo(best_f, m_digitResultPrecision));
                 return conv;
             }
         }
@@ -765,7 +821,7 @@ private:
             double step_y = 0.0;
             // Выполняем оптимизацию выбранной координаты
             if (optimize_x) {
-                double step_x = getStepSize(x, y, grad_x, true);
+                step_x = getStepSize(x, y, grad_x, true);
                 double x_new = updateCoordinate(x, step_x, m_inputData->x_left_bound, m_inputData->x_right_bound);
 
                 // Проверяем, что шаг действительно изменил координату
@@ -780,7 +836,7 @@ private:
             }
 
             if (!optimize_x) {
-                double step_y = getStepSize(x, y, grad_y, false);
+                step_y = getStepSize(x, y, grad_y, false);
                 double y_new = updateCoordinate(y, step_y, m_inputData->y_left_bound, m_inputData->y_right_bound);
 
                 // Проверяем, что шаг действительно изменил координату
@@ -879,6 +935,23 @@ private:
         m_reporter->insertMessage("Количество итераций: " + std::to_string(m_iterations));
         m_reporter->insertMessage("Количество вызовов функции: " + std::to_string(m_function_calls));
         m_reporter->insertResult(best_x, best_y, best_f);
+    }
+
+    //Считает количество знаков после запятой
+    static int countDecimals(const double value) {
+        std::string s = std::to_string(value);
+        size_t pos = s.find('.');
+        if (pos == std::string::npos) return 0;
+
+        while (!s.empty() && s.back() == '0') s.pop_back();
+        return s.size() - pos - 1;
+    }
+
+    //Округляет число до указанного количества знаков после запятой
+    double roundTo(const double value, const int digits) {
+        double factor = pow(10.0, digits);
+        //return round(value * factor) / factor;
+        return ceil(value * factor) / factor;
     }
     
 };

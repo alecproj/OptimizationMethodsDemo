@@ -103,7 +103,7 @@ struct InputData {
     double coefficient_step_size_y = 0.1; // Коэффициентный шаг для Y
 
     // --- ПАРАМЕТРЫ ТОЧНОСТИ ---
-    double result_precision = 1e-06;     // Точность результата
+    double result_precision = 1e-6;     // Точность результата
     double computation_precision = 1e-8; // Точность вычислений
      
     // --- ПАРАМЕТРЫ ШАГА ---
