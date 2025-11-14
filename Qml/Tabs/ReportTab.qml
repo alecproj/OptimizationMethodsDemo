@@ -39,7 +39,7 @@ Rectangle {
                ", применяя " + (algo || "") + extensionPart +
                ", за не более чем " + report.inputData.maxIterations +
                " шагов и не более чем " + report.inputData.maxFuncCalls +
-               " вызовов функции, с точностью вычислений, равной " +
+               " вызовов функции, с точностью вычислений, равной 10^-" +
                report.inputData.calcAccuracy +
                ", и с учетом заданного набора параметров: ";
     }
@@ -187,7 +187,7 @@ Rectangle {
                 }
 
                 Text {
-                    text: "Результат представить с точностью: " + root.report.inputData.resultAccuracy + "."
+                    text: "Результат представить с точностью: 10^-" + root.report.inputData.resultAccuracy + "."
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
