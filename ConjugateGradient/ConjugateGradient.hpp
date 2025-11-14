@@ -138,7 +138,7 @@ namespace CG {
 
         Result solve()
         {
-            if (!m_inputData || !m_reporter || m_reporter->begin() == 0) {
+            if (!m_inputData || !m_reporter || m_reporter->begin() != 0) {
                 return Result::Fail;
             }
 

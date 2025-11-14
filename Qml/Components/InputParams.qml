@@ -155,6 +155,7 @@ Flickable {
         }
 
         RowLayout {
+            visible: (AppStates.selectedFullAlgo !== FullAlgoType.CGB)
             spacing: 10
         
             Text {

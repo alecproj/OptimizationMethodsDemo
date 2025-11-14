@@ -72,7 +72,8 @@ public:
     enum Type {
         ALL = 0,
         CD  = 1, // Coordinate Descent
-        GD  = 2  // Gradient Descent
+        GD  = 2, // Gradient Descent
+        CG  = 3  // Conjugate Gradient
     };
     Q_ENUM(Type)
 
@@ -101,7 +102,8 @@ public:
         CDS     = 2, // Coordinate Descent Steepest
         GDB     = 3, // Gradient Descent Basic
         GDS     = 4, // Gradient Descent Steepest
-        GDR     = 5  // Gradient Descent Ravine
+        GDR     = 5, // Gradient Descent Ravine
+        CGB     = 6  // Conjugate Gradient Basic
     };
     Q_ENUM(Type)
 
@@ -113,27 +115,28 @@ class CheckList : public QObject {
 public:
     enum Check { 
         Error               = -1,
-        CalcAccuracy        = (1 << 0),  // CDB,CDS,GDB,GDS,GDR
-        ResultAccuracy      = (1 << 1),  // CDB,CDS,GDB,GDS,GDR
-        StartX1             = (1 << 2),  // CDB,CDS,GDB,GDS,GDR 
-        StartY1             = (1 << 3),  // CDB,CDS,GDB,GDS,GDR 
-        StartX2             = (1 << 4),  //    ,   ,   ,   ,
-        StartY2             = (1 << 5),  //                ,
-        StepX               = (1 << 6),  // CDB,CDS,   ,   ,
-        StepY               = (1 << 7),  // CDB,CDS,   ,   ,
-        Step                = (1 << 8),  //    ,   ,GDB,   ,
-        MinX                = (1 << 9),  // CDB,CDS,GDB,GDS,GDR
-        MaxX                = (1 << 10), // CDB,CDS,GDB,GDS,GDR
-        MinY                = (1 << 11), // CDB,CDS,GDB,GDS,GDR
-        MaxY                = (1 << 12), // CDB,CDS,GDB,GDS,GDR
-        Iterations          = (1 << 13), // CDB,CDS,GDB,GDS,GDR 
-        FuncCalls           = (1 << 14), // CDB,CDS,GDB,GDS,GDR
+        CalcAccuracy        = (1 << 0),  // CDB,CDS,GDB,GDS,GDR,CGB
+        ResultAccuracy      = (1 << 1),  // CDB,CDS,GDB,GDS,GDR,CGB
+        StartX1             = (1 << 2),  // CDB,CDS,GDB,GDS,GDR,CGB
+        StartY1             = (1 << 3),  // CDB,CDS,GDB,GDS,GDR,CGB 
+        StartX2             = (1 << 4),  //    ,   ,   ,   ,   ,
+        StartY2             = (1 << 5),  //                ,   ,
+        StepX               = (1 << 6),  // CDB,CDS,   ,   ,   ,
+        StepY               = (1 << 7),  // CDB,CDS,   ,   ,   ,
+        Step                = (1 << 8),  //    ,   ,GDB,   ,   ,CGB
+        MinX                = (1 << 9),  // CDB,CDS,GDB,GDS,GDR,CGB
+        MaxX                = (1 << 10), // CDB,CDS,GDB,GDS,GDR,CGB
+        MinY                = (1 << 11), // CDB,CDS,GDB,GDS,GDR,CGB
+        MaxY                = (1 << 12), // CDB,CDS,GDB,GDS,GDR,CGB
+        Iterations          = (1 << 13), // CDB,CDS,GDB,GDS,GDR,CGB
+        FuncCalls           = (1 << 14), // CDB,CDS,GDB,GDS,GDR,CGB
 
         CDBCheck            = 32463,
         CDSCheck            = 32463,
         GDBCheck            = 32527,
         GDSCheck            = 32271,
-        GDRCheck            = 32271
+        GDRCheck            = 32271,
+        CGBCheck            = 32527,
     };
     Q_ENUM(Check)
 
@@ -162,6 +165,11 @@ public:
             CalcAccuracy + ResultAccuracy + StartX1 + StartY1 +
              + MinX  + MaxX + MinY + MaxY + Iterations + FuncCalls
         ), "Invalid GDRCheck");
+        static_assert(CGBCheck == (
+            CalcAccuracy    + ResultAccuracy + StartX1 + StartY1 +
+            Step + MinX           + MaxX    + MinY    +
+            MaxY            + Iterations     + FuncCalls
+        ), "Invalid CGBCheck");
     }
 
 };
@@ -188,6 +196,8 @@ public:
             } else if (extension == ExtensionType::R) {
                 return FullAlgoType::GDR;
             }
+        } else if ((algo == AlgoType::CG) && (extension == ExtensionType::B)) {
+            return FullAlgoType::CGB;
         }
         return FullAlgoType::INVALID;
     }
@@ -204,6 +214,8 @@ public:
             return CheckList::GDSCheck;
         } else if (type == FullAlgoType::GDR) {
             return CheckList::GDRCheck;
+        } else if (type == FullAlgoType::CGB) {
+            return CheckList::CGBCheck;
         }
         return CheckList::Error;
     }
@@ -215,6 +227,8 @@ public:
                 return "Метод покоординатного спуска";
             case AlgoType::GD:
                 return "Метод градиентного спуска";
+            case AlgoType::CG:
+                return "Метод сопряженных градиентов";
             default:
                 return "";
         }

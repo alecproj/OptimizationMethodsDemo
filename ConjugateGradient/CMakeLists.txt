@@ -44,7 +44,7 @@ else()
     add_library(ConjugateGradient INTERFACE)
 endif()
 
-target_link_libraries(ConjugateGradient PRIVATE ${MUPARSER_TARGET_NAME})
+target_link_libraries(ConjugateGradient INTERFACE ${MUPARSER_TARGET_NAME})
 
 # #include <ConjugateGradient/Common.hpp>
 target_include_directories(ConjugateGradient
