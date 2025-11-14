@@ -34,6 +34,23 @@ public:
     {
     }
 
+    // Добавьте метод для сброса состояния
+    void reset() {
+        m_x = 0.0;
+        m_y = 0.0;
+        m_function_calls = 0;
+        m_iterations = 0;
+        m_digitResultPrecision = 0;
+        m_digitComputationPrecision = 0;
+        m_oscillation_count = 0;
+
+        m_recent_points.clear();
+        // Очищаем парсер
+        m_parser = mu::Parser{};
+
+    }
+
+
     double getX() const { return m_x; }                        // Получить X
     double getY() const { return m_y; }                        // Получить Y
     int getIterations() const { return m_iterations; }               // Получить кол-во итераций
@@ -154,6 +171,8 @@ public:
             return Result::Fail;
         }
 
+        reset();
+
         m_digitResultPrecision = countDecimals(m_inputData->result_precision);
         m_digitComputationPrecision = countDecimals(m_inputData->computation_precision);
 
@@ -215,6 +234,9 @@ private:
     int m_iterations; // Счётчик итераций
     int m_digitResultPrecision; //Количество знаков после запятой для результата
     int m_digitComputationPrecision; //Количество знаков после запятой для вычислений
+
+    std::vector<std::pair<double, double>> m_recent_points;
+    int m_oscillation_count = 0;
 
     // Инициализация парсера
     void initializeParser() {
@@ -405,10 +427,11 @@ private:
     }
 
 // Проверка сходимости
+// Проверка сходимости
 Result checkConvergence(double x_old, double y_old,
     double x_new, double y_new,
     double f_old, double f_new,
-    double& best_x, double& best_y, double& best_f) { // передаем по ссылке!
+    double& best_x, double& best_y, double& best_f) {
 
     double dx = std::abs(x_new - x_old);
     double dy = std::abs(y_new - y_old);
@@ -416,27 +439,23 @@ Result checkConvergence(double x_old, double y_old,
 
     double coordinate_norm = std::sqrt(dx * dx + dy * dy);
 
-    // УЛУЧШЕННЫЙ ДЕТЕКТОР ОСЦИЛЛЯЦИЙ
-    static std::vector<std::pair<double, double>> recent_points;
-    static int oscillation_count = 0;
-
-    // Сохраняем последние 5 точек
-    recent_points.push_back({ x_new, y_new });
-    if (recent_points.size() > 5) {
-        recent_points.erase(recent_points.begin());
+    // ИСПОЛЬЗУЕМ ПОЛЯ КЛАССА вместо static переменных
+    m_recent_points.push_back({ x_new, y_new });
+    if (m_recent_points.size() > 5) {
+        m_recent_points.erase(m_recent_points.begin());
     }
 
     // Проверяем все возможные циклы в последних точках
-    if (recent_points.size() >= 4) {
+    if (m_recent_points.size() >= 4) {
         bool found_cycle = false;
-        for (size_t i = 0; i < recent_points.size() - 2; ++i) {
-            for (size_t j = i + 1; j < recent_points.size() - 1; ++j) {
+        for (size_t i = 0; i < m_recent_points.size() - 2; ++i) {
+            for (size_t j = i + 1; j < m_recent_points.size() - 1; ++j) {
                 double dist = std::sqrt(
-                    std::pow(recent_points[i].first - recent_points[j].first, 2) +
-                    std::pow(recent_points[i].second - recent_points[j].second, 2)
+                    std::pow(m_recent_points[i].first - m_recent_points[j].first, 2) +
+                    std::pow(m_recent_points[i].second - m_recent_points[j].second, 2)
                 );
                 if (dist < m_inputData->computation_precision) {
-                    oscillation_count++;
+                    m_oscillation_count++;
                     found_cycle = true;
                     break;
                 }
@@ -444,16 +463,16 @@ Result checkConvergence(double x_old, double y_old,
             if (found_cycle) break;
         }
 
-        if (oscillation_count > 3) { // уменьшил порог для более раннего обнаружения
+        if (m_oscillation_count > 3) { // уменьшил порог для более раннего обнаружения
             std::cout << "*** STOP: Oscillation detected after "
-                << oscillation_count << " cycles ***" << std::endl;
-            m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(oscillation_count) + " циклов");
+                << m_oscillation_count << " cycles ***" << std::endl;
+            m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(m_oscillation_count) + " циклов");
 
             // ПРИНУДИТЕЛЬНО УСТАНАВЛИВАЕМ ЛУЧШУЮ ТОЧКУ
             if (m_inputData->extremum_type == ExtremumType::MAXIMUM) {
                 // Для максимума ищем точку с наибольшим значением функции
                 double max_f = best_f;
-                for (const auto& point : recent_points) {
+                for (const auto& point : m_recent_points) {
                     double f_val = evaluateFunction(point.first, point.second);
                     if (f_val > max_f) {
                         max_f = f_val;
@@ -466,7 +485,7 @@ Result checkConvergence(double x_old, double y_old,
             else {
                 // Для минимума ищем точку с наименьшим значением функции
                 double min_f = best_f;
-                for (const auto& point : recent_points) {
+                for (const auto& point : m_recent_points) {
                     double f_val = evaluateFunction(point.first, point.second);
                     if (f_val < min_f) {
                         min_f = f_val;
@@ -480,7 +499,7 @@ Result checkConvergence(double x_old, double y_old,
         }
 
         if (!found_cycle) {
-            oscillation_count = 0; // сбрасываем счетчик если цикл прервался
+            m_oscillation_count = 0; // сбрасываем счетчик если цикл прервался
         }
     }
 
@@ -504,6 +523,7 @@ Result checkConvergence(double x_old, double y_old,
 
     return Result::Continue;
 }
+
 
 
     // Проверка границ (на каждой итерации)
