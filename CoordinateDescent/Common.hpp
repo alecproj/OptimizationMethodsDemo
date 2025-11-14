@@ -44,7 +44,9 @@ enum class Result : int {
     InvalidConstantStepSizeY = -25,    // Неверный ввод постоянного шага Y
     InvalidCoefficientStepSizeY = -26, // Неверный ввод коэффициентного шага Y
     InvalidStepTypeX = -27,            // Неверный тип шага для X
-    InvalidStepTypeY = -28             // Неверный тип шага для Y
+    InvalidStepTypeY = -28,            // Неверный тип шага для Y
+    OscillationDetected = -29,         // Найдены осцилляции
+    Continue = -30                     // Продолжать итерации (временный статус)
 };
 
 // Тип алгоритма оптимизации
@@ -164,6 +166,7 @@ inline std::string resultToString(Result result) {
         case Result::InvalidCoefficientStepSizeY: return "Неверный ввод коэффициентного шага Y";
         case Result::InvalidStepTypeX:            return "Неверный тип шага для X";
         case Result::InvalidStepTypeY:            return "Неверный тип шага для Y"; 
+        case Result::OscillationDetected:         return "Обнаружены осцилляции";
         default:                                  return "Неизвестная ошибка";
     }
 }

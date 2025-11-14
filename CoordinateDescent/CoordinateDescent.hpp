@@ -190,9 +190,9 @@ public:
             initializeParser();
 
             if (!isFunctionDifferentiableAtStart()) {
+                m_reporter->insertMessage("Функция не дифференцируема...");
                 return Result::NonDifferentiableFunction;
             }
-
             // Выбор алгоритма
             switch (m_inputData->algorithm_type) {
                 case AlgorithmType::BASIC_COORDINATE_DESCENT:
@@ -204,7 +204,10 @@ public:
                 default:
                     result = Result::InvalidAlgorithmType;
                     break;
+
+            
             }
+  
         } catch (const mu::Parser::exception_type& e) {
             result = Result::ParseError;
         } catch (const std::exception& e) {
@@ -273,13 +276,15 @@ private:
         catch (...) {
             std::cout << "Функция не дифференцируема в начальной точке ("
                 << m_inputData->initial_x << ", " << m_inputData->initial_y << ")" << std::endl;
+            m_reporter->insertMessage("Функция не дифференцируема в начальной точке ("
+                + std::to_string(m_inputData->initial_x) + ", " + std::to_string(m_inputData->initial_y) + ")");
             return false;
         }
     }
 
     Result checkFunctionDifferentiability(const std::string& function) {
         try {
-            
+
             // Предварительная проверка на известные недифференцируемые функции
             std::vector<std::string> non_diff_functions = {
                 "abs(", "|", "sign(", "floor(", "ceil(", "round(",
@@ -296,10 +301,14 @@ private:
                 if (func_lower.find(non_diff_lower) != std::string::npos) {
                     std::cout << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func << std::endl;
                     std::cout << "Функция содержит: " << function << std::endl;
+
+                    m_reporter->insertMessage("Обнаружена потенциально недифференцируемая функция: " 
+                    + non_diff_func);
+                    m_reporter->insertMessage("Функция содержит: " + function);
                     return Result::NonDifferentiableFunction;
                 }
-            } 
-            
+            }
+
             // Проверка численной дифференцируемости
             mu::Parser test_parser;
             double test_x = 0.0;
@@ -348,26 +357,46 @@ private:
                         std::isnan(deriv_y2) || std::isinf(deriv_y2)) {
                         std::cout << "Производная не определена в точке ("
                             << test_x << ", " << test_y << ")" << std::endl;
+
+                        m_reporter->insertMessage("Производная не определена в точке (" 
+                        + std::to_string(test_x) + ", " + std::to_string(test_y) + ")");
+
                         return Result::NonDifferentiableFunction;
                     }
-                } catch (const mu::Parser::exception_type& e) {
+                }
+                catch (const mu::Parser::exception_type& e) {
                     std::cout << "Функция не дифференцируема в точке ("
                         << test_x << ", " << test_y << "): " << e.GetMsg() << std::endl;
+
+                    m_reporter->insertMessage("Функция не дифференцируема в точке ("
+                        + std::to_string(test_x) + ", " + std::to_string(test_y) + ")");
+
                     return Result::NonDifferentiableFunction;
-                } catch (const std::exception& e) {
+                }
+                catch (const std::exception& e) {
+
                     std::cout << "Ошибка дифференцирования в точке ("
                         << test_x << ", " << test_y << "): " << e.what() << std::endl;
+
+                    m_reporter->insertMessage("Ошибка дифференцирования в точке ("
+                        + std::to_string(test_x) + ", " + std::to_string(test_y) + ")");
+
                     return Result::NonDifferentiableFunction;
                 }
             }
             std::cout << "Функция прошла проверку дифференцируемости" << std::endl;
+            m_reporter->insertMessage("Функция прошла проверку дифференцируемости");
             return Result::Success;
 
-        } catch (const mu::Parser::exception_type& e) {
-            std::cout << "Ошибка парсера при проверке дифференцируемости: " << e.GetMsg() << std::endl;
+        }
+        catch (const mu::Parser::exception_type& e) {
+            std::cout << "Ошибка парсера при проверке дифференцируемости: " << e.GetMsg() << std::endl;\
+            m_reporter->insertMessage("Ошибка парсера при проверке дифференцируемости: ");
             return Result::ParseError;
-        } catch (const std::exception& e) {
+        }
+        catch (const std::exception& e) {
             std::cout << "Общая ошибка при проверке дифференцируемости: " << e.what() << std::endl;
+            m_reporter->insertMessage("Общая ошибка при проверке дифференцируемости: ");
             return Result::ComputeError;
         }
     }
@@ -409,7 +438,7 @@ private:
     }
 
     // Проверка сходимости
-    bool checkConvergence(double x_old, double y_old,
+    Result checkConvergence(double x_old, double y_old,
         double x_new, double y_new,
         double f_old, double f_new,
         double& best_x, double& best_y, double& best_f) { // передаем по ссылке!
@@ -451,6 +480,7 @@ private:
             if (oscillation_count > 3) { // уменьшил порог для более раннего обнаружения
                 std::cout << "*** STOP: Oscillation detected after "
                     << oscillation_count << " cycles ***" << std::endl;
+                m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(oscillation_count) + " циклов");
 
                 // ПРИНУДИТЕЛЬНО УСТАНАВЛИВАЕМ ЛУЧШУЮ ТОЧКУ
                 if (m_inputData->extremum_type == ExtremumType::MAXIMUM) {
@@ -479,7 +509,7 @@ private:
                         }
                     }
                 }
-                return true;
+                return Result::OscillationDetected;
             }
 
             if (!found_cycle) {
@@ -501,10 +531,11 @@ private:
             }
 
             std::cout << "*** CONVERGENCE: Coordinates and function stabilized ***" << std::endl;
-            return true;
+            m_reporter->insertMessage("СХОДИМОСТЬ: Координаты и функция стабилизировалась");
+            return Result::Success;
         }
 
-        return false;
+        return Result::Continue;
     }
 
     // Проверка границ (на каждой итерации)
@@ -540,10 +571,10 @@ private:
     double getAdaptiveStep(double x, double y, double gradient, bool is_x) {
         // Если ищем минимум -> движемся вниз, максимум -> вверх
         double direction = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
-       
+
         double initial_step = is_x ? m_inputData->constant_step_size_x
-                                   : m_inputData->constant_step_size_y;
-        
+            : m_inputData->constant_step_size_y;
+
         double step = initial_step;
         double current_value = evaluateFunction(x, y);
         double best_delta = 0.0;
@@ -597,27 +628,29 @@ private:
 // АЛГОРИТМЫ ОПТИМИЗАЦИИ
 // ============================================================================
 
- // Базовый алгоритм покоординатного спуска
-Result basicCoordinateDescent() {
-    double x = m_inputData->initial_x;
-    double y = m_inputData->initial_y;
-    double f_current = evaluateFunction(x, y);
-    auto iterationTable = m_reporter->beginTable("Шаги запуска", { "Номер итерации i", "x_i", "y_i", "f_i", "Градиент", "Шаг" });
-    double best_x = x, best_y = y, best_f = f_current;
-    m_iterations = 0;
+    Result basicCoordinateDescent() {
+        double x = m_inputData->initial_x;
+        double y = m_inputData->initial_y;
+        double f_current = evaluateFunction(x, y);
 
-    while (m_iterations < m_inputData->max_iterations &&
-           m_function_calls < m_inputData->max_function_calls) {
-         
+        auto iterationTable = m_reporter->beginTable("Шаги базового покоординатного спуска",
+            { "i", "x", "y", "f(x,y)", "∇f/∂x", "∇f/∂y", "Δx", "Δy" });
+
+        double best_x = x, best_y = y, best_f = f_current;
+        m_iterations = 0;
+
+        while (m_iterations < m_inputData->max_iterations &&
+            m_function_calls < m_inputData->max_function_calls) {
+
             double x_old = x, y_old = y;
             double f_old = f_current;
 
-            // Оптимизация по X
+            // === Шаг по X ===
             double grad_x = partialDerivativeX(x, y);
             double step_x = getStepSize(x, y, grad_x, true);
             x = updateCoordinate(x, step_x, m_inputData->x_left_bound, m_inputData->x_right_bound);
 
-            // Оптимизация по Y
+            // === Шаг по Y ===
             double grad_y = partialDerivativeY(x, y);
             double step_y = getStepSize(x, y, grad_y, false);
             y = updateCoordinate(y, step_y, m_inputData->y_left_bound, m_inputData->y_right_bound);
@@ -625,54 +658,62 @@ Result basicCoordinateDescent() {
             f_current = evaluateFunction(x, y);
             m_iterations++;
 
-            bool improvement = (m_inputData->extremum_type == ExtremumType::MINIMUM)
-                ? (f_current < best_f)
-                : (f_current > best_f);
+            
 
-            if (improvement) {
-                best_x = x;
-                best_y = y;
-                best_f = f_current;
+            // Обновление лучшей точки
+            bool improved = (m_inputData->extremum_type == ExtremumType::MINIMUM)
+                ? (f_current < best_f) : (f_current > best_f);
+            if (improved) {
+                best_x = x; best_y = y; best_f = f_current;
             }
-
-            // Отчёт о текущей итерации
-           /* if (m_reporter) {
-                m_reporter->reportIterations(m_iterations, best_x, best_y, best_f);
-            }*/
-
-            // Проверка сходимости
-            // Проверка сходимости с передачей лучших значений
-            if (checkConvergence(x_old, y_old, x, y, f_old, f_current,
-                                 best_x, best_y, best_f)) {
-                m_x = best_x;
-                m_y = best_y;
-                f_current = best_f;
-                return Result::Success;
-            }
-
+            //m_reporter->insertRow(iterationTable, { m_iterations, x, y, f_current, grad_x, grad_y, step_x, step_y});
+            m_reporter->insertRow(iterationTable, { m_iterations, best_x, best_y, best_f, grad_x, grad_y, step_x, step_y });
             // Проверка границ
             if (!isWithinBounds(x, y)) {
-                m_x = best_x;
-                m_y = best_y;
+                m_x = best_x; m_y = best_y;
+                m_reporter->endTable(iterationTable);
+                m_reporter->insertMessage("Выход за границы области");
                 return Result::OutOfBounds;
             }
-            std::cout << "Итерация " << m_iterations
-                << ": x=" << x << ", y=" << y
-                << ", f=" << f_current << std::endl
-                << ", ЛУЧШАЯ f=" << best_f << std::endl;
+
+            // === КЛЮЧЕВОЙ ВЫЗОВ: ПРОВЕРКА СХОДИМОСТИ И ОСЦИЛЛЯЦИЙ ===
+            Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
+            if (conv != Result::Continue) {
+                m_x = best_x; m_y = best_y;
+                m_reporter->endTable(iterationTable);
+
+                switch (conv) {
+                case Result::Success:
+                    m_reporter->insertMessage("✅Сходимость достигнута");
+                    break;
+                case Result::OscillationDetected:
+                    m_reporter->insertMessage("✅Алгоритм завершен: обнаружены осцилляции — возвращена лучшая точка");
+                    break;
+                default:
+                    m_reporter->insertMessage("🔴Останов по коду: " + std::to_string(static_cast<int>(conv)));
+                    break;
+                }
+
+                ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
+                m_reporter->insertResult(best_x, best_y, best_f);
+                return conv;
+            }
         }
 
-        m_x = best_x;
-        m_y = best_y;
-        f_current = best_f;
-        return checkTerminationCondition();
-
+        m_x = best_x; m_y = best_y;
+        m_reporter->endTable(iterationTable);
+        Result term = checkTerminationCondition();
+        ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
+        m_reporter->insertResult(best_x, best_y, best_f);
+        return term;
     }
     
     Result steepestCoordinateDescent() {
         double x = m_inputData->initial_x;
         double y = m_inputData->initial_y;
         double f_current = evaluateFunction(x, y);
+        auto iterationTable = m_reporter->beginTable("Шаги базового покоординатного спуска",
+            { "i", "x", "y", "f(x,y)", "∇f/∂x", "∇f/∂y", "Δx", "Δy" });
 
         double best_x = x, best_y = y, best_f = f_current;
         m_iterations = 0;
@@ -720,6 +761,8 @@ Result basicCoordinateDescent() {
                 std::cout << "*** FORCED SWITCH due to consecutive optimizations ***" << std::endl;
             }
 
+            double step_x = 0.0;
+            double step_y = 0.0;
             // Выполняем оптимизацию выбранной координаты
             if (optimize_x) {
                 double step_x = getStepSize(x, y, grad_x, true);
@@ -760,33 +803,54 @@ Result basicCoordinateDescent() {
                 best_y = y;
                 best_f = f_current;
             }
-
+            m_reporter->insertRow(iterationTable, {
+                m_iterations, x, y, f_current, grad_x, grad_y, step_x, step_y
+                });
             // Отладочный вывод
-            std::cout << "Итерация " << m_iterations
+            /*std::cout << "Итерация " << m_iterations
                 << ": grad_x=" << grad_x << " (abs=" << abs_grad_x
                 << "), grad_y=" << grad_y << " (abs=" << abs_grad_y
                 << "), выбрана " << (optimize_x ? "X" : "Y")
                 << ", x=" << x << ", y=" << y << ", f=" << f_current
-                << std::endl;
-
-            // Проверка сходимости
-            if (checkConvergence(x_old, y_old, x, y, f_old, f_current,
-                best_x, best_y, best_f)) {
-                m_x = best_x;
-                m_y = best_y;
-                return Result::Success;
-            }
-
+                << std::endl;*/
+            
             if (!isWithinBounds(x, y)) {
                 m_x = best_x;
                 m_y = best_y;
                 return Result::OutOfBounds;
             }
-        }
 
-        m_x = best_x;
-        m_y = best_y;
-        return checkTerminationCondition();
+            // === КЛЮЧЕВОЙ ВЫЗОВ: ПРОВЕРКА СХОДИМОСТИ И ОСЦИЛЛЯЦИЙ ===
+            Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
+            if (conv != Result::Continue) {
+                m_x = best_x; m_y = best_y;
+                m_reporter->endTable(iterationTable);
+
+                switch (conv) {
+                case Result::Success:
+                    m_reporter->insertMessage("✅Сходимость достигнута.");
+                    break;
+                case Result::OscillationDetected:
+                    m_reporter->insertMessage("✅Алгоритм завершен: обнаружены осцилляции — возвращена лучшая точка");
+                    break;
+                default:
+                    m_reporter->insertMessage("🔴Останов по коду: " + std::to_string(static_cast<int>(conv)));
+                    break;
+                }
+
+                ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
+                m_reporter->insertResult(best_x, best_y, best_f);
+                return conv;
+            }
+            
+            
+        }
+        m_x = best_x; m_y = best_y;
+        m_reporter->endTable(iterationTable);
+        Result term = checkTerminationCondition();
+        ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
+        m_reporter->insertResult(best_x, best_y, best_f);
+        return term;
     }
 
     // Обновление координаты с учётом границ
@@ -799,13 +863,24 @@ Result basicCoordinateDescent() {
     // Проверка условий завершения
     Result checkTerminationCondition() {
         if (m_iterations >= m_inputData->max_iterations) {
+            m_reporter->insertMessage("Достигнуто максимальное количество итераций");
             return Result::MaxIterations;
         }
         if (m_function_calls >= m_inputData->max_function_calls) {
+            m_reporter->insertMessage("Достигнуто максимальное количество вызовов функции");
             return Result::MaxFunctionsCalls;
         }
         return Result::Success;
     }
+
+    void ReporterResult(double best_x, double best_y, double best_f, int m_function_calls, int m_iterations) {
+        
+        m_reporter->insertMessage("Итого:");
+        m_reporter->insertMessage("Количество итераций: " + std::to_string(m_iterations));
+        m_reporter->insertMessage("Количество вызовов функции: " + std::to_string(m_function_calls));
+        m_reporter->insertResult(best_x, best_y, best_f);
+    }
+    
 };
 
 } // namespace CD

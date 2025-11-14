@@ -31,6 +31,7 @@ Status MainController::setInputData(const InputData *data)
     if (m_currAlgorithm == AlgoType::CD) {
         fillCDData(data);
         auto rv = m_cdAlgo.setInputData(&m_cdData);
+        qDebug() << "SET INPUT" << static_cast<int>(rv);
         if (rv != CD::Result::Success) {
             askConfirm(
                 "Ошибка подготовки данных",
@@ -54,8 +55,13 @@ Status MainController::setInputData(const InputData *data)
 Status MainController::solve()
 {
     if (m_currAlgorithm == AlgoType::CD) {
-        if (m_cdAlgo.solve() != CD::Result::Success) {
-            askConfirm("Ошибка при решении", "Что-то пошло не так");
+        auto rv = m_cdAlgo.solve();
+        qDebug() << "ALGO RESUULT: " << static_cast<int>(rv);
+        if (rv != CD::Result::Success) {
+            askConfirm(
+                "Ошибка при решении",
+                QString::fromStdString(CD::resultToString(rv))
+            );
             return Status::Fail;
         }
     } else if (m_currAlgorithm == AlgoType::GD) {
@@ -171,20 +177,26 @@ void MainController::fillCDData(const InputData *data)
     m_cdData.function = data->function().toStdString();
     m_cdData.algorithm_type = static_cast<CD::AlgorithmType>(data->extensionId());
     m_cdData.extremum_type = static_cast<CD::ExtremumType>(data->extremumId());
-    m_cdData.step_type = CD::StepType::CONSTANT;
-    m_cdData.step_type_x = CD::StepType::CONSTANT;
-    m_cdData.step_type_y = CD::StepType::CONSTANT;
+    m_cdData.step_type = static_cast<CD::StepType>(data->stepId());
+    m_cdData.step_type_x = m_cdData.step_type;
+    m_cdData.step_type_y = m_cdData.step_type;
     m_cdData.initial_x = data->startX1();
     m_cdData.initial_y = data->startY1();
     m_cdData.x_left_bound = data->minX();
     m_cdData.x_right_bound = data->maxX();
     m_cdData.y_left_bound = data->minY();
     m_cdData.y_right_bound = data->maxY();
-    m_cdData.constant_step_size_x = data->stepX();
-    m_cdData.constant_step_size_y = data->stepY();
+    if (m_cdData.step_type == CD::StepType::COEFFICIENT) {
+        m_cdData.coefficient_step_size_x = data->stepX();
+        m_cdData.coefficient_step_size_y = data->stepY();
+    } else {
+        m_cdData.constant_step_size_x = data->stepX();
+        m_cdData.constant_step_size_y = data->stepY();
+    }
     m_cdData.result_precision = data->resultAccuracy();
     m_cdData.computation_precision = data->calcAccuracy();
     m_cdData.max_iterations = data->maxIterations();
+    m_cdData.max_function_calls = data->maxFuncCalls();
 }
 
 void MainController::fillGDData(const InputData *data)
