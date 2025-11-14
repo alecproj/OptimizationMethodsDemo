@@ -13,6 +13,8 @@ MainController::MainController(QObject *parent)
     , m_cdData{}
     , m_gdAlgo{&m_writer}
     , m_gdData{}
+    , m_cgAlgo{&m_writer}
+    , m_cgData{}
     , m_quickInfoModel{this}
     , m_openReports{}
     , m_filePendingDeletion{}
@@ -49,6 +51,16 @@ Status MainController::setInputData(const InputData *data)
             );
             return Status::Fail;
         }
+    } else if (m_currAlgorithm == AlgoType::CG) {
+        fillCGData(data);
+        auto rv = m_cgAlgo.setInputData(&m_cgData);
+        if (rv != CG::Result::Success) {
+            askConfirm(
+                "Ошибка подготовки данных",
+                QString::fromStdString(CG::resultToString(rv))
+            );
+            return Status::Fail;
+        }
     } else {
         askConfirm("Ошибка подготовки данных", "Алгоритм не поддерживается");
         return Status::Fail;
@@ -74,6 +86,15 @@ Status MainController::solve()
             askConfirm(
                 "Ошибка при решении",
                 QString::fromStdString(GD::resultToString(rv))
+            );
+            return Status::Fail;
+        }
+    } else if (m_currAlgorithm == AlgoType::CG) {
+        auto rv = m_cgAlgo.solve();
+        if (rv != CG::Result::Success) {
+            askConfirm(
+                "Ошибка при решении",
+                QString::fromStdString(CG::resultToString(rv))
             );
             return Status::Fail;
         }
@@ -233,4 +254,31 @@ void MainController::fillGDData(const InputData *data)
         m_gdData.coefficient_step_size = data->step();
     }
 
+}
+
+void MainController::fillCGData(const InputData *data)
+{
+    m_cgData.function = data->function().toStdString();
+    m_cgData.algorithm_type = static_cast<CG::AlgorithmType>(data->extensionId());
+    m_cgData.extremum_type = static_cast<CG::ExtremumType>(data->extremumId());
+
+    m_cgData.initial_x = data->startX1();
+    m_cgData.initial_y = data->startY1();
+    m_cgData.x_left_bound = data->minX();
+    m_cgData.x_right_bound = data->maxX();
+    m_cgData.y_left_bound = data->minY();
+    m_cgData.y_right_bound = data->maxY();
+    m_cgData.constant_step_size = data->step();
+    m_cgData.coefficient_step_size = data->step();
+    m_cgData.result_precision = data->resultAccuracy();
+    m_cgData.computation_precision = data->calcAccuracy();
+    m_cgData.max_iterations = data->maxIterations();
+    m_cgData.max_function_calls = data->maxFuncCalls();
+
+    m_cgData.step_type = static_cast<CG::StepType>(data->stepId());
+    if(m_cgData.step_type == CG::StepType::CONSTANT || m_cgData.step_type == CG::StepType::ADAPTIVE){
+        m_cgData.constant_step_size = data->step();
+    } else if(m_cgData.step_type == CG::StepType::COEFFICIENT){
+        m_cgData.coefficient_step_size = data->step();
+    }
 }

@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # можно переопределить эти опции извне.
 option(COORDINATEDESCENT_BUILD_STANDALONE "Build CoordinateDescent as standalone exe" OFF)
 option(GRADIENTDESCENT_BUILD_STANDALONE "Build GradientDescent as standalone exe" OFF)
+option(CONJUGATEGRADIENT_BUILD_STANDALONE "Build ConjugateGradient as standalone exe" OFF)
 
 # ----------- QML Files ------------
 
@@ -45,6 +46,7 @@ endif()
 
 add_subdirectory(CoordinateDescent EXCLUDE_FROM_ALL)
 add_subdirectory(GradientDescent EXCLUDE_FROM_ALL)
+add_subdirectory(ConjugateGradient EXCLUDE_FROM_ALL)
 
 add_subdirectory(Sources)
 

@@ -31,11 +31,12 @@ Rectangle {
         StyledComboBox {
             id: algorithm
             Layout.leftMargin: (parent.width * 0.05)
-            Layout.preferredWidth: 230
+            Layout.preferredWidth: 250
 
             model: [
-                { value: AlgoType.CD, text: "Метод координатного спуска" },
-                { value: AlgoType.GD, text: "Метод градиентного спуска" }
+                { value: AlgoType.CD, text: "Метод покоординатного спуска" },
+                { value: AlgoType.GD, text: "Метод градиентного спуска" },
+                { value: AlgoType.CG, text: "Метод сопряженных градиентов" }
             ]
 
             textRole: "text"
@@ -43,6 +44,7 @@ Rectangle {
             currentValue: AppStates.selectedAlgorithm
             onActivated: {
                 AppStates.selectedAlgorithm = currentValue;
+                AppStates.selectedExtension = ExtensionType.B;
                 AppStates.selectedFullAlgo 
                     = helper.calculateFullType(
                         AppStates.selectedAlgorithm, 

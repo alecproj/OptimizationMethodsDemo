@@ -42,4 +42,5 @@ target_link_libraries(app_sources
         Qt6::Core
         CoordinateDescent
         GradientDescent
+        ConjugateGradient
 )
