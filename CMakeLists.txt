@@ -93,7 +93,10 @@ target_link_libraries(${PROJECT_NAME}App
         Qt6::Core
         Qt6::Qml
         Qt6::Quick
+
 )
+
+target_compile_options(muparser PUBLIC "/UUNICODE" "/U_UNICODE")
 
 set_target_properties(${PROJECT_NAME}App PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}

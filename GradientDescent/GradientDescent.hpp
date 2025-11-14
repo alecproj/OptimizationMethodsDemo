@@ -30,7 +30,9 @@ public:
         m_x{ 0.0 },
         m_y{ 0.0 },
         m_function_calls{ 0 },
-        m_iterations{ 0 }
+        m_iterations{ 0 },
+        m_computationPrecision{ 0.0 },
+        m_resultPrecision{0.0}
     {
     }
 
@@ -43,11 +45,11 @@ public:
         m_digitResultPrecision = 0;
         m_digitComputationPrecision = 0;
         m_oscillation_count = 0;
-
         m_recent_points.clear();
         // Очищаем парсер
         m_parser = mu::Parser{};
-
+        m_computationPrecision = 0.0;
+        m_resultPrecision = 0.0;
     }
 
 
@@ -126,17 +128,19 @@ public:
         }
 
         // Проверка точности результата
-        if (data->result_precision <= 0.0 || data->result_precision > 1.0) {
+        if (data->result_precision < 1.0 || data->result_precision > 15.0) {
+            std::cout << "------------------------------------------------------------" << data->result_precision << std::endl;
             return Result::InvalidResultPrecision;
         }
 
         // Проверка точности вычислений
-        if (data->computation_precision <= 0.0 || data->computation_precision > 1.0) {
+        if (data->computation_precision < 1.0 || data->computation_precision > 15.0) {
+            std::cout << "------------------------------------------------------------" << data->computation_precision << std::endl;
             return Result::InvalidComputationPrecision;
         }
 
         // Проверка, что точность вычислений меньше точности результата
-        if (data->computation_precision > data->result_precision) {
+        if (data->computation_precision < data->result_precision) {
             return Result::InvalidLogicPrecision;
         }
 
@@ -173,8 +177,10 @@ public:
 
         reset();
 
-        m_digitResultPrecision = countDecimals(m_inputData->result_precision);
-        m_digitComputationPrecision = countDecimals(m_inputData->computation_precision);
+        m_computationPrecision = std::pow(10, -m_inputData->computation_precision);
+        m_resultPrecision = std::pow(10, -m_inputData->result_precision);
+        m_digitResultPrecision = static_cast<int>(m_inputData->result_precision);
+        m_digitComputationPrecision = static_cast<int>(m_inputData->computation_precision);
 
 
         m_reporter->insertMessage("Начало заполнения отчета.");
@@ -233,7 +239,9 @@ private:
     int m_function_calls; // Счётчик вызовов функции
     int m_iterations; // Счётчик итераций
     int m_digitResultPrecision; //Количество знаков после запятой для результата
-    int m_digitComputationPrecision; //Количество знаков после запятой для вычислений
+    int m_digitComputationPrecision; //Количество знаков после запятой для вычисленийo
+    double m_computationPrecision;
+    double m_resultPrecision;
 
     std::vector<std::pair<double, double>> m_recent_points;
     int m_oscillation_count = 0;
@@ -410,7 +418,7 @@ private:
     double partialDerivativeX(double x, double y) {
         double x_old = m_x, y_old = m_y;
         m_y = y; // Фиксируем y
-        double derivative = m_parser.Diff(&m_x, x, m_inputData->computation_precision);
+        double derivative = m_parser.Diff(&m_x, x, m_computationPrecision);
         m_x = x_old;
         m_y = y_old;
         return derivative;
@@ -420,7 +428,7 @@ private:
     double partialDerivativeY(double x, double y) {
         double x_old = m_x, y_old = m_y;
         m_x = x; // Фиксируем x
-        double derivative = m_parser.Diff(&m_y, y, m_inputData->computation_precision);
+        double derivative = m_parser.Diff(&m_y, y, m_computationPrecision);
         m_x = x_old;
         m_y = y_old;
         return derivative;
@@ -454,7 +462,7 @@ Result checkConvergence(double x_old, double y_old,
                     std::pow(m_recent_points[i].first - m_recent_points[j].first, 2) +
                     std::pow(m_recent_points[i].second - m_recent_points[j].second, 2)
                 );
-                if (dist < m_inputData->computation_precision) {
+                if (dist < m_computationPrecision) {
                     m_oscillation_count++;
                     found_cycle = true;
                     break;
@@ -504,8 +512,8 @@ Result checkConvergence(double x_old, double y_old,
     }
 
     // ОСНОВНОЙ КРИТЕРИЙ СХОДИМОСТИ - с учетом лучшей точки
-    if (coordinate_norm < m_inputData->result_precision &&
-        df < m_inputData->result_precision) {
+    if (coordinate_norm < m_resultPrecision &&
+        df < m_resultPrecision) {
 
         // ПЕРЕД ВОЗВРАТОМ УБЕДИТЕСЬ, ЧТО ИСПОЛЬЗУЕМ ЛУЧШУЮ ТОЧКУ
         double current_f = evaluateFunction(x_new, y_new);
@@ -586,7 +594,15 @@ Result checkConvergence(double x_old, double y_old,
 
             // 3. ДВИЖЕНИЕ ПО ВСЕМ КООРДИНАТАМ ОДНОВРЕМЕННО
             double direction = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
-
+            double delta_x = direction * step * grad_x;
+            double delta_y = direction * step * grad_y;
+            /*
+            std::cout << "DEBUG MOVEMENT: " << std::endl;
+            std::cout << "  grad_x = " << grad_x << ", grad_y = " << grad_y << std::endl;
+            std::cout << "  step = " << step << std::endl;
+            std::cout << "  delta_x = " << delta_x << ", delta_y = " << delta_y << std::endl;
+            std::cout << "  before: x = " << x << ", y = " << y << std::endl;
+            */
             x = updateCoordinate(x, direction * step * grad_x, m_inputData->x_left_bound, m_inputData->x_right_bound);
             y = updateCoordinate(y, direction * step * grad_y, m_inputData->y_left_bound, m_inputData->y_right_bound);
 
@@ -599,13 +615,14 @@ Result checkConvergence(double x_old, double y_old,
                 : (f_current > best_f);
 
             if (improvement) {
-                best_x = x;
-                best_y = y;
-                best_f = f_current;
+                best_x = roundTo(x, m_digitComputationPrecision);
+                best_y = roundTo(y, m_digitComputationPrecision);
+                best_f = roundTo(f_current, m_digitComputationPrecision);
             }
 
 
-            m_reporter->insertRow(iterationTable,{m_iterations, x, y, f_current, grad_norm, step});
+            m_reporter->insertRow(iterationTable,{m_iterations, roundTo(x, m_digitComputationPrecision), roundTo(y, m_digitComputationPrecision), roundTo(f_current, m_digitComputationPrecision), roundTo(grad_norm, m_digitComputationPrecision), roundTo(step, m_digitComputationPrecision)});
+/*
             // Отладочный вывод
             std::cout << "Итерация " << m_iterations
                 << ": x=" << x << ", y=" << y
@@ -613,7 +630,8 @@ Result checkConvergence(double x_old, double y_old,
                 << ", grad_norm=" << grad_norm
                 << ", step=" << step
                 << ", ЛУЧШАЯ f=" << best_f << std::endl;
-
+            std::cout << "NORM: " << grad_norm << " CP: " << m_computationPrecision << std::endl;
+            */
             // Проверка сходимости
             Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
             if (conv != Result::Continue) {
@@ -633,15 +651,15 @@ Result checkConvergence(double x_old, double y_old,
                         break;
                 }
 
-                ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
-                m_reporter->insertResult(best_x, best_y, best_f);
+                ReporterResult(roundTo(best_x, m_digitResultPrecision), roundTo(best_y, m_digitResultPrecision) , roundTo(best_f, m_digitResultPrecision), m_function_calls, m_iterations);
+                m_reporter->insertResult(roundTo(best_x, m_digitResultPrecision), roundTo(best_y, m_digitResultPrecision), roundTo(best_f, m_digitResultPrecision));
                 return conv;
             }
 
             // Проверка границ
             if (!isWithinBounds(x, y)) {
-                m_x = best_x;
-                m_y = best_y;
+                m_x = roundTo(best_x, m_digitResultPrecision);
+                m_y = roundTo(best_y, m_digitResultPrecision);
 
                 m_reporter->endTable(iterationTable);
                 m_reporter->insertMessage("Базовый градиентный метод не завершен выход за границы.");
@@ -649,23 +667,23 @@ Result checkConvergence(double x_old, double y_old,
 
                 return Result::OutOfBounds;
             }
-
             // Проверка на слишком маленький градиент
-            if (grad_norm < m_inputData->computation_precision) {
+            if (grad_norm < m_computationPrecision) {
+
 
                 m_reporter->endTable(iterationTable);
                 m_reporter->insertMessage("Базовый градиентный метод - градиент слишком мал.");
-                ReporterResult(best_x, best_y, best_f,m_function_calls, m_iterations);
-
+                ReporterResult(roundTo(best_x, m_digitResultPrecision), roundTo(best_y, m_digitResultPrecision) , roundTo(best_f, m_digitResultPrecision), m_function_calls, m_iterations);
+                m_reporter->insertResult(roundTo(best_x, m_digitResultPrecision), roundTo(best_y, m_digitResultPrecision), roundTo(best_f, m_digitResultPrecision));
                 std::cout << "=== GRADIENT DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
-                m_x = best_x;
-                m_y = best_y;
+                m_x = roundTo(best_x, m_digitResultPrecision);
+                m_y = roundTo(best_y, m_digitResultPrecision);
                 return Result::Success;
             }
         }
 
-        m_x = best_x;
-        m_y = best_y;
+        m_x = roundTo(best_x, m_digitResultPrecision);
+        m_y = roundTo(best_y, m_digitResultPrecision);
         m_reporter->insertMessage("Базовый градиентный метод - достигнуты ограничения.");
         std::cout << "=== GRADIENT DESCENT: ДОСТИГНУТЫ ОГРАНИЧЕНИЯ ===" << std::endl;
         return checkTerminationCondition();
@@ -720,13 +738,14 @@ Result checkConvergence(double x_old, double y_old,
                 best_f = f_current;
             }
             m_reporter->insertRow(iterationTable,{m_iterations, x, y, f_current, grad_norm, optimal_step});
+            /*
             // Отладочный вывод
             std::cout << "Итерация " << m_iterations
                 << ": x=" << x << ", y=" << y
                 << ", f=" << f_current
                 << ", grad_norm=" << grad_norm
                 << ", optimal_step=" << optimal_step << std::endl;
-
+*/
             // Проверка сходимости
             Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
             if (conv != Result::Continue) {
@@ -762,7 +781,7 @@ Result checkConvergence(double x_old, double y_old,
             }
 
             // Проверка на слишком маленький градиент
-            if (grad_norm < m_inputData->computation_precision) {
+            if (grad_norm < m_computationPrecision) {
 
                 m_x = best_x;
                 m_y = best_y;
@@ -816,7 +835,7 @@ Result checkConvergence(double x_old, double y_old,
             double grad_y = partialDerivativeY(x, y);
             double grad_norm = std::sqrt(grad_x * grad_x + grad_y * grad_y);
 
-            if (grad_norm < m_inputData->computation_precision) {
+            if (grad_norm < m_computationPrecision) {
                 m_x = best_x;
                 m_y = best_y;
 
@@ -882,6 +901,7 @@ Result checkConvergence(double x_old, double y_old,
             }
 
             m_reporter->insertRow(iterationTable,{m_iterations, x, y, f_current, grad_norm, ravine_factor});
+            /*
              // Отладочный вывод
             std::cout << "Итерация " << m_iterations
                 << ": x=" << x << ", y=" << y
@@ -889,7 +909,7 @@ Result checkConvergence(double x_old, double y_old,
                 << ", grad_norm=" << grad_norm
                 << ", ravine_factor=" << ravine_factor
                 << ", ЛУЧШАЯ f=" << best_f << std::endl;
-
+*/
             // Проверка сходимости
             Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
             if (conv != Result::Continue) {
