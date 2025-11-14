@@ -900,7 +900,8 @@ private:
         }
     }
 
-    // Адаптивный шаг для градиентного метода
+    // Адаптивный шаг для градиентного метода изначальный
+    /*
     double getAdaptiveGradientStep(double x, double y, double grad_x, double grad_y, double grad_norm) {
         double direction = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
         double initial_step = m_inputData->constant_step_size;
@@ -942,7 +943,72 @@ private:
 
         return best_step;
     }
+    */
 
+    // Адаптивный шаг для градиентного метода Backtracking line search c условием Армижо
+    double getAdaptiveGradientStep(double x, double y,
+                               double grad_x, double grad_y,
+                               double grad_norm)
+    {
+        double direction = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
+
+        // Стартовый шаг
+        double step = m_inputData->constant_step_size;
+
+        // Коэффициент уменьшения шага (как STEP_REDUCTION)
+        const double beta = 0.5;        // Можно оставить STEP_REDUCTION, если хочешь
+        const double c = 0.1;           // Параметр Армижо (обычно 0.1...0.2)
+
+        double f_current = evaluateFunction(x, y);
+
+        // Направление перемещения
+        double dir_x = direction * grad_x;
+        double dir_y = direction * grad_y;
+
+        while (step >= MIN_STEP)
+        {
+            // Предлагаемая новая точка
+            double x_new = x + step * dir_x;
+            double y_new = y + step * dir_y;
+
+            // Учёт границ — как у тебя
+            x_new = std::max(m_inputData->x_left_bound,
+                             std::min(m_inputData->x_right_bound, x_new));
+            y_new = std::max(m_inputData->y_left_bound,
+                             std::min(m_inputData->y_right_bound, y_new));
+
+            // Если всё равно за границами — уменьшаем шаг
+            if (!isWithinBounds(x_new, y_new)) {
+                step *= beta;
+                continue;
+            }
+
+            // Вычисляем новое значение функции
+            double f_new = evaluateFunction(x_new, y_new);
+
+            // Условие Армижо:
+            // f_new <= f_current + c * step * grad^T * direction*grad
+            double armijo_rhs =
+                f_current + c * step * (grad_x * dir_x + grad_y * dir_y);
+
+            bool armijo_ok =
+                (m_inputData->extremum_type == ExtremumType::MINIMUM)
+                ? (f_new <= armijo_rhs)
+                : (f_new >= armijo_rhs);
+
+            if (armijo_ok) {
+                return step;        // Шаг найден!
+            }
+
+            // Иначе уменьшаем шаг
+            step *= beta;
+        }
+
+        // Если всё слишком плохо — возвращаем минимальный шаг
+        return MIN_STEP;
+    }
+
+    
     // Поиск оптимального шага вдоль направления градиента методом золотого сечения
     double findOptimalStepAlongGradient(double x, double y, double grad_x, double grad_y) {
         const double golden_ratio = 0.618033988749895;
