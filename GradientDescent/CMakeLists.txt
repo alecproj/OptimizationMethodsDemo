@@ -43,14 +43,14 @@ else()
     add_library(GradientDescent INTERFACE)
 endif()
 
-target_link_libraries(GradientDescent PRIVATE ${MUPARSER_TARGET_NAME})
+target_link_libraries(GradientDescent INTERFACE ${MUPARSER_TARGET_NAME})
 
 target_include_directories(GradientDescent
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
 )
 
-target_compile_features(GradientDescent INTERFACE cxx_std_20)
+target_compile_features(GradientDescent INTERFACE cxx_std_17)
 
 if(GRADIENTDESCENT_BUILD_STANDALONE AND EXISTS ${GD_MAIN})
     add_executable(GradientDescent_app ${GD_MAIN})

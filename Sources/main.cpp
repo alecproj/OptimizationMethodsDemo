@@ -40,9 +40,9 @@ int main(int argc, char *argv[])
     /* ------------- TEST -------------- */
 
     {
-        testMuparser();
-        TestReporter test;
-        // test.test();
+        //testMuparser();
+        //TestReporter test;
+        //test.test();
     }
 
     /* ------------- /TEST ------------- */

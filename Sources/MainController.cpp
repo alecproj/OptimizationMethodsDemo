@@ -41,8 +41,12 @@ Status MainController::setInputData(const InputData *data)
         }
     } else if (m_currAlgorithm == AlgoType::GD) {
         fillGDData(data);
-        if (m_gdAlgo.setInputData(&m_gdData) != GDResult::Success) {
-            askConfirm("Ошибка подготовки данных", "Что-то пошло не так");
+        auto rv = m_gdAlgo.setInputData(&m_gdData);
+        if (rv != GD::Result::Success) {
+            askConfirm(
+                "Ошибка подготовки данных",
+                QString::fromStdString(GD::resultToString(rv))
+            );
             return Status::Fail;
         }
     } else {
@@ -65,8 +69,12 @@ Status MainController::solve()
             return Status::Fail;
         }
     } else if (m_currAlgorithm == AlgoType::GD) {
-        if (m_gdAlgo.solve() != GDResult::Success) {
-            askConfirm("Ошибка при решении", "Что-то пошло не так");
+        auto rv = m_gdAlgo.solve();
+        if (rv != GD::Result::Success) {
+            askConfirm(
+                "Ошибка при решении",
+                QString::fromStdString(GD::resultToString(rv))
+            );
             return Status::Fail;
         }
     } else {
@@ -201,5 +209,28 @@ void MainController::fillCDData(const InputData *data)
 
 void MainController::fillGDData(const InputData *data)
 {
-    return;
+    m_gdData.function = data->function().toStdString();
+    m_gdData.algorithm_type = static_cast<GD::AlgorithmType>(data->extensionId());
+    m_gdData.extremum_type = static_cast<GD::ExtremumType>(data->extremumId());
+
+    m_gdData.initial_x = data->startX1();
+    m_gdData.initial_y = data->startY1();
+    m_gdData.x_left_bound = data->minX();
+    m_gdData.x_right_bound = data->maxX();
+    m_gdData.y_left_bound = data->minY();
+    m_gdData.y_right_bound = data->maxY();
+    m_gdData.constant_step_size = data->step();
+    m_gdData.coefficient_step_size = data->step();
+    m_gdData.result_precision = data->resultAccuracy();
+    m_gdData.computation_precision = data->calcAccuracy();
+    m_gdData.max_iterations = data->maxIterations();
+    m_gdData.max_function_calls = data->maxFuncCalls();
+
+    m_gdData.step_type = static_cast<GD::StepType>(data->stepId());
+    if(m_gdData.step_type == GD::StepType::CONSTANT || m_gdData.step_type == GD::StepType::ADAPTIVE){
+        m_gdData.constant_step_size = data->step();
+    } else if(m_gdData.step_type == GD::StepType::COEFFICIENT){
+        m_gdData.coefficient_step_size = data->step();
+    }
+
 }
