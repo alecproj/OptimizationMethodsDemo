@@ -149,8 +149,7 @@ public:
             return Result::InvalidLogicPrecision;
         }
 
-        m_computationPrecision = std::pow(10, -data->computation_precision);
-        m_resultPrecision = std::pow(10, -data->result_precision);
+        
 
         // --- ВАЛИДАЦИЯ ПАРАМЕТРОВ ШАГА ---
         
@@ -193,10 +192,10 @@ public:
 
         resetAlgorithmState();
         // Округляем результат
-
+        m_computationPrecision = std::pow(10, -m_inputData->computation_precision);
+        m_resultPrecision = std::pow(10, -m_inputData->result_precision);
         m_digitResultPrecision = static_cast<int>(m_inputData->result_precision);
         m_digitComputationPrecision = static_cast<int>(m_inputData->computation_precision);
-        
         Result result = Result::Success;
 
         try {
@@ -682,33 +681,33 @@ private:
 // ============================================================================
 
     Result basicCoordinateDescent() {
-        double x = m_inputData->initial_x;
-        double y = m_inputData->initial_y;
-        double f_current = evaluateFunction(x, y);
+        double x = roundComputation(m_inputData->initial_x);
+        double y = roundComputation(m_inputData->initial_y);
+        double f_current = roundComputation(evaluateFunction(x, y));
 
         auto iterationTable = m_reporter->beginTable("Шаги базового покоординатного спуска",
             { "i", "x", "y", "f(x,y)", "∇f/∂x", "∇f/∂y", "Δx", "Δy" });
 
-        double best_x = x, best_y = y, best_f = f_current;
+        double best_x = roundComputation(x), best_y = roundComputation(y), best_f = roundComputation(f_current);
         m_iterations = 0;
 
         while (m_iterations < m_inputData->max_iterations &&
             m_function_calls < m_inputData->max_function_calls) {
 
-            double x_old = x, y_old = y;
-            double f_old = f_current;
+            double x_old = roundComputation(x), y_old = roundComputation(y);
+            double f_old = roundComputation(f_current);
 
             // === Шаг по X ===
-            double grad_x = partialDerivativeX(x, y);
-            double step_x = getStepSize(x, y, grad_x, true);
-            x = updateCoordinate(x, step_x, m_inputData->x_left_bound, m_inputData->x_right_bound);
+            double grad_x = roundComputation(partialDerivativeX(x, y));
+            double step_x = roundComputation(getStepSize(x, y, grad_x, true));
+            x = roundComputation(updateCoordinate(x, step_x, m_inputData->x_left_bound, m_inputData->x_right_bound));
 
             // === Шаг по Y ===
-            double grad_y = partialDerivativeY(x, y);
-            double step_y = getStepSize(x, y, grad_y, false);
-            y = updateCoordinate(y, step_y, m_inputData->y_left_bound, m_inputData->y_right_bound);
+            double grad_y = roundComputation(partialDerivativeY(x, y));
+            double step_y = roundComputation(getStepSize(x, y, grad_y, false));
+            y = roundComputation(updateCoordinate(y, step_y, m_inputData->y_left_bound, m_inputData->y_right_bound));
 
-            f_current = evaluateFunction(x, y);
+            f_current = roundComputation(evaluateFunction(x, y));
             m_iterations++;
 
             
@@ -717,23 +716,23 @@ private:
             bool improved = (m_inputData->extremum_type == ExtremumType::MINIMUM)
                 ? (f_current < best_f) : (f_current > best_f);
             if (improved) {
-                best_x = roundTo(x, m_digitComputationPrecision); 
-                best_y = roundTo(y, m_digitComputationPrecision); 
-                best_f = roundTo(f_current, m_digitComputationPrecision);
+                best_x = roundComputation(x);
+                best_y = roundComputation(y);
+                best_f = roundComputation(f_current);
             }
             //m_reporter->insertRow(iterationTable, { m_iterations, x, y, f_current, grad_x, grad_y, step_x, step_y});
             m_reporter->insertRow(iterationTable, { m_iterations, 
-                                                    best_x, 
-                                                    best_y, 
-                                                    best_f,
-                                                    roundTo(grad_x, m_digitComputationPrecision),
-                                                    roundTo(grad_y, m_digitComputationPrecision),
-                                                    roundTo(step_x, m_digitComputationPrecision),
-                                                    roundTo(grad_y, m_digitComputationPrecision) });
+                                                    roundComputation(best_x),
+                                                    roundComputation(best_y),
+                                                    roundComputation(best_f),
+                                                    roundComputation(grad_x),
+                                                    roundComputation(grad_y),
+                                                    roundComputation(step_x),
+                                                    roundComputation(step_y)});
 
             // Проверка границ
             if (!isWithinBounds(x, y)) {
-                m_x = best_x; m_y = best_y;
+                m_x = roundResult(best_x); m_y = roundResult(best_y);
                 m_reporter->endTable(iterationTable);
                 m_reporter->insertMessage("Выход за границы области");
                 return Result::OutOfBounds;
@@ -742,7 +741,7 @@ private:
             // === КЛЮЧЕВОЙ ВЫЗОВ: ПРОВЕРКА СХОДИМОСТИ И ОСЦИЛЛЯЦИЙ ===
             Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
             if (conv != Result::Continue) {
-                m_x = best_x; m_y = best_y;
+                m_x = roundResult(best_x); m_y = roundResult(best_y);
                 m_reporter->endTable(iterationTable);
 
                 switch (conv) {
@@ -757,32 +756,32 @@ private:
                     break;
                 }
 
-                ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
-                m_reporter->insertResult(roundTo(best_x, m_digitResultPrecision),
-                                         roundTo(best_y, m_digitResultPrecision),
-                                         roundTo(best_f, m_digitResultPrecision));
+                ReporterResult(roundResult(best_x), roundResult(best_y), roundResult(best_f), m_function_calls, m_iterations);
+                m_reporter->insertResult(roundResult(best_x),
+                                         roundResult(best_y),
+                                         roundResult(best_f));
                 return conv;
             }
         }
 
-        m_x = best_x; m_y = best_y;
+        m_x = roundComputation(best_x); m_y = roundComputation(best_y);
         m_reporter->endTable(iterationTable);
         Result term = checkTerminationCondition();
-        ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
-        m_reporter->insertResult(roundTo(best_x, m_digitComputationPrecision),
-                                 roundTo(best_y, m_digitComputationPrecision),
-                                 roundTo(best_f, m_digitComputationPrecision));
+        ReporterResult(roundResult(best_x), roundResult(best_y), roundResult(best_f), m_function_calls, m_iterations);
+        m_reporter->insertResult(roundResult(best_x),
+                                 roundResult(best_y),
+                                 roundResult(best_f));
         return term;
     }
     
     Result steepestCoordinateDescent() {
-        double x = m_inputData->initial_x;
-        double y = m_inputData->initial_y;
-        double f_current = evaluateFunction(x, y);
+        double x = roundComputation(m_inputData->initial_x);
+        double y = roundComputation(m_inputData->initial_y);
+        double f_current = roundComputation(evaluateFunction(x, y));
         auto iterationTable = m_reporter->beginTable("Шаги базового покоординатного спуска",
             { "i", "x", "y", "f(x,y)", "∇f/∂x", "∇f/∂y", "Δx", "Δy" });
 
-        double best_x = x, best_y = y, best_f = f_current;
+        double best_x = roundComputation(x), best_y = roundComputation(y), best_f = roundComputation(f_current);
         m_iterations = 0;
 
         // Для отслеживания застревания
@@ -792,16 +791,16 @@ private:
         while (m_iterations < m_inputData->max_iterations &&
             m_function_calls < m_inputData->max_function_calls) {
 
-            double x_old = x, y_old = y;
-            double f_old = f_current;
+            double x_old = roundComputation(x), y_old = roundComputation(y);
+            double f_old = roundComputation(f_current);
 
             // Вычисление частных производных
-            double grad_x = partialDerivativeX(x, y);
-            double grad_y = partialDerivativeY(x, y);
+            double grad_x = roundComputation(partialDerivativeX(x, y));
+            double grad_y = roundComputation(partialDerivativeY(x, y));
 
             // ИСПРАВЛЕНИЕ: Для наискорейшего спуска используем АБСОЛЮТНЫЕ значения градиентов
-            double abs_grad_x = std::abs(grad_x);
-            double abs_grad_y = std::abs(grad_y);
+            double abs_grad_x = roundComputation(std::abs(grad_x));
+            double abs_grad_y = roundComputation(std::abs(grad_y));
 
             // Определяем, какую координату оптимизировать
             bool optimize_x;
@@ -832,12 +831,12 @@ private:
             double step_y = 0.0;
             // Выполняем оптимизацию выбранной координаты
             if (optimize_x) {
-                step_x = getStepSize(x, y, grad_x, true);
-                double x_new = updateCoordinate(x, step_x, m_inputData->x_left_bound, m_inputData->x_right_bound);
+                step_x = roundComputation(getStepSize(x, y, grad_x, true));
+                double x_new = roundComputation(updateCoordinate(x, step_x, m_inputData->x_left_bound, m_inputData->x_right_bound));
 
                 // Проверяем, что шаг действительно изменил координату
                 if (std::abs(x_new - x) > m_computationPrecision) {
-                    x = x_new;
+                    x = roundComputation(x_new);
                 }
                 else {
                     // Шаг слишком маленький - переключаемся на другую координату
@@ -847,17 +846,17 @@ private:
             }
 
             if (!optimize_x) {
-                step_y = getStepSize(x, y, grad_y, false);
-                double y_new = updateCoordinate(y, step_y, m_inputData->y_left_bound, m_inputData->y_right_bound);
+                step_y = roundComputation(getStepSize(x, y, grad_y, false));
+                double y_new = roundComputation(updateCoordinate(y, step_y, m_inputData->y_left_bound, m_inputData->y_right_bound));
 
                 // Проверяем, что шаг действительно изменил координату
                 if (std::abs(y_new - y) > m_computationPrecision) {
-                    y = y_new;
+                    y = roundComputation(y_new);
                 }
             }
 
             last_was_x = optimize_x;
-            f_current = evaluateFunction(x, y);
+            f_current = roundComputation(evaluateFunction(x, y));
             m_iterations++;
 
             // Обновление лучшей точки
@@ -866,20 +865,19 @@ private:
                 : (f_current > best_f);
 
             if (improvement) {
-                best_x = roundTo(x, m_digitComputationPrecision); 
-                best_y = roundTo(y, m_digitComputationPrecision); 
-                best_f = roundTo(f_current, m_digitComputationPrecision);
+                best_x = roundComputation(x);
+                best_y = roundComputation(y);
+                best_f = roundComputation(f_current);
             }
             m_reporter->insertRow(iterationTable, {
                                   m_iterations, 
-                                  x, 
-                                  y, 
-                                  f_current, 
-                                  roundTo(grad_x, m_digitComputationPrecision),
-                                  roundTo(grad_y, m_digitComputationPrecision),
-                                  roundTo(step_x, m_digitComputationPrecision),
-                                  roundTo(step_y, m_digitComputationPrecision)
-});
+                                  roundComputation(x),
+                                  roundComputation(y),
+                                  roundComputation(f_current),
+                                  roundComputation(grad_x),
+                                  roundComputation(grad_y),
+                                  roundComputation(step_x),
+                                  roundComputation(step_y)});
             // Отладочный вывод
             /*std::cout << "Итерация " << m_iterations
                 << ": grad_x=" << grad_x << " (abs=" << abs_grad_x
@@ -889,15 +887,15 @@ private:
                 << std::endl;*/
             
             if (!isWithinBounds(x, y)) {
-                m_x = best_x;
-                m_y = best_y;
+                m_x = roundResult(best_x);
+                m_y = roundResult(best_y);
                 return Result::OutOfBounds;
             }
 
             // === КЛЮЧЕВОЙ ВЫЗОВ: ПРОВЕРКА СХОДИМОСТИ И ОСЦИЛЛЯЦИЙ ===
             Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
             if (conv != Result::Continue) {
-                m_x = best_x; m_y = best_y;
+                m_x = roundResult(best_x); roundResult(m_y = best_y);
                 m_reporter->endTable(iterationTable);
 
                 switch (conv) {
@@ -912,20 +910,22 @@ private:
                     break;
                 }
 
-                ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
-                m_reporter->insertResult(roundTo(best_x, m_digitComputationPrecision),
-                                         roundTo(best_y, m_digitComputationPrecision),
-                                         roundTo(best_f, m_digitComputationPrecision));
+                ReporterResult(roundResult(best_x), roundResult(best_y), roundResult(best_f), m_function_calls, m_iterations);
+                m_reporter->insertResult(roundResult(best_x),
+                                         roundResult(best_y),
+                                         roundResult(best_f));
                 return conv;
             }
             
             
         }
-        m_x = best_x; m_y = best_y;
+        m_x = roundResult(best_x); m_y = roundResult(best_y);
         m_reporter->endTable(iterationTable);
         Result term = checkTerminationCondition();
-        ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
-        m_reporter->insertResult(best_x, best_y, best_f);
+        ReporterResult(roundResult(best_x), roundResult(best_y), roundResult(best_f), m_function_calls, m_iterations);
+        m_reporter->insertResult(roundResult(best_x),
+                                 roundResult(best_y),
+                                 roundResult(best_f));
         return term;
     }
 
@@ -972,6 +972,18 @@ private:
         double factor = pow(10.0, digits);
         //return round(value * factor) / factor;
         return ceil(value * factor) / factor;
+    }
+
+    inline double roundComputation(double v)
+    {
+        double factor = std::pow(10.0, m_digitComputationPrecision);
+        return std::round(v * factor) / factor;
+    }
+
+    inline double roundResult(double v) 
+    {
+        double factor = std::pow(10.0, m_digitResultPrecision);
+        return std::round(v * factor) / factor;
     }
     
 };
