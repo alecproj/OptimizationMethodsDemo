@@ -22,7 +22,7 @@ Rectangle {
             fn = report.inputData.function;
         }
 
-        var extremum = helper.extremumTypeToString(report.inputData.extensionId)
+        var extremum = helper.extremumTypeToString(report.inputData.extremumId)
         if (extremum) extremum = extremum.toLowerCase()
 
         var algo = helper.algoTypeToString(report.inputData.algorithmId);
@@ -39,7 +39,7 @@ Rectangle {
                ", применяя " + (algo || "") + extensionPart +
                ", за не более чем " + report.inputData.maxIterations +
                " шагов и не более чем " + report.inputData.maxFuncCalls +
-               " вызовов функции, с точностью вычислений, равной " +
+               " вызовов функции, с точностью вычислений, равной 10^-" +
                report.inputData.calcAccuracy +
                ", и с учетом заданного набора параметров: ";
     }
@@ -112,7 +112,8 @@ Rectangle {
                 }
 
                 Text {
-                    visible: (root.checkMask & CheckList.StartX1)
+                    visible: ((root.checkMask !== CheckList.GDSCheck)
+                        && (root.checkMask !== CheckList.GDRCheck))
                     Layout.preferredWidth: flickable.width
                     text: stepTypeDescription()
                     font.pixelSize: root.fontSize
@@ -186,7 +187,7 @@ Rectangle {
                 }
 
                 Text {
-                    text: "Результат представить с точностью: " + root.report.inputData.resultAccuracy + "."
+                    text: "Результат представить с точностью: 10^-" + root.report.inputData.resultAccuracy + "."
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }

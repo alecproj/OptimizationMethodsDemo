@@ -203,7 +203,7 @@ Flickable {
             spacing: 10
 
             Text {
-                text: "Укажите точность вычислений "
+                text: "Укажите точность вычислений (кол-во знаков после запятой)"
             }
 
             Item { Layout.fillWidth: true }
@@ -212,10 +212,10 @@ Flickable {
                 id: calcAccuracy 
                 boxed: true
                 Layout.preferredWidth: 150
-                placeholderText: "0.00001"
+                placeholderText: "8"
 
                 validator: RegularExpressionValidator {
-                    regularExpression: /^(1\.0|0\.0{0,17}1)$/i
+                    regularExpression: /^(?:[1-9]|1[0-5])$/i
                 }
 
                 onTextEdited: {
@@ -239,7 +239,7 @@ Flickable {
             spacing: 10
 
             Text {
-                text: "Укажите точность результата"
+                text: "Укажите точность результата (кол-во знаков после запятой)"
             }
 
             Item { Layout.fillWidth: true }
@@ -248,10 +248,10 @@ Flickable {
                 id: resultAccuracy
                 Layout.preferredWidth: 150
                 boxed: true
-                placeholderText: "0.0001"
+                placeholderText: "6"
 
                 validator: RegularExpressionValidator {
-                    regularExpression: /^(1\.0|0\.0{0,17}1)$/i
+                    regularExpression: /^(?:[1-9]|1[0-5])$/i
                 }
 
                 onActiveFocusChanged: {
@@ -285,7 +285,7 @@ Flickable {
                 id: startX1
                 Layout.preferredWidth: 150
                 boxed: true
-                placeholderText: "10.0"
+                placeholderText: "1.0"
 
                 validator: RegularExpressionValidator {
                     regularExpression: /^\-?\d{1,15}\.\d{0,15}([eE][+-]?\d{1,3})?$/i
@@ -308,7 +308,7 @@ Flickable {
                 id: startY1
                 Layout.preferredWidth: 150
                 boxed: true
-                placeholderText: "10.0"
+                placeholderText: "1.0"
 
                 validator: RegularExpressionValidator {
                     regularExpression: /^\-?\d{1,15}\.\d{0,15}([eE][+-]?\d{1,3})?$/i
@@ -407,7 +407,7 @@ Flickable {
                 id: stepX
                 Layout.preferredWidth: 150
                 boxed: true
-                placeholderText: "10.0"
+                placeholderText: "0.1"
 
                 validator: RegularExpressionValidator {
                     regularExpression: /^\-?\d{1,15}\.\d{0,15}([eE][+-]?\d{1,3})?$/i
@@ -430,7 +430,7 @@ Flickable {
                 id: stepY
                 Layout.preferredWidth: 150
                 boxed: true
-                placeholderText: "10.0"
+                placeholderText: "0.1"
 
                 validator: RegularExpressionValidator {
                     regularExpression: /^\-?\d{1,15}\.\d{0,15}([eE][+-]?\d{1,3})?$/i
@@ -468,7 +468,7 @@ Flickable {
                 id: step
                 Layout.preferredWidth: 150
                 boxed: true
-                placeholderText: "1.0"
+                placeholderText: "0.1"
 
                 validator: RegularExpressionValidator {
                     regularExpression: /^\-?\d{1,5}\.\d{0,15}([eE][+-]?\d{1,3})?$/i
@@ -505,7 +505,7 @@ Flickable {
                 id: minX
                 Layout.preferredWidth: 150
                 boxed: true
-                placeholderText: "-1.0"
+                placeholderText: "-10.0"
 
                 validator: RegularExpressionValidator {
                     regularExpression: /^\-?\d{1,15}\.\d{0,15}([eE][+-]?\d{1,3})?$/i
@@ -528,7 +528,7 @@ Flickable {
                 id: maxX
                 Layout.preferredWidth: 150
                 boxed: true
-                placeholderText: "1.0"
+                placeholderText: "10.0"
 
                 validator: RegularExpressionValidator {
                     regularExpression: /^\-?\d{1,15}\.\d{0,15}([eE][+-]?\d{1,3})?$/i
@@ -566,7 +566,7 @@ Flickable {
                 id: minY
                 Layout.preferredWidth: 150
                 boxed: true
-                placeholderText: "-1.0"
+                placeholderText: "-10.0"
 
                 validator: RegularExpressionValidator {
                     regularExpression: /^\-?\d{1,15}\.\d{0,15}([eE][+-]?\d{1,3})?$/i
@@ -589,7 +589,7 @@ Flickable {
                 id: maxY
                 Layout.preferredWidth: 150
                 boxed: true
-                placeholderText: "1.0"
+                placeholderText: "10.0"
 
                 validator: RegularExpressionValidator {
                     regularExpression: /^\-?\d{1,15}\.\d{0,15}([eE][+-]?\d{1,3})?$/i
@@ -625,7 +625,7 @@ Flickable {
                 id: iterations 
                 Layout.preferredWidth: 150
                 boxed: true
-                placeholderText: "200"
+                placeholderText: "250"
 
                 validator: RegularExpressionValidator {
                     regularExpression: /^[1-9]\d{0,3}$/i
@@ -661,7 +661,7 @@ Flickable {
                 id: funcCalls 
                 Layout.preferredWidth: 150
                 boxed: true
-                placeholderText: "200"
+                placeholderText: "2500"
 
                 validator: RegularExpressionValidator {
                     regularExpression: /^[1-9]\d{0,4}$/i
