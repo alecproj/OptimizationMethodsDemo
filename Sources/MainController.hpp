@@ -13,12 +13,14 @@
 
 #include <CoordinateDescent/CoordinateDescent.hpp>
 #include <GradientDescent/GradientDescent.hpp>
+#include <ConjugateGradient/ConjugateGradient.hpp>
 
 #include <QObject>
 
 using Status = Result::Type;
 using CDAlgoType = CD::CoordinateDescent<ReportWriter>;
 using GDAlgoType = GD::GradientDescent<ReportWriter>;
+using CGAlgoType = CG::ConjugateGradient<ReportWriter>;
 
 class MainController : public QObject {
     Q_OBJECT
@@ -62,12 +64,15 @@ private:
     GDAlgoType m_gdAlgo;
     GD::InputData m_gdData;
     QuickInfoListModel m_quickInfoModel;
+    CGAlgoType m_cgAlgo;
+    CG::InputData m_cgData;
     QList<Report *> m_openReports;
     QString m_filePendingDeletion;
     EnumHelper m_enumHelper;
 
     void fillCDData(const InputData *data);
     void fillGDData(const InputData *data);
+    void fillCGData(const InputData *data);
 };
 
 #endif // SOURCES_MAINCONTROLLER_HPP_
