@@ -79,11 +79,14 @@ public:
         }
 
         // Проверка типа шага
-        if (data->step_type != StepType::CONSTANT &&
-            data->step_type != StepType::COEFFICIENT &&
-            data->step_type != StepType::ADAPTIVE) {
-            return Result::InvalidStepType;
+        if (data->algorithm_type == AlgorithmType::GRADIENT_DESCENT) {
+            if (data->step_type != StepType::CONSTANT &&
+                data->step_type != StepType::COEFFICIENT &&
+                data->step_type != StepType::ADAPTIVE) {
+                return Result::InvalidStepType;
+            }
         }
+
 
         // Проверка корректности границ X (вопрос про равенство)
         if ((data->x_left_bound >= data->x_right_bound)) {
