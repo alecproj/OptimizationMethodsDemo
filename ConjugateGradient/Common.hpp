@@ -39,6 +39,8 @@ namespace CG {
         InvalidLogicPrecision = -20,       // Неверный ввод точностей
         InvalidConstantStepSize = -21,     // Неверный ввод постоянного шага
         InvalidCoefficientStepSize = -22,  // Неверный ввод коэффициентного шага
+        OscillationDetected = -23,         // Найдены осцилляции
+        Continue = -24                     // Продолжать итерации (временный статус)
     };
 
     // Тип алгоритма оптимизации
@@ -141,6 +143,7 @@ namespace CG {
         case Result::InvalidLogicPrecision:       return "Неверный ввод точностей";
         case Result::InvalidConstantStepSize:     return "Неверный ввод постоянного шага";
         case Result::InvalidCoefficientStepSize:  return "Неверный ввод коэффициентного шага";
+        case Result::OscillationDetected:         return "Обнаружены осцилляции";
         default:                                  return "Unknown result";
         }
     }
