@@ -38,6 +38,7 @@ namespace CG {
             m_function_calls{ 0 },
             m_iterations{ 0 }
         {
+            resetAlgorithmState();
         }
 
         double getX() const { return m_x; }                             // Получить X
@@ -141,8 +142,9 @@ namespace CG {
             if (!m_inputData || !m_reporter || m_reporter->begin() != 0) {
                 return Result::Fail;
             }
-
+            
             Result result = Result::Success;
+            resetAlgorithmState();
 
             try {
                 initializeParser();
@@ -174,7 +176,10 @@ namespace CG {
         double m_x, m_y;
         int m_function_calls;
         int m_iterations;
-        static constexpr double gradient_epsilon{ 1e-8 };
+        static constexpr double gradient_epsilon{ 1e-16 };
+        std::vector<std::pair<double, double>> m_recent_points;
+        int m_oscillation_count;
+        std::vector<std::string> m_non_diff_functions;
 
         // === ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===
 
@@ -186,6 +191,21 @@ namespace CG {
             m_function_calls = 0;
         }
 
+        // Метод для сброса состояния алгоритма
+        void resetAlgorithmState() {
+            m_function_calls = 0;
+            m_iterations = 0;
+            m_x = 0.0;
+            m_y = 0.0;
+            m_recent_points.clear();
+            m_oscillation_count = 0;
+
+            // Инициализация списка недифференцируемых функций
+            m_non_diff_functions = {
+                "abs(", "|", "sign(", "floor(", "ceil(", "round(",
+                "fmod(", "mod(", "rand(", "max(", "min(", "random"
+            };
+        }
         // Проверка синтаксиса функции
         Result validateFunctionSyntax(const std::string& function) {
             try {
@@ -244,17 +264,13 @@ namespace CG {
                 std::string func_lower = function;
                 std::transform(func_lower.begin(), func_lower.end(), func_lower.begin(), ::tolower);
 
-                for (const auto& non_diff_func : non_diff_functions) {
+                for (const auto& non_diff_func : m_non_diff_functions) {
                     std::string non_diff_lower = non_diff_func;
                     std::transform(non_diff_lower.begin(), non_diff_lower.end(), non_diff_lower.begin(), ::tolower);
 
                     if (func_lower.find(non_diff_lower) != std::string::npos) {
                         std::cout << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func << std::endl;
-                        std::cout << "Функция содержит: " << function << std::endl;
-                        
-                        m_reporter->insertMessage("Обнаружена потенциально недифференцируемая функция: "
-                            + non_diff_func);
-                        m_reporter->insertMessage("Функция содержит: " + function);
+                        m_reporter->insertMessage("Обнаружена потенциально недифференцируемая функция: " + non_diff_func);
                         return Result::NonDifferentiableFunction;
                     }
                 }
@@ -389,35 +405,31 @@ namespace CG {
         Result checkConvergence(double x_old, double y_old,
             double x_new, double y_new,
             double f_old, double f_new,
-            double& best_x, double& best_y, double& best_f) { // передаем по ссылке!
+            double& best_x, double& best_y, double& best_f) {
 
             double dx = std::abs(x_new - x_old);
             double dy = std::abs(y_new - y_old);
             double df = std::abs(f_new - f_old);
-
             double coordinate_norm = std::sqrt(dx * dx + dy * dy);
 
-            // УЛУЧШЕННЫЙ ДЕТЕКТОР ОСЦИЛЛЯЦИЙ
-            static std::vector<std::pair<double, double>> recent_points;
-            static int oscillation_count = 0;
-
+            // ИСПОЛЬЗУЕМ ЧЛЕНЫ КЛАССА ВМЕСТО СТАТИЧЕСКИХ ПЕРЕМЕННЫХ
             // Сохраняем последние 5 точек
-            recent_points.push_back({ x_new, y_new });
-            if (recent_points.size() > 5) {
-                recent_points.erase(recent_points.begin());
+            m_recent_points.push_back({ x_new, y_new });
+            if (m_recent_points.size() > 5) {
+                m_recent_points.erase(m_recent_points.begin());
             }
 
             // Проверяем все возможные циклы в последних точках
-            if (recent_points.size() >= 4) {
+            if (m_recent_points.size() >= 4) {
                 bool found_cycle = false;
-                for (size_t i = 0; i < recent_points.size() - 2; ++i) {
-                    for (size_t j = i + 1; j < recent_points.size() - 1; ++j) {
+                for (size_t i = 0; i < m_recent_points.size() - 2; ++i) {
+                    for (size_t j = i + 1; j < m_recent_points.size() - 1; ++j) {
                         double dist = std::sqrt(
-                            std::pow(recent_points[i].first - recent_points[j].first, 2) +
-                            std::pow(recent_points[i].second - recent_points[j].second, 2)
+                            std::pow(m_recent_points[i].first - m_recent_points[j].first, 2) +
+                            std::pow(m_recent_points[i].second - m_recent_points[j].second, 2)
                         );
                         if (dist < m_inputData->computation_precision) {
-                            oscillation_count++;
+                            m_oscillation_count++;
                             found_cycle = true;
                             break;
                         }
@@ -425,16 +437,15 @@ namespace CG {
                     if (found_cycle) break;
                 }
 
-                if (oscillation_count > 3) { // уменьшил порог для более раннего обнаружения
+                if (m_oscillation_count > 3) {
                     std::cout << "*** STOP: Oscillation detected after "
-                        << oscillation_count << " cycles ***" << std::endl;
-                    m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(oscillation_count) + " циклов");
-                    
+                        << m_oscillation_count << " cycles ***" << std::endl;
+                    m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(m_oscillation_count) + " циклов");
+
                     // ПРИНУДИТЕЛЬНО УСТАНАВЛИВАЕМ ЛУЧШУЮ ТОЧКУ
                     if (m_inputData->extremum_type == ExtremumType::MAXIMUM) {
-                        // Для максимума ищем точку с наибольшим значением функции
                         double max_f = best_f;
-                        for (const auto& point : recent_points) {
+                        for (const auto& point : m_recent_points) {
                             double f_val = evaluateFunction(point.first, point.second);
                             if (f_val > max_f) {
                                 max_f = f_val;
@@ -445,9 +456,8 @@ namespace CG {
                         }
                     }
                     else {
-                        // Для минимума ищем точку с наименьшим значением функции
                         double min_f = best_f;
-                        for (const auto& point : recent_points) {
+                        for (const auto& point : m_recent_points) {
                             double f_val = evaluateFunction(point.first, point.second);
                             if (f_val < min_f) {
                                 min_f = f_val;
@@ -461,7 +471,7 @@ namespace CG {
                 }
 
                 if (!found_cycle) {
-                    oscillation_count = 0; // сбрасываем счетчик если цикл прервался
+                    m_oscillation_count = 0; // сбрасываем счетчик если цикл прервался
                 }
             }
 
@@ -629,8 +639,26 @@ namespace CG {
             m_reporter->insertResult(best_x, best_y, best_f);
         }
 
+        //Считает количество знаков после запятой
+        static int countDecimals(const double value) {
+            std::string s = std::to_string(value);
+            size_t pos = s.find('.');
+            if (pos == std::string::npos) return 0;
+
+            while (!s.empty() && s.back() == '0') s.pop_back();
+            return s.size() - pos - 1;
+        }
+
+        //Округляет число до указанного количества знаков после запятой
+        double roundTo(const double value, const int digits) {
+            double factor = pow(10.0, digits);
+            //return round(value * factor) / factor;
+            return ceil(value * factor) / factor;
+        }
+
         // Метод сопряженных градиентов (Fletcher-Reeves)
         Result conjugateGradient() {
+
             double x = m_inputData->initial_x;
             double y = m_inputData->initial_y;
             double f_current = evaluateFunction(x, y);
@@ -646,9 +674,10 @@ namespace CG {
             auto iterationTable = m_reporter->beginTable("Метод сопряженных градиентов ",
                 { "i", "x", "y", "f(x,y)", "∇f/∂x", "∇f/∂y", "Шаг", "β", "||∇f||" });
             
-            // Начальное направление (антиградиент для минимума)
-            double direction_x = -grad_x;
-            double direction_y = -grad_y;
+            
+            double direction_sign = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
+            double direction_x = direction_sign * grad_x;
+            double direction_y = direction_sign * grad_y;
             
             std::cout << "=== ЗАПУСК CONJUGATE GRADIENT ===" << std::endl;
             std::cout << "Начальная точка: (" << x << ", " << y << "), f = " << f_current << std::endl;
@@ -680,8 +709,8 @@ namespace CG {
                 double beta = (m_iterations % 2 == 0) ? 0.0 : (grad_norm_new / grad_norm_old); // Сброс каждые 2 итерации
 
                 // 5. Обновление сопряженного направления
-                direction_x = -new_grad_x + beta * direction_x;
-                direction_y = -new_grad_y + beta * direction_y;
+                direction_x = direction_sign * new_grad_x + beta * direction_x;
+                direction_y = direction_sign * new_grad_y + beta * direction_y;
 
                 grad_norm_old = grad_norm_new;
 
