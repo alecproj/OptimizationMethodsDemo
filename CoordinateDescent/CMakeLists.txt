@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+﻿cmake_minimum_required(VERSION 3.16)
 
 project(CoordinateDescent VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -45,7 +45,7 @@ else()
     add_library(CoordinateDescent INTERFACE)
 endif()
 
-target_link_libraries(CoordinateDescent PRIVATE ${MUPARSER_TARGET_NAME})
+target_link_libraries(CoordinateDescent INTERFACE ${MUPARSER_TARGET_NAME})
 
 # #include <CoordinateDescent/Common.hpp>
 target_include_directories(CoordinateDescent

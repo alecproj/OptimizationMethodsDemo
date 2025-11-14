@@ -18,7 +18,7 @@
 
 using Status = Result::Type;
 using GDAlgoType = GradientDescent<ReportWriter>;
-using CDAlgoType = CoordinateDescent<ReportWriter>;
+using CDAlgoType = CD::CoordinateDescent<ReportWriter>;
 
 class MainController : public QObject {
     Q_OBJECT
@@ -58,7 +58,7 @@ private:
     AlgoType::Type m_currAlgorithm;
     ExtensionType::Type m_currExtension;
     CDAlgoType m_cdAlgo;
-    CoordinateInput m_cdData;
+    CD::InputData m_cdData;
     GDAlgoType m_gdAlgo;
     GradientInput m_gdData;
     QuickInfoListModel m_quickInfoModel;
