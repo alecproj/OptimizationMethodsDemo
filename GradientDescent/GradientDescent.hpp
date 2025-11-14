@@ -401,104 +401,107 @@ private:
         return derivative;
     }
 
-    // Проверка сходимости
-    bool checkConvergence(double x_old, double y_old,
-        double x_new, double y_new,
-        double f_old, double f_new,
-        double& best_x, double& best_y, double& best_f) {
+// Проверка сходимости
+Result checkConvergence(double x_old, double y_old,
+    double x_new, double y_new,
+    double f_old, double f_new,
+    double& best_x, double& best_y, double& best_f) { // передаем по ссылке!
 
-        double dx = std::abs(x_new - x_old);
-        double dy = std::abs(y_new - y_old);
-        double df = std::abs(f_new - f_old);
+    double dx = std::abs(x_new - x_old);
+    double dy = std::abs(y_new - y_old);
+    double df = std::abs(f_new - f_old);
 
-        double coordinate_norm = std::sqrt(dx * dx + dy * dy);
+    double coordinate_norm = std::sqrt(dx * dx + dy * dy);
 
-        // УЛУЧШЕННЫЙ ДЕТЕКТОР ОСЦИЛЛЯЦИЙ
-        static std::vector<std::pair<double, double>> recent_points;
-        static int oscillation_count = 0;
+    // УЛУЧШЕННЫЙ ДЕТЕКТОР ОСЦИЛЛЯЦИЙ
+    static std::vector<std::pair<double, double>> recent_points;
+    static int oscillation_count = 0;
 
-        // Сохраняем последние 5 точек
-        recent_points.push_back({ x_new, y_new });
-        if (recent_points.size() > 5) {
-            recent_points.erase(recent_points.begin());
-        }
-
-        // Проверяем все возможные циклы в последних точках
-        if (recent_points.size() >= 4) {
-            bool found_cycle = false;
-            for (size_t i = 0; i < recent_points.size() - 2; ++i) {
-                for (size_t j = i + 1; j < recent_points.size() - 1; ++j) {
-                    double dist = std::sqrt(
-                        std::pow(recent_points[i].first - recent_points[j].first, 2) +
-                        std::pow(recent_points[i].second - recent_points[j].second, 2)
-                    );
-                    if (dist < m_inputData->computation_precision) {
-                        oscillation_count++;
-                        found_cycle = true;
-                        break;
-                    }
-                }
-                if (found_cycle) break;
-            }
-
-            if (oscillation_count > 3) {
-                std::cout << "*** STOP: Oscillation detected after "
-                    << oscillation_count << " cycles ***" << std::endl;
-
-                // ПРИНУДИТЕЛЬНО УСТАНАВЛИВАЕМ ЛУЧШУЮ ТОЧКУ
-                if (m_inputData->extremum_type == ExtremumType::MAXIMUM) {
-                    // Для максимума ищем точку с наибольшим значением функции
-                    double max_f = best_f;
-                    for (const auto& point : recent_points) {
-                        double f_val = evaluateFunction(point.first, point.second);
-                        if (f_val > max_f) {
-                            max_f = f_val;
-                            best_x = point.first;
-                            best_y = point.second;
-                            best_f = f_val;
-                        }
-                    }
-                }
-                else {
-                    // Для минимума ищем точку с наименьшим значением функции
-                    double min_f = best_f;
-                    for (const auto& point : recent_points) {
-                        double f_val = evaluateFunction(point.first, point.second);
-                        if (f_val < min_f) {
-                            min_f = f_val;
-                            best_x = point.first;
-                            best_y = point.second;
-                            best_f = f_val;
-                        }
-                    }
-                }
-                return true;
-            }
-
-            if (!found_cycle) {
-                oscillation_count = 0; // сбрасываем счетчик если цикл прервался
-            }
-        }
-
-        // ОСНОВНОЙ КРИТЕРИЙ СХОДИМОСТИ - с учетом лучшей точки
-        if (coordinate_norm < m_inputData->result_precision &&
-            df < m_inputData->result_precision) {
-
-            // ПЕРЕД ВОЗВРАТОМ УБЕДИТЕСЬ, ЧТО ИСПОЛЬЗУЕМ ЛУЧШУЮ ТОЧКУ
-            double current_f = evaluateFunction(x_new, y_new);
-            if ((m_inputData->extremum_type == ExtremumType::MAXIMUM && current_f > best_f) ||
-                (m_inputData->extremum_type == ExtremumType::MINIMUM && current_f < best_f)) {
-                best_x = x_new;
-                best_y = y_new;
-                best_f = current_f;
-            }
-
-            std::cout << "*** CONVERGENCE: Coordinates and function stabilized ***" << std::endl;
-            return true;
-        }
-
-        return false;
+    // Сохраняем последние 5 точек
+    recent_points.push_back({ x_new, y_new });
+    if (recent_points.size() > 5) {
+        recent_points.erase(recent_points.begin());
     }
+
+    // Проверяем все возможные циклы в последних точках
+    if (recent_points.size() >= 4) {
+        bool found_cycle = false;
+        for (size_t i = 0; i < recent_points.size() - 2; ++i) {
+            for (size_t j = i + 1; j < recent_points.size() - 1; ++j) {
+                double dist = std::sqrt(
+                    std::pow(recent_points[i].first - recent_points[j].first, 2) +
+                    std::pow(recent_points[i].second - recent_points[j].second, 2)
+                );
+                if (dist < m_inputData->computation_precision) {
+                    oscillation_count++;
+                    found_cycle = true;
+                    break;
+                }
+            }
+            if (found_cycle) break;
+        }
+
+        if (oscillation_count > 3) { // уменьшил порог для более раннего обнаружения
+            std::cout << "*** STOP: Oscillation detected after "
+                << oscillation_count << " cycles ***" << std::endl;
+            m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(oscillation_count) + " циклов");
+
+            // ПРИНУДИТЕЛЬНО УСТАНАВЛИВАЕМ ЛУЧШУЮ ТОЧКУ
+            if (m_inputData->extremum_type == ExtremumType::MAXIMUM) {
+                // Для максимума ищем точку с наибольшим значением функции
+                double max_f = best_f;
+                for (const auto& point : recent_points) {
+                    double f_val = evaluateFunction(point.first, point.second);
+                    if (f_val > max_f) {
+                        max_f = f_val;
+                        best_x = point.first;
+                        best_y = point.second;
+                        best_f = f_val;
+                    }
+                }
+            }
+            else {
+                // Для минимума ищем точку с наименьшим значением функции
+                double min_f = best_f;
+                for (const auto& point : recent_points) {
+                    double f_val = evaluateFunction(point.first, point.second);
+                    if (f_val < min_f) {
+                        min_f = f_val;
+                        best_x = point.first;
+                        best_y = point.second;
+                        best_f = f_val;
+                    }
+                }
+            }
+            return Result::OscillationDetected;
+        }
+
+        if (!found_cycle) {
+            oscillation_count = 0; // сбрасываем счетчик если цикл прервался
+        }
+    }
+
+    // ОСНОВНОЙ КРИТЕРИЙ СХОДИМОСТИ - с учетом лучшей точки
+    if (coordinate_norm < m_inputData->result_precision &&
+        df < m_inputData->result_precision) {
+
+        // ПЕРЕД ВОЗВРАТОМ УБЕДИТЕСЬ, ЧТО ИСПОЛЬЗУЕМ ЛУЧШУЮ ТОЧКУ
+        double current_f = evaluateFunction(x_new, y_new);
+        if ((m_inputData->extremum_type == ExtremumType::MAXIMUM && current_f > best_f) ||
+            (m_inputData->extremum_type == ExtremumType::MINIMUM && current_f < best_f)) {
+            best_x = x_new;
+            best_y = y_new;
+            best_f = current_f;
+        }
+
+        std::cout << "*** CONVERGENCE: Coordinates and function stabilized ***" << std::endl;
+        m_reporter->insertMessage("СХОДИМОСТЬ: Координаты и функция стабилизировалась");
+        return Result::Success;
+    }
+
+    return Result::Continue;
+}
+
 
     // Проверка границ (на каждой итерации)
     bool isWithinBounds(double x, double y) {
@@ -589,19 +592,27 @@ private:
                 << ", ЛУЧШАЯ f=" << best_f << std::endl;
 
             // Проверка сходимости
-            if (checkConvergence(x_old, y_old, x, y, f_old, f_current,
-                best_x, best_y, best_f)) {
+            Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
+            if (conv != Result::Continue) {
                 m_x = best_x;
                 m_y = best_y;
-
-
                 m_reporter->endTable(iterationTable);
-                m_reporter->insertMessage("Базовый градиентный метод завершен.");
-                ReporterResult(best_x, best_y, best_f,m_function_calls, m_iterations);
 
-                std::cout << "=== GRADIENT DESCENT ЗАВЕРШЕН ===" << std::endl;
+                switch (conv) {
+                    case Result::Success:
+                        m_reporter->insertMessage("Сходимость достигнута. Базовый градиентный метод завершен.");
+                        break;
+                    case Result::OscillationDetected:
+                        m_reporter->insertMessage("Алгоритм завершен: обнаружены осцилляции — возвращена лучшая точка");
+                        break;
+                    default:
+                        m_reporter->insertMessage("Остановка по коду: " + std::to_string(static_cast<int>(conv)));
+                        break;
+                }
 
-                return Result::Success;
+                ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
+                m_reporter->insertResult(best_x, best_y, best_f);
+                return conv;
             }
 
             // Проверка границ
@@ -694,16 +705,27 @@ private:
                 << ", optimal_step=" << optimal_step << std::endl;
 
             // Проверка сходимости
-            if (checkConvergence(x_old, y_old, x, y, f_old, f_current,
-                best_x, best_y, best_f)) {
+            Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
+            if (conv != Result::Continue) {
                 m_x = best_x;
                 m_y = best_y;
                 m_reporter->endTable(iterationTable);
 
-                m_reporter->insertMessage("Метод наискорейшего спуска для градиентного метода завершен.");
+                switch (conv) {
+                    case Result::Success:
+                        m_reporter->insertMessage("Сходимость достигнута. Метод наискорейшего спуска для градиентного метода завершен.");
+                        break;
+                    case Result::OscillationDetected:
+                        m_reporter->insertMessage("Алгоритм завершен: обнаружены осцилляции — возвращена лучшая точка");
+                        break;
+                    default:
+                        m_reporter->insertMessage("Остановка по коду: " + std::to_string(static_cast<int>(conv)));
+                        break;
+                }
+
                 ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
-                std::cout << "=== STEEPEST DESCENT ЗАВЕРШЕН ===" << std::endl;
-                return Result::Success;
+                m_reporter->insertResult(best_x, best_y, best_f);
+                return conv;
             }
 
             // Проверка границ
@@ -846,15 +868,27 @@ private:
                 << ", ЛУЧШАЯ f=" << best_f << std::endl;
 
             // Проверка сходимости
-            if (checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f)) {
+            Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
+            if (conv != Result::Continue) {
                 m_x = best_x;
                 m_y = best_y;
-                std::cout << "=== RAVINE METHOD ЗАВЕРШЕН ===" << std::endl;
+                m_reporter->endTable(iterationTable);
 
-                m_reporter->insertMessage("Овражное расширение градиентного спуска завершено.");
+                switch (conv) {
+                    case Result::Success:
+                        m_reporter->insertMessage("Сходимость достигнута. Овражное расширение градиентного спуска завершено.");
+                        break;
+                    case Result::OscillationDetected:
+                        m_reporter->insertMessage("Алгоритм завершен: обнаружены осцилляции — возвращена лучшая точка");
+                        break;
+                    default:
+                        m_reporter->insertMessage("Остановка по коду: " + std::to_string(static_cast<int>(conv)));
+                        break;
+                }
+
                 ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
-
-                return Result::Success;
+                m_reporter->insertResult(best_x, best_y, best_f);
+                return conv;
             }
 
             // Проверка границ
@@ -1008,7 +1042,7 @@ private:
         return MIN_STEP;
     }
 
-    
+
     // Поиск оптимального шага вдоль направления градиента методом золотого сечения
     double findOptimalStepAlongGradient(double x, double y, double grad_x, double grad_y) {
         const double golden_ratio = 0.618033988749895;
