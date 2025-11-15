@@ -499,7 +499,7 @@ private:
                 if (found_cycle) break;
             }
 
-            if (m_oscillation_count > 3) {
+            if (m_oscillation_count > 5) {
                 std::cout << "*** STOP: Oscillation detected after "
                     << m_oscillation_count << " cycles ***" << std::endl;
                 m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(m_oscillation_count) + " циклов");
@@ -572,12 +572,12 @@ private:
         // Для минимума: двигаемся ПРОТИВ градиента
         // Для максимума: двигаемся ПО градиенту
         double direction = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
-
+        double sign_gradient = (gradient > 0) ? 1.0 : (gradient < 0 ? -1.0 : 0.0);
         double constant_step_size = is_x ? m_inputData->constant_step_size_x
             : m_inputData->constant_step_size_y;
 
         // Просто умножаем шаг на направление - знак градиента уже учтен в самом градиенте
-        return constant_step_size * direction;
+        return constant_step_size * direction * sign_gradient;
     }
 
     // Коэффициентный шаг (зависимость от градиента)
@@ -595,40 +595,37 @@ private:
 
     // Адаптивный шаг
     double getAdaptiveStep(double x, double y, double gradient, bool is_x) {
-        // Определяем направление движения
-        double direction_sign = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
+        if (std::abs(gradient) < m_computationPrecision) {
+            return 0.0; // Нет смысла двигаться
+        }
 
-        double initial_step = is_x ? m_inputData->constant_step_size_x
+        double direction = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
+        double base_step = is_x ? m_inputData->constant_step_size_x
             : m_inputData->constant_step_size_y;
 
+        // 🔥 КЛЮЧЕВОЕ УЛУЧШЕНИЕ: масштабируем базовый шаг по градиенту
+        // Чем больше |gradient|, тем больше шаг (но не безгранично)
+        double scaled_step = base_step * std::min(10.0, std::max(0.1, std::abs(gradient)));
+
+        // Альтернатива: используем "единичный" шаг вдоль градиента, но ограничиваем
+        // double scaled_step = std::min(MAX_STEP, base_step * std::abs(gradient));
+
         double current_value = evaluateFunction(x, y);
-        double best_step = 0.0;
+        double best_delta = 0.0;
         double best_value = current_value;
+        bool found_improvement = false;
 
-        // Пробуем разные размеры шага в правильном направлении
-        std::vector<double> step_sizes = {
-            initial_step * 2.0,    // Попробовать увеличить шаг
-            initial_step,          // Исходный шаг
-            initial_step * 0.5,    // Уменьшить шаг
-            initial_step * 0.1,    // Сильно уменьшить шаг
-            initial_step * 0.01    // Очень маленький шаг
-        };
-
-        for (double step : step_sizes) {
-            // Вычисляем дельту с правильным знаком
-            double delta = direction_sign * step;
-
-            // Учитываем знак градиента для выбора направления
-            if (gradient < 0) {
-                delta = -delta;
-            }
+        // Пробуем шаги вокруг scaled_step
+        std::vector<double> multipliers = { 2.0, 1.0, 0.5, 0.2, 0.1 };
+        for (double mult : multipliers) {
+            double step_size = scaled_step * mult;
+            double delta = direction * step_size;
+            if (gradient < 0) delta = -delta; // коррекция направления
 
             double x_new = is_x ? x + delta : x;
             double y_new = is_x ? y : y + delta;
 
-            if (!isWithinBounds(x_new, y_new)) {
-                continue;
-            }
+            if (!isWithinBounds(x_new, y_new)) continue;
 
             double new_value = evaluateFunction(x_new, y_new);
             bool improvement = (m_inputData->extremum_type == ExtremumType::MINIMUM)
@@ -637,26 +634,19 @@ private:
 
             if (improvement) {
                 best_value = new_value;
-                best_step = step;
+                best_delta = delta;
+                found_improvement = true;
             }
         }
 
-        // Возвращаем дельту, а не просто шаг
-        if (best_step != 0.0) {
-            double final_delta = direction_sign * best_step;
-            if (gradient < 0) {
-                final_delta = -final_delta;
-            }
-            return final_delta;
+        if (found_improvement) {
+            return best_delta;
         }
 
-        // Если не нашли улучшения, возвращаем маленький шаг в правильном направлении
-        double small_step = initial_step * 0.001;
-        double small_delta = direction_sign * small_step;
-        if (gradient < 0) {
-            small_delta = -small_delta;
-        }
-        return small_delta;
+        // Если не улучшили — делаем tiny шаг в правильном направлении
+        double tiny_delta = direction * base_step * 0.001;
+        if (gradient < 0) tiny_delta = -tiny_delta;
+        return tiny_delta;
     }
 
     double getStepSize(double x, double y, double gradient, bool is_x) {
@@ -835,7 +825,7 @@ private:
                 double x_new = roundComputation(updateCoordinate(x, step_x, m_inputData->x_left_bound, m_inputData->x_right_bound));
 
                 // Проверяем, что шаг действительно изменил координату
-                if (std::abs(x_new - x) > m_computationPrecision) {
+                if (roundComputation(std::abs(x_new - x)) > m_computationPrecision) {
                     x = roundComputation(x_new);
                 }
                 else {
@@ -850,7 +840,7 @@ private:
                 double y_new = roundComputation(updateCoordinate(y, step_y, m_inputData->y_left_bound, m_inputData->y_right_bound));
 
                 // Проверяем, что шаг действительно изменил координату
-                if (std::abs(y_new - y) > m_computationPrecision) {
+                if (roundComputation(std::abs(y_new - y)) > m_computationPrecision) {
                     y = roundComputation(y_new);
                 }
             }
@@ -976,12 +966,14 @@ private:
 
     inline double roundComputation(double v)
     {
+        //return v;
         double factor = std::pow(10.0, m_digitComputationPrecision);
         return std::round(v * factor) / factor;
     }
 
     inline double roundResult(double v) 
     {
+        //return v;
         double factor = std::pow(10.0, m_digitResultPrecision);
         return std::round(v * factor) / factor;
     }

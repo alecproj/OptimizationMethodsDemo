@@ -520,21 +520,6 @@ namespace CG {
         // РЕАЛИЗАЦИИ ТИПОВ ШАГА
         // ============================================================================
 
-        double getConjugateGradientStep(double x, double y, double dir_x, double dir_y) {
-            switch (m_inputData->step_type) {
-            case StepType::CONSTANT:
-                return m_inputData->constant_step_size;
-            case StepType::COEFFICIENT: {
-                double dir_norm = std::sqrt(dir_x * dir_x + dir_y * dir_y);
-                return m_inputData->coefficient_step_size * dir_norm;
-            }
-            case StepType::ADAPTIVE:
-                return findOptimalStepAlongDirectionCG(x, y, dir_x, dir_y);
-            default:
-                return m_inputData->constant_step_size;
-            }
-        }
-
         double findOptimalStepAlongDirectionCG(double x, double y, double dir_x, double dir_y) {
             const double golden_ratio = 0.618033988749895;
             const double tolerance = 1e-8;
