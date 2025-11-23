@@ -123,7 +123,7 @@ public:
         StartY2             = (1 << 5),  //                ,   ,
         StepX               = (1 << 6),  // CDB,CDS,   ,   ,   ,
         StepY               = (1 << 7),  // CDB,CDS,   ,   ,   ,
-        Step                = (1 << 8),  //    ,   ,GDB,   ,   ,CGB
+        Step                = (1 << 8),  //    ,   ,GDB,   ,   ,
         MinX                = (1 << 9),  // CDB,CDS,GDB,GDS,GDR,CGB
         MaxX                = (1 << 10), // CDB,CDS,GDB,GDS,GDR,CGB
         MinY                = (1 << 11), // CDB,CDS,GDB,GDS,GDR,CGB
@@ -136,7 +136,7 @@ public:
         GDBCheck            = 32527,
         GDSCheck            = 32271,
         GDRCheck            = 32271,
-        CGBCheck            = 32527,
+        CGBCheck            = 32271,
     };
     Q_ENUM(Check)
 
@@ -167,7 +167,7 @@ public:
         ), "Invalid GDRCheck");
         static_assert(CGBCheck == (
             CalcAccuracy    + ResultAccuracy + StartX1 + StartY1 +
-            Step + MinX           + MaxX    + MinY    +
+            MinX           + MaxX    + MinY    +
             MaxY            + Iterations     + FuncCalls
         ), "Invalid CGBCheck");
     }

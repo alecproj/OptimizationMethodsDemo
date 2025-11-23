@@ -25,10 +25,10 @@ class InputData : public QObject
     Q_PROPERTY(int stepId READ stepId WRITE setStepId NOTIFY stepIdChanged)
     Q_PROPERTY(int maxIterations READ maxIterations WRITE setMaxIterations NOTIFY maxIterationsChanged)
     Q_PROPERTY(int maxFuncCalls READ maxFuncCalls WRITE setMaxFuncCalls NOTIFY maxFuncCallsChanged)
+    Q_PROPERTY(int calcAccuracy READ calcAccuracy WRITE setCalcAccuracy NOTIFY calcAccuracyChanged)
+    Q_PROPERTY(int resultAccuracy READ resultAccuracy WRITE setResultAccuracy NOTIFY resultAccuracyChanged)
 
     // double
-    Q_PROPERTY(double calcAccuracy READ calcAccuracy WRITE setCalcAccuracy NOTIFY calcAccuracyChanged)
-    Q_PROPERTY(double resultAccuracy READ resultAccuracy WRITE setResultAccuracy NOTIFY resultAccuracyChanged)
     Q_PROPERTY(double startX1 READ startX1 WRITE setStartX1 NOTIFY startX1Changed)
     Q_PROPERTY(double startY1 READ startY1 WRITE setStartY1 NOTIFY startY1Changed)
     Q_PROPERTY(double startX2 READ startX2 WRITE setStartX2 NOTIFY startX2Changed)
@@ -52,8 +52,8 @@ public:
         , m_stepId(StepType::CONSTANT)
         , m_maxIterations(0)
         , m_maxFuncCalls(0)
-        , m_calcAccuracy(0.0)
-        , m_resultAccuracy(0.0)
+        , m_calcAccuracy(0)
+        , m_resultAccuracy(0)
         , m_startX1(0.0)
         , m_startY1(0.0)
         , m_startX2(0.0)
@@ -77,9 +77,9 @@ public:
     StepType::Type stepId() const { return m_stepId; }
     int maxIterations() const { return m_maxIterations; }
     int maxFuncCalls() const { return m_maxFuncCalls; }
+    int calcAccuracy() const { return m_calcAccuracy; }
+    int resultAccuracy() const { return m_resultAccuracy; }
 
-    double calcAccuracy() const { return m_calcAccuracy; }
-    double resultAccuracy() const { return m_resultAccuracy; }
     double startX1() const { return m_startX1; }
     double startY1() const { return m_startY1; }
     double startX2() const { return m_startX2; }
@@ -96,6 +96,8 @@ public:
 
     Q_INVOKABLE QString maxIterationsAsString() const { return QString::number(m_maxIterations); }
     Q_INVOKABLE QString maxFuncCallsAsString() const { return QString::number(m_maxFuncCalls); }
+    Q_INVOKABLE QString calcAccuracyAsString() const { return QString::number(m_calcAccuracy); }
+    Q_INVOKABLE QString resultAccuracyAsString() const { return QString::number(m_resultAccuracy); }
 
     static QString formatDoubleWithDot(double v) {
         QString s = QString::number(v, 'f', 15);
@@ -110,8 +112,6 @@ public:
         return s;
     }
 
-    Q_INVOKABLE QString calcAccuracyAsString() const { return formatDoubleWithDot(m_calcAccuracy); }
-    Q_INVOKABLE QString resultAccuracyAsString() const { return formatDoubleWithDot(m_resultAccuracy); }
     Q_INVOKABLE QString startX1AsString() const { return formatDoubleWithDot(m_startX1); }
     Q_INVOKABLE QString startY1AsString() const { return formatDoubleWithDot(m_startY1); }
     Q_INVOKABLE QString startX2AsString() const { return formatDoubleWithDot(m_startX2); }
@@ -190,16 +190,16 @@ public slots:
         }
     }
 
-    void setCalcAccuracy(double v)
+    void setCalcAccuracy(int v)
     {
-        if (!qFuzzyCompare(m_calcAccuracy, v)) {
+        if (m_calcAccuracy != v) {
             m_calcAccuracy = v;
             emit calcAccuracyChanged();
         }
     }
-    void setResultAccuracy(double v)
+    void setResultAccuracy(int v)
     {
-        if (!qFuzzyCompare(m_resultAccuracy, v)) {
+        if (m_resultAccuracy != v) {
             m_resultAccuracy = v;
             emit resultAccuracyChanged();
         }
@@ -308,7 +308,7 @@ public:
     Q_INVOKABLE bool setCalcAccuracyFromString(const QString& s)
     {
         bool rv = false;
-        double v = s.toDouble(&rv);
+        int v = s.toInt(&rv);
         if (rv) {
             setCalcAccuracy(v);
         }
@@ -317,7 +317,7 @@ public:
     Q_INVOKABLE bool setResultAccuracyFromString(const QString& s)
     {
         bool rv = false;
-        double v = s.toDouble(&rv);
+        int v = s.toInt(&rv);
         if (rv) {
             setResultAccuracy(v);
         }
@@ -433,9 +433,9 @@ signals:
     void stepIdChanged();
     void maxIterationsChanged();
     void maxFuncCallsChanged();
-
     void calcAccuracyChanged();
     void resultAccuracyChanged();
+
     void startX1Changed();
     void startY1Changed();
     void startX2Changed();
@@ -458,9 +458,9 @@ private:
     StepType::Type m_stepId;
     int m_maxIterations;
     int m_maxFuncCalls;
+    int m_calcAccuracy;
+    int m_resultAccuracy;
 
-    double m_calcAccuracy;
-    double m_resultAccuracy;
     double m_startX1;
     double m_startY1;
     double m_startX2;

@@ -128,14 +128,12 @@ public:
         }
 
         // Проверка точности результата
-        if (data->result_precision < 1.0 || data->result_precision > 15.0) {
-            std::cout << "------------------------------------------------------------" << data->result_precision << std::endl;
+        if (data->result_precision < 1 || data->result_precision > 15) {
             return Result::InvalidResultPrecision;
         }
 
         // Проверка точности вычислений
-        if (data->computation_precision < 1.0 || data->computation_precision > 15.0) {
-            std::cout << "------------------------------------------------------------" << data->computation_precision << std::endl;
+        if (data->computation_precision < 1 || data->computation_precision > 15) {
             return Result::InvalidComputationPrecision;
         }
 
@@ -179,8 +177,8 @@ public:
 
         m_computationPrecision = std::pow(10, -m_inputData->computation_precision);
         m_resultPrecision = std::pow(10, -m_inputData->result_precision);
-        m_digitResultPrecision = static_cast<int>(m_inputData->result_precision);
-        m_digitComputationPrecision = static_cast<int>(m_inputData->computation_precision);
+        m_digitResultPrecision = m_inputData->result_precision;
+        m_digitComputationPrecision = m_inputData->computation_precision;
 
 
         m_reporter->insertMessage("Начало заполнения отчета.");

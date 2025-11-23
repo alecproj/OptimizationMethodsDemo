@@ -268,17 +268,8 @@ void MainController::fillCGData(const InputData *data)
     m_cgData.x_right_bound = data->maxX();
     m_cgData.y_left_bound = data->minY();
     m_cgData.y_right_bound = data->maxY();
-    m_cgData.constant_step_size = data->step();
-    m_cgData.coefficient_step_size = data->step();
     m_cgData.result_precision = data->resultAccuracy();
     m_cgData.computation_precision = data->calcAccuracy();
     m_cgData.max_iterations = data->maxIterations();
     m_cgData.max_function_calls = data->maxFuncCalls();
-
-    m_cgData.step_type = static_cast<CG::StepType>(data->stepId());
-    if(m_cgData.step_type == CG::StepType::CONSTANT || m_cgData.step_type == CG::StepType::ADAPTIVE){
-        m_cgData.constant_step_size = data->step();
-    } else if(m_cgData.step_type == CG::StepType::COEFFICIENT){
-        m_cgData.coefficient_step_size = data->step();
-    }
 }

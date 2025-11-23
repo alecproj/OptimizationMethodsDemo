@@ -174,13 +174,13 @@ ReportStatus::Status ReportReader::readInputData(const QJsonObject &obj, InputDa
     }
 
     if (inputObj.contains("calcAccuracy") && !inputObj.value("calcAccuracy").isNull()) {
-        out->setCalcAccuracy(inputObj.value("calcAccuracy").toDouble(out->calcAccuracy()));
+        out->setCalcAccuracy(inputObj.value("calcAccuracy").toInt(out->calcAccuracy()));
     } else {
         return ReportStatus::InvalidDataStruct;
     }
 
     if (inputObj.contains("resultAccuracy") && !inputObj.value("resultAccuracy").isNull()) {
-        out->setResultAccuracy(inputObj.value("resultAccuracy").toDouble(out->resultAccuracy()));
+        out->setResultAccuracy(inputObj.value("resultAccuracy").toInt(out->resultAccuracy()));
     } else {
         return ReportStatus::InvalidDataStruct;
     }
