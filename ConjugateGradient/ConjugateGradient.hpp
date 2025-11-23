@@ -86,13 +86,6 @@ namespace CG {
                 return Result::InvalidExtremumType;
             }
 
-            // Проверка типа шага
-            if (data->step_type != StepType::CONSTANT &&
-                data->step_type != StepType::COEFFICIENT &&
-                data->step_type != StepType::ADAPTIVE) {
-                return Result::InvalidStepType;
-            }
-
             // Проверка корректности границ X
             if ((data->x_left_bound >= data->x_right_bound)) {
                 return Result::InvalidXBound;
@@ -126,14 +119,6 @@ namespace CG {
             // Проверка что точность вычислений меньше точности результата
             if (data->computation_precision < data->result_precision) {
                 return Result::InvalidLogicPrecision;
-            }
-
-            // --- ВАЛИДАЦИЯ ПАРАМЕТРОВ ШАГА ---
-            if (data->constant_step_size <= 0.0) {
-                return Result::InvalidConstantStepSize;
-            }
-            if (data->coefficient_step_size <= 0.0) {
-                return Result::InvalidCoefficientStepSize;
             }
 
             // Сохраняем данные
@@ -527,7 +512,7 @@ namespace CG {
 
             double a = 0.0;
             double b = findInitialStepBoundForDirectionCG(x, y, dir_x, dir_y);
-            if (b <= a) return m_inputData->constant_step_size;
+            if (b <= a) return 0.01;
 
             double h1 = b - (b - a) * golden_ratio;
             double h2 = a + (b - a) * golden_ratio;

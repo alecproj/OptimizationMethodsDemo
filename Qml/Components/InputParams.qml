@@ -123,7 +123,8 @@ Flickable {
 
         RowLayout {
             visible: ((AppStates.selectedFullAlgo !== FullAlgoType.GDS)
-                && (AppStates.selectedFullAlgo !== FullAlgoType.GDR))
+                && (AppStates.selectedFullAlgo !== FullAlgoType.GDR)
+                && (AppStates.selectedFullAlgo !== FullAlgoType.CGB))
             spacing: 10
 
             Text {
