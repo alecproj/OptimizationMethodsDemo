@@ -194,8 +194,8 @@ public:
         // Округляем результат
         m_computationPrecision = std::pow(10, -m_inputData->computation_precision);
         m_resultPrecision = std::pow(10, -m_inputData->result_precision);
-        m_digitResultPrecision = static_cast<int>(m_inputData->result_precision);
-        m_digitComputationPrecision = static_cast<int>(m_inputData->computation_precision);
+        m_digitResultPrecision = m_inputData->result_precision;
+        m_digitComputationPrecision = m_inputData->computation_precision;
         Result result = Result::Success;
 
         try {

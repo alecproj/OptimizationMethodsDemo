@@ -74,8 +74,8 @@ namespace CG {
         double y_right_bound = 1000.0; // Правая граница диапазона Y
 
         // --- ПАРАМЕТРЫ ТОЧНОСТИ ---
-        double result_precision = 1e-06;     // Точность результата
-        double computation_precision = 1e-8; // Точность вычислений
+        int result_precision = 8;     // Точность результата
+        int computation_precision = 15; // Точность вычислений
 
         // --- ОГРАНИЧЕНИЯ ---
         int max_iterations = 1000;       // Макс. число итераций 

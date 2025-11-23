@@ -107,12 +107,12 @@ namespace CG {
             }
 
             // Проверка точности результата
-            if (data->result_precision < 1.0 || data->result_precision > 15.0) {
+            if (data->result_precision < 1 || data->result_precision > 15) {
                 return Result::InvalidResultPrecision;
             }
 
             // Проверка точности вычислений
-            if (data->computation_precision < 1.0 || data->computation_precision > 15.0) {
+            if (data->computation_precision < 1 || data->computation_precision > 15) {
                 return Result::InvalidComputationPrecision;
             }
 
@@ -134,12 +134,12 @@ namespace CG {
             
             Result result = Result::Success;
             resetAlgorithmState();
-            m_computationDigits = static_cast<int>(m_inputData->computation_precision);
-            m_resultDigits = static_cast<int>(m_inputData->result_precision);
+            m_computationDigits = m_inputData->computation_precision;
+            m_resultDigits = m_inputData->result_precision;
             m_computationPrecision = std::pow(
-                10, static_cast<int>(-m_inputData->computation_precision));
+                10, (-m_inputData->computation_precision));
             m_resultPrecision = std::pow(
-                10, static_cast<int>(-m_inputData->result_precision));
+                10, (-m_inputData->result_precision));
 
             try {
                 initializeParser();
