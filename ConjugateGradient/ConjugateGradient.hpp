@@ -36,8 +36,13 @@ namespace CG {
             m_x{ 0.0 },
             m_y{ 0.0 },
             m_function_calls{ 0 },
-            m_iterations{ 0 }
+            m_iterations{ 0 },
+            m_computationPrecision{ 0.0 },
+            m_resultPrecision{ 0.0 },
+            m_computationDigits{ 0 },
+            m_resultDigits{ 0 }
         {
+            resetAlgorithmState();
         }
 
         double getX() const { return m_x; }                             // Получить X
@@ -109,17 +114,17 @@ namespace CG {
             }
 
             // Проверка точности результата
-            if (data->result_precision <= 0.0 || data->result_precision > 1.0) {
+            if (data->result_precision < 1.0 || data->result_precision > 15.0) {
                 return Result::InvalidResultPrecision;
             }
 
             // Проверка точности вычислений
-            if (data->computation_precision <= 0.0 || data->computation_precision > 1.0) {
+            if (data->computation_precision < 1.0 || data->computation_precision > 15.0) {
                 return Result::InvalidComputationPrecision;
             }
 
             // Проверка что точность вычислений меньше точности результата
-            if (data->computation_precision > data->result_precision) {
+            if (data->computation_precision < data->result_precision) {
                 return Result::InvalidLogicPrecision;
             }
 
@@ -141,8 +146,15 @@ namespace CG {
             if (!m_inputData || !m_reporter || m_reporter->begin() != 0) {
                 return Result::Fail;
             }
-
+            
             Result result = Result::Success;
+            resetAlgorithmState();
+            m_computationDigits = static_cast<int>(m_inputData->computation_precision);
+            m_resultDigits = static_cast<int>(m_inputData->result_precision);
+            m_computationPrecision = std::pow(
+                10, static_cast<int>(-m_inputData->computation_precision));
+            m_resultPrecision = std::pow(
+                10, static_cast<int>(-m_inputData->result_precision));
 
             try {
                 initializeParser();
@@ -174,7 +186,14 @@ namespace CG {
         double m_x, m_y;
         int m_function_calls;
         int m_iterations;
-        static constexpr double gradient_epsilon{ 1e-8 };
+        static constexpr double gradient_epsilon{ 1e-16 };
+        std::vector<std::pair<double, double>> m_recent_points;
+        int m_oscillation_count;
+        std::vector<std::string> m_non_diff_functions;
+        double m_computationPrecision;
+        double m_resultPrecision;
+        int m_computationDigits;
+        int m_resultDigits;
 
         // === ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===
 
@@ -186,6 +205,21 @@ namespace CG {
             m_function_calls = 0;
         }
 
+        // Метод для сброса состояния алгоритма
+        void resetAlgorithmState() {
+            m_function_calls = 0;
+            m_iterations = 0;
+            m_x = 0.0;
+            m_y = 0.0;
+            m_recent_points.clear();
+            m_oscillation_count = 0;
+
+            // Инициализация списка недифференцируемых функций
+            m_non_diff_functions = {
+                "abs(", "|", "sign(", "floor(", "ceil(", "round(",
+                "fmod(", "mod(", "rand(", "max(", "min(", "random"
+            };
+        }
         // Проверка синтаксиса функции
         Result validateFunctionSyntax(const std::string& function) {
             try {
@@ -244,17 +278,13 @@ namespace CG {
                 std::string func_lower = function;
                 std::transform(func_lower.begin(), func_lower.end(), func_lower.begin(), ::tolower);
 
-                for (const auto& non_diff_func : non_diff_functions) {
+                for (const auto& non_diff_func : m_non_diff_functions) {
                     std::string non_diff_lower = non_diff_func;
                     std::transform(non_diff_lower.begin(), non_diff_lower.end(), non_diff_lower.begin(), ::tolower);
 
                     if (func_lower.find(non_diff_lower) != std::string::npos) {
                         std::cout << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func << std::endl;
-                        std::cout << "Функция содержит: " << function << std::endl;
-                        
-                        m_reporter->insertMessage("Обнаружена потенциально недифференцируемая функция: "
-                            + non_diff_func);
-                        m_reporter->insertMessage("Функция содержит: " + function);
+                        m_reporter->insertMessage("Обнаружена потенциально недифференцируемая функция: " + non_diff_func);
                         return Result::NonDifferentiableFunction;
                     }
                 }
@@ -369,7 +399,7 @@ namespace CG {
         double partialDerivativeX(double x, double y) {
             double x_old = m_x, y_old = m_y;
             m_y = y; // Фиксируем y
-            double derivative = m_parser.Diff(&m_x, x, m_inputData->computation_precision);
+            double derivative = m_parser.Diff(&m_x, x, m_computationPrecision);
             m_x = x_old;
             m_y = y_old;
             return derivative;
@@ -379,7 +409,7 @@ namespace CG {
         double partialDerivativeY(double x, double y) {
             double x_old = m_x, y_old = m_y;
             m_x = x; // Фиксируем x
-            double derivative = m_parser.Diff(&m_y, y, m_inputData->computation_precision);
+            double derivative = m_parser.Diff(&m_y, y, m_computationPrecision);
             m_x = x_old;
             m_y = y_old;
             return derivative;
@@ -389,35 +419,31 @@ namespace CG {
         Result checkConvergence(double x_old, double y_old,
             double x_new, double y_new,
             double f_old, double f_new,
-            double& best_x, double& best_y, double& best_f) { // передаем по ссылке!
+            double& best_x, double& best_y, double& best_f) {
 
             double dx = std::abs(x_new - x_old);
             double dy = std::abs(y_new - y_old);
             double df = std::abs(f_new - f_old);
-
             double coordinate_norm = std::sqrt(dx * dx + dy * dy);
 
-            // УЛУЧШЕННЫЙ ДЕТЕКТОР ОСЦИЛЛЯЦИЙ
-            static std::vector<std::pair<double, double>> recent_points;
-            static int oscillation_count = 0;
-
+            // ИСПОЛЬЗУЕМ ЧЛЕНЫ КЛАССА ВМЕСТО СТАТИЧЕСКИХ ПЕРЕМЕННЫХ
             // Сохраняем последние 5 точек
-            recent_points.push_back({ x_new, y_new });
-            if (recent_points.size() > 5) {
-                recent_points.erase(recent_points.begin());
+            m_recent_points.push_back({ x_new, y_new });
+            if (m_recent_points.size() > 5) {
+                m_recent_points.erase(m_recent_points.begin());
             }
 
             // Проверяем все возможные циклы в последних точках
-            if (recent_points.size() >= 4) {
+            if (m_recent_points.size() >= 4) {
                 bool found_cycle = false;
-                for (size_t i = 0; i < recent_points.size() - 2; ++i) {
-                    for (size_t j = i + 1; j < recent_points.size() - 1; ++j) {
+                for (size_t i = 0; i < m_recent_points.size() - 2; ++i) {
+                    for (size_t j = i + 1; j < m_recent_points.size() - 1; ++j) {
                         double dist = std::sqrt(
-                            std::pow(recent_points[i].first - recent_points[j].first, 2) +
-                            std::pow(recent_points[i].second - recent_points[j].second, 2)
+                            std::pow(m_recent_points[i].first - m_recent_points[j].first, 2) +
+                            std::pow(m_recent_points[i].second - m_recent_points[j].second, 2)
                         );
-                        if (dist < m_inputData->computation_precision) {
-                            oscillation_count++;
+                        if (dist < m_computationPrecision) {
+                            m_oscillation_count++;
                             found_cycle = true;
                             break;
                         }
@@ -425,16 +451,15 @@ namespace CG {
                     if (found_cycle) break;
                 }
 
-                if (oscillation_count > 3) { // уменьшил порог для более раннего обнаружения
+                if (m_oscillation_count > 3) {
                     std::cout << "*** STOP: Oscillation detected after "
-                        << oscillation_count << " cycles ***" << std::endl;
-                    m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(oscillation_count) + " циклов");
-                    
+                        << m_oscillation_count << " cycles ***" << std::endl;
+                    m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(m_oscillation_count) + " циклов");
+
                     // ПРИНУДИТЕЛЬНО УСТАНАВЛИВАЕМ ЛУЧШУЮ ТОЧКУ
                     if (m_inputData->extremum_type == ExtremumType::MAXIMUM) {
-                        // Для максимума ищем точку с наибольшим значением функции
                         double max_f = best_f;
-                        for (const auto& point : recent_points) {
+                        for (const auto& point : m_recent_points) {
                             double f_val = evaluateFunction(point.first, point.second);
                             if (f_val > max_f) {
                                 max_f = f_val;
@@ -445,9 +470,8 @@ namespace CG {
                         }
                     }
                     else {
-                        // Для минимума ищем точку с наименьшим значением функции
                         double min_f = best_f;
-                        for (const auto& point : recent_points) {
+                        for (const auto& point : m_recent_points) {
                             double f_val = evaluateFunction(point.first, point.second);
                             if (f_val < min_f) {
                                 min_f = f_val;
@@ -461,13 +485,13 @@ namespace CG {
                 }
 
                 if (!found_cycle) {
-                    oscillation_count = 0; // сбрасываем счетчик если цикл прервался
+                    m_oscillation_count = 0; // сбрасываем счетчик если цикл прервался
                 }
             }
 
             // ОСНОВНОЙ КРИТЕРИЙ СХОДИМОСТИ - с учетом лучшей точки
-            if (coordinate_norm < m_inputData->result_precision &&
-                df < m_inputData->result_precision) {
+            if (coordinate_norm < m_resultPrecision &&
+                df < m_resultPrecision) {
 
                 // ПЕРЕД ВОЗВРАТОМ УБЕДИТЕСЬ, ЧТО ИСПОЛЬЗУЕМ ЛУЧШУЮ ТОЧКУ
                 double current_f = evaluateFunction(x_new, y_new);
@@ -495,21 +519,6 @@ namespace CG {
         // ============================================================================
         // РЕАЛИЗАЦИИ ТИПОВ ШАГА
         // ============================================================================
-
-        double getConjugateGradientStep(double x, double y, double dir_x, double dir_y) {
-            switch (m_inputData->step_type) {
-            case StepType::CONSTANT:
-                return m_inputData->constant_step_size;
-            case StepType::COEFFICIENT: {
-                double dir_norm = std::sqrt(dir_x * dir_x + dir_y * dir_y);
-                return m_inputData->coefficient_step_size * dir_norm;
-            }
-            case StepType::ADAPTIVE:
-                return findOptimalStepAlongDirectionCG(x, y, dir_x, dir_y);
-            default:
-                return m_inputData->constant_step_size;
-            }
-        }
 
         double findOptimalStepAlongDirectionCG(double x, double y, double dir_x, double dir_y) {
             const double golden_ratio = 0.618033988749895;
@@ -621,7 +630,7 @@ namespace CG {
             return Result::Success;
         }
 
-        void ReporterResult(double best_x, double best_y, double best_f, int m_function_calls, int m_iterations) {
+        void insertResultInfo(double best_x, double best_y, double best_f, int m_function_calls, int m_iterations) {
 
             m_reporter->insertMessage("Итого:");
             m_reporter->insertMessage("Количество итераций: " + std::to_string(m_iterations));
@@ -629,26 +638,38 @@ namespace CG {
             m_reporter->insertResult(best_x, best_y, best_f);
         }
 
+        //Считает количество знаков после запятой
+        static int countDecimals(const double value) {
+            std::string s = std::to_string(value);
+            size_t pos = s.find('.');
+            if (pos == std::string::npos) return 0;
+
+            while (!s.empty() && s.back() == '0') s.pop_back();
+            return s.size() - pos - 1;
+        }
+
         // Метод сопряженных градиентов (Fletcher-Reeves)
         Result conjugateGradient() {
-            double x = m_inputData->initial_x;
-            double y = m_inputData->initial_y;
-            double f_current = evaluateFunction(x, y);
+
+            double x = roundComputation(m_inputData->initial_x);
+            double y = roundComputation(m_inputData->initial_y);
+            double f_current = roundComputation(evaluateFunction(x, y));
 
             double best_x = x, best_y = y, best_f = f_current;
             m_iterations = 0;
 
             // Начальный градиент
-            double grad_x = partialDerivativeX(x, y);
-            double grad_y = partialDerivativeY(x, y);
-            double grad_norm_old = grad_x * grad_x + grad_y * grad_y;
+            double grad_x = roundComputation(partialDerivativeX(x, y));
+            double grad_y = roundComputation(partialDerivativeY(x, y));
+            double grad_norm_old = roundComputation(grad_x * grad_x + grad_y * grad_y);
 
             auto iterationTable = m_reporter->beginTable("Метод сопряженных градиентов ",
                 { "i", "x", "y", "f(x,y)", "∇f/∂x", "∇f/∂y", "Шаг", "β", "||∇f||" });
             
-            // Начальное направление (антиградиент для минимума)
-            double direction_x = -grad_x;
-            double direction_y = -grad_y;
+            
+            double direction_sign = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
+            double direction_x = direction_sign * grad_x;
+            double direction_y = direction_sign * grad_y;
             
             std::cout << "=== ЗАПУСК CONJUGATE GRADIENT ===" << std::endl;
             std::cout << "Начальная точка: (" << x << ", " << y << "), f = " << f_current << std::endl;
@@ -660,28 +681,29 @@ namespace CG {
                 double f_old = f_current;
 
                 // 1. Поиск оптимального шага вдоль текущего направления
-                double optimal_step = findOptimalStepAlongDirectionCG(x, y, direction_x, direction_y);
+                double optimal_step
+                    = roundComputation(findOptimalStepAlongDirectionCG(x, y, direction_x, direction_y));
 
                 // 2. Обновление координат
-                x = updateCoordinate(x, optimal_step * direction_x,
-                    m_inputData->x_left_bound, m_inputData->x_right_bound);
-                y = updateCoordinate(y, optimal_step * direction_y,
-                    m_inputData->y_left_bound, m_inputData->y_right_bound);
+                x = roundComputation(updateCoordinate(x, optimal_step * direction_x,
+                    m_inputData->x_left_bound, m_inputData->x_right_bound));
+                y = roundComputation(updateCoordinate(y, optimal_step * direction_y,
+                    m_inputData->y_left_bound, m_inputData->y_right_bound));
 
-                f_current = evaluateFunction(x, y);
+                f_current = roundComputation(evaluateFunction(x, y));
                 m_iterations++;
 
                 // 3. Вычисление нового градиента
-                double new_grad_x = partialDerivativeX(x, y);
-                double new_grad_y = partialDerivativeY(x, y);
+                double new_grad_x = roundComputation(partialDerivativeX(x, y));
+                double new_grad_y = roundComputation(partialDerivativeY(x, y));
 
                 // 4. Вычисление коэффициента Флетчера-Ривза
-                double grad_norm_new = new_grad_x * new_grad_x + new_grad_y * new_grad_y;
+                double grad_norm_new = roundComputation(new_grad_x * new_grad_x + new_grad_y * new_grad_y);
                 double beta = (m_iterations % 2 == 0) ? 0.0 : (grad_norm_new / grad_norm_old); // Сброс каждые 2 итерации
 
                 // 5. Обновление сопряженного направления
-                direction_x = -new_grad_x + beta * direction_x;
-                direction_y = -new_grad_y + beta * direction_y;
+                direction_x = roundComputation(direction_sign * new_grad_x + beta * direction_x);
+                direction_y = roundComputation(direction_sign * new_grad_y + beta * direction_y);
 
                 grad_norm_old = grad_norm_new;
 
@@ -736,22 +758,28 @@ namespace CG {
                         break;
                     }
 
-                    ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
-                    m_reporter->insertResult(best_x, best_y, best_f);
+                    insertResultInfo(best_x, best_y, best_f, m_function_calls, m_iterations);
+                    m_reporter->insertResult(
+                        roundResult(best_x),
+                        roundResult(best_y),
+                        roundResult(best_f)
+                    );
                     return conv;
                 }
 
-                
-
                 // Проверка на слишком маленький градиент
-                if (std::sqrt(grad_norm_new) < m_inputData->computation_precision) {
+                if (std::sqrt(grad_norm_new) < m_computationPrecision) {
                     std::cout << "=== CONJUGATE GRADIENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
                     m_x = best_x;
                     m_y = best_y;
                     m_reporter->endTable(iterationTable);
                     m_reporter->insertMessage("Алгоритм завершен: Градиаент слишком мал");
-                    ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
-                    m_reporter->insertResult(best_x, best_y, best_f);
+                    insertResultInfo(best_x, best_y, best_f, m_function_calls, m_iterations);
+                    m_reporter->insertResult(
+                        roundResult(best_x),
+                        roundResult(best_y),
+                        roundResult(best_f)
+                    );
                     return Result::Success;
                 }
             }
@@ -759,9 +787,25 @@ namespace CG {
             m_x = best_x; m_y = best_y;
             m_reporter->endTable(iterationTable);
             Result term = checkTerminationCondition();
-            ReporterResult(best_x, best_y, best_f, m_function_calls, m_iterations);
-            m_reporter->insertResult(best_x, best_y, best_f);
+            insertResultInfo(best_x, best_y, best_f, m_function_calls, m_iterations);
+            m_reporter->insertResult(
+                roundResult(best_x),
+                roundResult(best_y),
+                roundResult(best_f)
+            );
             return term;
+        }
+
+        inline double roundComputation(double v)
+        {
+            double factor = std::pow(10.0, m_computationDigits);
+            return std::round(v * factor) / factor;
+        }
+
+        inline double roundResult(double v)
+        {
+            double factor = std::pow(10.0, m_resultDigits);
+            return std::round(v * factor) / factor;
         }
     };
 
