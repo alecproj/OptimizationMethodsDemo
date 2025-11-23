@@ -7,6 +7,7 @@
 #define CONJUGATEGRADIENT_CONJUGATEGRADIENT_HPP_
 
 #include "ConjugateGradient/Common.hpp"  // Изменено: используем свой Common.hpp
+#include <glog/logging.h>
 #include <muParser.h>
 #include <vector>
 #include <cmath>
@@ -15,6 +16,10 @@
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
+#endif
+
+#ifndef DEBUG
+#define DEBUG 1
 #endif
 
 namespace CG {
@@ -241,8 +246,8 @@ namespace CG {
                 return true;
             }
             catch (...) {
-                std::cout << "Функция не дифференцируема в начальной точке ("
-                    << m_inputData->initial_x << ", " << m_inputData->initial_y << ")" << std::endl;
+                LOG(ERROR) << "Функция не дифференцируема в начальной точке ("
+                    << m_inputData->initial_x << ", " << m_inputData->initial_y << ")";
                 m_reporter->insertMessage("Функция не дифференцируема в начальной точке ("
                     + std::to_string(m_inputData->initial_x) 
                     + ", " + std::to_string(m_inputData->initial_y) + ")");
@@ -268,7 +273,7 @@ namespace CG {
                     std::transform(non_diff_lower.begin(), non_diff_lower.end(), non_diff_lower.begin(), ::tolower);
 
                     if (func_lower.find(non_diff_lower) != std::string::npos) {
-                        std::cout << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func << std::endl;
+                        LOG(ERROR) << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func;
                         m_reporter->insertMessage("Обнаружена потенциально недифференцируемая функция: " + non_diff_func);
                         return Result::NonDifferentiableFunction;
                     }
@@ -320,8 +325,8 @@ namespace CG {
                             std::isnan(deriv_y1) || std::isinf(deriv_y1) ||
                             std::isnan(deriv_x2) || std::isinf(deriv_x2) ||
                             std::isnan(deriv_y2) || std::isinf(deriv_y2)) {
-                            std::cout << "Производная не определена в точке ("
-                                << test_x << ", " << test_y << ")" << std::endl;
+                            LOG(ERROR) << "Производная не определена в точке ("
+                                << test_x << ", " << test_y << ")";
                             
                             m_reporter->insertMessage("Производная не определена в точке ("
                                 + std::to_string(test_x) + ", " + std::to_string(test_y) + ")");
@@ -329,16 +334,16 @@ namespace CG {
                         }
                     }
                     catch (const mu::Parser::exception_type& e) {
-                        std::cout << "Функция не дифференцируема в точке ("
-                            << test_x << ", " << test_y << "): " << e.GetMsg() << std::endl;
+                        LOG(ERROR) << "Функция не дифференцируема в точке ("
+                            << test_x << ", " << test_y << "): " << e.GetMsg();
                         
                         m_reporter->insertMessage("Функция не дифференцируема в точке ("
                             + std::to_string(test_x) + ", " + std::to_string(test_y) + ")");
                         return Result::NonDifferentiableFunction;
                     }
                     catch (const std::exception& e) {
-                        std::cout << "Ошибка дифференцирования в точке ("
-                            << test_x << ", " << test_y << "): " << e.what() << std::endl;
+                        LOG(ERROR) << "Ошибка дифференцирования в точке ("
+                            << test_x << ", " << test_y << "): " << e.what();
 
                         m_reporter->insertMessage("Ошибка дифференцирования в точке ("
                             + std::to_string(test_x) + ", " + std::to_string(test_y) + ")");
@@ -346,18 +351,18 @@ namespace CG {
                         return Result::NonDifferentiableFunction;
                     }
                 }
-                std::cout << "Функция прошла проверку дифференцируемости" << std::endl;
+                LOG(INFO) << "Функция прошла проверку дифференцируемости";
                 m_reporter->insertMessage("Функция прошла проверку дифференцируемости");
                 return Result::Success;
 
             }
             catch (const mu::Parser::exception_type& e) {
-                std::cout << "Ошибка парсера при проверке дифференцируемости: " << e.GetMsg() << std::endl;
+                LOG(ERROR) << "Ошибка парсера при проверке дифференцируемости: " << e.GetMsg();
                 m_reporter->insertMessage("Ошибка парсера при проверке дифференцируемости: ");
                 return Result::ParseError;
             }
             catch (const std::exception& e) {
-                std::cout << "Общая ошибка при проверке дифференцируемости: " << e.what() << std::endl;
+                LOG(ERROR) << "Общая ошибка при проверке дифференцируемости: " << e.what();
                 m_reporter->insertMessage("Общая ошибка при проверке дифференцируемости: ");
                 return Result::ComputeError;
             }
@@ -437,8 +442,8 @@ namespace CG {
                 }
 
                 if (m_oscillation_count > 3) {
-                    std::cout << "*** STOP: Oscillation detected after "
-                        << m_oscillation_count << " cycles ***" << std::endl;
+                    LOG(INFO) << "STOP: Oscillation detected after "
+                        << m_oscillation_count << " cycles ***";
                     m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(m_oscillation_count) + " циклов");
 
                     // ПРИНУДИТЕЛЬНО УСТАНАВЛИВАЕМ ЛУЧШУЮ ТОЧКУ
@@ -487,7 +492,7 @@ namespace CG {
                     best_f = current_f;
                 }
 
-                std::cout << "*** CONVERGENCE: Coordinates and function stabilized ***" << std::endl;
+                LOG(INFO) << "CONVERGENCE: Coordinates and function stabilized";
                 m_reporter->insertMessage("СХОДИМОСТЬ: Координаты и функция стабилизировалась");
                 return Result::Success;
             }
@@ -656,8 +661,8 @@ namespace CG {
             double direction_x = direction_sign * grad_x;
             double direction_y = direction_sign * grad_y;
             
-            std::cout << "=== ЗАПУСК CONJUGATE GRADIENT ===" << std::endl;
-            std::cout << "Начальная точка: (" << x << ", " << y << "), f = " << f_current << std::endl;
+            LOG(INFO) << "=== ЗАПУСК CONJUGATE GRADIENT ===";
+            VLOG(DEBUG) << "Начальная точка: (" << x << ", " << y << "), f = " << f_current;
 
             while (m_iterations < m_inputData->max_iterations &&
                 m_function_calls < m_inputData->max_function_calls) {
@@ -711,18 +716,18 @@ namespace CG {
                 std::sqrt(grad_norm_new)
              });
                 // Отладочный вывод
-                /*std::cout << "Итерация " << m_iterations
+                VLOG(DEBUG) << "Итерация " << m_iterations
                     << ": x=" << x << ", y=" << y
                     << ", f=" << f_current
                     << ", grad_norm=" << std::sqrt(grad_norm_new)
                     << ", beta=" << beta
-                    << ", ЛУЧШАЯ f=" << best_f << std::endl;*/
+                    << ", ЛУЧШАЯ f=" << best_f;
 
                 // Проверка границ
                 if (!isWithinBounds(x, y)) {
                     m_x = best_x;
                     m_y = best_y;
-                    std::cout << "=== CONJUGATE GRADIENT: ВЫХОД ЗА ГРАНИЦЫ ===" << std::endl;
+                    LOG(ERROR) << "=== CONJUGATE GRADIENT: ВЫХОД ЗА ГРАНИЦЫ ===";
                     return Result::OutOfBounds;
                 }
                 
@@ -754,7 +759,7 @@ namespace CG {
 
                 // Проверка на слишком маленький градиент
                 if (std::sqrt(grad_norm_new) < m_computationPrecision) {
-                    std::cout << "=== CONJUGATE GRADIENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
+                    LOG(INFO) << "=== CONJUGATE GRADIENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===";
                     m_x = best_x;
                     m_y = best_y;
                     m_reporter->endTable(iterationTable);

@@ -3,6 +3,11 @@
 project(CoordinateDescent VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# ---------------------- glog -------------------------
+find_package (glog 0.7.1 REQUIRED)
+
+# ---------------- CoordinateDescent ------------------
+
 # Создаёт цель CoordinateDescent.
 # - Если в папке есть .cpp (кроме main.cpp) — создаётся STATIC library.
 # - Если .cpp отсутствуют (header-only) — создаётся INTERFACE library.
@@ -45,7 +50,11 @@ else()
     add_library(CoordinateDescent INTERFACE)
 endif()
 
-target_link_libraries(CoordinateDescent INTERFACE ${MUPARSER_TARGET_NAME})
+target_link_libraries(CoordinateDescent
+    INTERFACE
+        ${MUPARSER_TARGET_NAME}
+        glog::glog
+)
 
 # #include <CoordinateDescent/Common.hpp>
 target_include_directories(CoordinateDescent

@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.16)
 project(GradientDescent VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# ---------------------- glog -------------------------
+find_package (glog 0.7.1 REQUIRED)
+
+# ---------------- GradientDescent ------------------
+
 # Создаёт цель GradientDescent.
 # - Если в папке есть .cpp (кроме main.cpp) — создаётся STATIC library.
 # - Если .cpp отсутствуют (header-only) — создаётся INTERFACE library.
@@ -43,7 +48,11 @@ else()
     add_library(GradientDescent INTERFACE)
 endif()
 
-target_link_libraries(GradientDescent INTERFACE ${MUPARSER_TARGET_NAME})
+target_link_libraries(GradientDescent
+    INTERFACE
+        ${MUPARSER_TARGET_NAME}
+        glog::glog
+)
 
 target_include_directories(GradientDescent
     INTERFACE

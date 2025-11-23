@@ -2,6 +2,7 @@
 #define GRADIENTDESCENT_GRADIENTDESCENT_HPP_
 
 #include <GradientDescent/Common.hpp>
+#include <glog/logging.h>
 #include <muParser.h>
 #include <vector>
 #include <cmath>
@@ -9,6 +10,10 @@
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
+#endif
+
+#ifndef DEBUG
+#define DEBUG 1
 #endif
 
 namespace GD {
@@ -290,7 +295,7 @@ private:
         }
         catch (...) {
             //m_reporter->insertMessage("Функция не дифференцируема в начальной точке (" + std::to_string(m_inputData->initial_x) + ", " + std::to_string(m_inputData->initial_y) + ")");
-            std::cout << "Функция не дифференцируема в начальной точке (" << m_inputData->initial_x << ", " << m_inputData->initial_y << ")" << std::endl;
+            LOG(ERROR) << "Функция не дифференцируема в начальной точке (" << m_inputData->initial_x << ", " << m_inputData->initial_y << ")";
             return false;
         }
     }
@@ -314,8 +319,8 @@ private:
                 std::transform(non_diff_lower.begin(), non_diff_lower.end(), non_diff_lower.begin(), ::tolower);
 
                 if (func_lower.find(non_diff_lower) != std::string::npos) {
-                    std::cout << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func << std::endl;
-                    std::cout << "Функция содержит: " << function << std::endl;
+                    LOG(ERROR) << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func;
+                    LOG(ERROR) << "Функция содержит: " << function;
                     return Result::NonDifferentiableFunction;
                 }
             }
@@ -366,33 +371,33 @@ private:
                         std::isnan(deriv_y1) || std::isinf(deriv_y1) ||
                         std::isnan(deriv_x2) || std::isinf(deriv_x2) ||
                         std::isnan(deriv_y2) || std::isinf(deriv_y2)) {
-                        std::cout << "Производная не определена в точке ("
-                            << test_x << ", " << test_y << ")" << std::endl;
+                        LOG(ERROR) << "Производная не определена в точке ("
+                            << test_x << ", " << test_y << ")";
                         return Result::NonDifferentiableFunction;
                     }
                 }
                 catch (const mu::Parser::exception_type& e) {
-                    std::cout << "Функция не дифференцируема в точке ("
-                        << test_x << ", " << test_y << "): " << e.GetMsg() << std::endl;
+                    LOG(ERROR) << "Функция не дифференцируема в точке ("
+                        << test_x << ", " << test_y << "): " << e.GetMsg();
                     return Result::NonDifferentiableFunction;
                 }
                 catch (const std::exception& e) {
-                    std::cout << "Ошибка дифференцирования в точке ("
-                        << test_x << ", " << test_y << "): " << e.what() << std::endl;
+                    LOG(ERROR) << "Ошибка дифференцирования в точке ("
+                        << test_x << ", " << test_y << "): " << e.what();
                     return Result::NonDifferentiableFunction;
                 }
             }
             //m_reporter->insertMessage("Функция прошла проверку дифференцируемости");
-            std::cout << "Функция прошла проверку дифференцируемости" << std::endl;
+            VLOG(DEBUG) << "Функция прошла проверку дифференцируемости";
             return Result::Success;
 
         }
         catch (const mu::Parser::exception_type& e) {
-            std::cout << "Ошибка парсера при проверке дифференцируемости: " << e.GetMsg() << std::endl;
+            LOG(ERROR) << "Ошибка парсера при проверке дифференцируемости: " << e.GetMsg();
             return Result::ParseError;
         }
         catch (const std::exception& e) {
-            std::cout << "Общая ошибка при проверке дифференцируемости: " << e.what() << std::endl;
+            LOG(ERROR) << "Общая ошибка при проверке дифференцируемости: " << e.what();
             return Result::ComputeError;
         }
     }
@@ -472,8 +477,8 @@ Result checkConvergence(double x_old, double y_old,
         }
 
         if (m_oscillation_count > 3) { // уменьшил порог для более раннего обнаружения
-            std::cout << "*** STOP: Oscillation detected after "
-                << m_oscillation_count << " cycles ***" << std::endl;
+            LOG(INFO) << "*** STOP: Oscillation detected after "
+                << m_oscillation_count << " cycles ***";
             m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(m_oscillation_count) + " циклов");
 
             // ПРИНУДИТЕЛЬНО УСТАНАВЛИВАЕМ ЛУЧШУЮ ТОЧКУ
@@ -524,7 +529,7 @@ Result checkConvergence(double x_old, double y_old,
             best_f = current_f;
         }
 
-        std::cout << "*** CONVERGENCE: Coordinates and function stabilized ***" << std::endl;
+        LOG(INFO) << "*** CONVERGENCE: Coordinates and function stabilized ***";
         m_reporter->insertMessage("СХОДИМОСТЬ: Координаты и функция стабилизировалась");
         return Result::Success;
     }
@@ -571,8 +576,8 @@ Result checkConvergence(double x_old, double y_old,
         double best_x = roundComputation(x), best_y = roundComputation(y), best_f = roundComputation(f_current);
         m_iterations = 0;
 
-        std::cout << "=== ЗАПУСК GRADIENT DESCENT ===" << std::endl;
-        std::cout << "Начальная точка: (" << x << ", " << y << "), f = " << f_current << std::endl;
+        LOG(INFO) << "=== ЗАПУСК GRADIENT DESCENT ===";
+        VLOG(DEBUG) << "Начальная точка: (" << x << ", " << y << "), f = " << f_current;
 
         auto iterationTable = m_reporter->beginTable("Шаги запуска", {"Номер итерации i", "x_i", "y_i", "f_i", "Градиент", "Шаг"});
 
@@ -596,13 +601,12 @@ Result checkConvergence(double x_old, double y_old,
             double direction = (m_inputData->extremum_type == ExtremumType::MINIMUM) ? -1.0 : 1.0;
             double delta_x = direction * step * grad_x;
             double delta_y = direction * step * grad_y;
-            /*
-            std::cout << "DEBUG MOVEMENT: " << std::endl;
-            std::cout << "  grad_x = " << grad_x << ", grad_y = " << grad_y << std::endl;
-            std::cout << "  step = " << step << std::endl;
-            std::cout << "  delta_x = " << delta_x << ", delta_y = " << delta_y << std::endl;
-            std::cout << "  before: x = " << x << ", y = " << y << std::endl;
-            */
+
+            VLOG(DEBUG) << "  grad_x = " << grad_x << ", grad_y = " << grad_y;
+            VLOG(DEBUG) << "  step = " << step;
+            VLOG(DEBUG) << "  delta_x = " << delta_x << ", delta_y = " << delta_y;
+            VLOG(DEBUG) << "  before: x = " << x << ", y = " << y;
+
             x = updateCoordinate(x, direction * step * grad_x, m_inputData->x_left_bound, m_inputData->x_right_bound);
             y = updateCoordinate(y, direction * step * grad_y, m_inputData->y_left_bound, m_inputData->y_right_bound);
 
@@ -622,16 +626,15 @@ Result checkConvergence(double x_old, double y_old,
 
 
             m_reporter->insertRow(iterationTable,{m_iterations,roundComputation(x), roundComputation(y), roundComputation(f_current), roundComputation(grad_norm), roundComputation(step)});
-/*
-            // Отладочный вывод
-            std::cout << "Итерация " << m_iterations
+
+            VLOG(DEBUG) << "Итерация " << m_iterations
                 << ": x=" << x << ", y=" << y
                 << ", f=" << f_current
                 << ", grad_norm=" << grad_norm
                 << ", step=" << step
-                << ", ЛУЧШАЯ f=" << best_f << std::endl;
-            std::cout << "NORM: " << grad_norm << " CP: " << m_computationPrecision << std::endl;
-            */
+                << ", ЛУЧШАЯ f=" << best_f;
+            VLOG(DEBUG) << "NORM: " << grad_norm << " CP: " << m_computationPrecision;
+
             // Проверка сходимости
             Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
             if (conv != Result::Continue) {
@@ -663,7 +666,7 @@ Result checkConvergence(double x_old, double y_old,
 
                 m_reporter->endTable(iterationTable);
                 m_reporter->insertMessage("Базовый градиентный метод не завершен выход за границы.");
-                std::cout << "=== GRADIENT DESCENT: ВЫХОД ЗА ГРАНИЦЫ ===" << std::endl;
+                LOG(ERROR) << "=== GRADIENT DESCENT: ВЫХОД ЗА ГРАНИЦЫ ===";
 
                 return Result::OutOfBounds;
             }
@@ -674,7 +677,8 @@ Result checkConvergence(double x_old, double y_old,
                 m_reporter->endTable(iterationTable);
                 m_reporter->insertMessage("Базовый градиентный метод - градиент слишком мал.");
                 ReporterResult(roundResult(best_x), roundResult(best_y) , roundResult(best_f), m_function_calls, m_iterations);
-                m_reporter->insertResult(roundResult(best_x), roundResult(best_y), roundResult(best_f));                std::cout << "=== GRADIENT DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
+                m_reporter->insertResult(roundResult(best_x), roundResult(best_y), roundResult(best_f));
+                LOG(INFO) << "=== GRADIENT DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===";
                 m_x = roundResult(best_x);
                 m_y = roundResult(best_y);
                 return Result::Success;
@@ -684,7 +688,7 @@ Result checkConvergence(double x_old, double y_old,
         m_x = roundResult(best_x);
         m_y = roundResult(best_y);
         m_reporter->insertMessage("Базовый градиентный метод - достигнуты ограничения.");
-        std::cout << "=== GRADIENT DESCENT: ДОСТИГНУТЫ ОГРАНИЧЕНИЯ ===" << std::endl;
+        LOG(INFO) << "=== GRADIENT DESCENT: ДОСТИГНУТЫ ОГРАНИЧЕНИЯ ===";
         return checkTerminationCondition();
     }
 
@@ -697,8 +701,8 @@ Result checkConvergence(double x_old, double y_old,
         double best_x = roundComputation(x), best_y = roundComputation(y), best_f = roundComputation(f_current);
         m_iterations = 0;
 
-        std::cout << "=== ЗАПУСК STEEPEST DESCENT ===" << std::endl;
-        std::cout << "Начальная точка: (" << x << ", " << y << "), f = " << f_current << std::endl;
+        LOG(INFO) << "=== ЗАПУСК STEEPEST DESCENT ===";
+        VLOG(DEBUG) << "Начальная точка: (" << x << ", " << y << "), f = " << f_current;
 
         auto iterationTable = m_reporter->beginTable("Шаги запуска", {"Номер итерации i", "x_i", "y_i", "f_i", "Градиент", "Оптимальный шаг"});
 
@@ -737,14 +741,13 @@ Result checkConvergence(double x_old, double y_old,
                 best_f = roundComputation(f_current);
             }
             m_reporter->insertRow(iterationTable,{m_iterations, x, y, f_current, grad_norm, optimal_step});
-            /*
-            // Отладочный вывод
-            std::cout << "Итерация " << m_iterations
+
+            VLOG(DEBUG) << "Итерация " << m_iterations
                 << ": x=" << x << ", y=" << y
                 << ", f=" << f_current
                 << ", grad_norm=" << grad_norm
-                << ", optimal_step=" << optimal_step << std::endl;
-*/
+                << ", optimal_step=" << optimal_step;
+
             // Проверка сходимости
             Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
             if (conv != Result::Continue) {
@@ -778,7 +781,7 @@ Result checkConvergence(double x_old, double y_old,
                 m_y = roundComputation(best_y);
                 m_reporter->endTable(iterationTable);
                 m_reporter->insertMessage("Метод наискорейшего спуска для градиентного метода завершен - выход за границы.");
-                std::cout << "=== STEEPEST DESCENT: ВЫХОД ЗА ГРАНИЦЫ ===" << std::endl;
+                LOG(ERROR) << "=== STEEPEST DESCENT: ВЫХОД ЗА ГРАНИЦЫ ===";
                 return Result::OutOfBounds;
             }
 
@@ -793,7 +796,7 @@ Result checkConvergence(double x_old, double y_old,
                 ReporterResult(roundResult(best_x), roundResult(best_y) , roundResult(best_f), m_function_calls, m_iterations);
                 m_reporter->insertResult(roundResult(best_x), roundResult(best_y), roundResult(best_f));
 
-                std::cout << "=== STEEPEST DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===" << std::endl;
+                LOG(INFO) << "=== STEEPEST DESCENT: ГРАДИЕНТ СЛИШКОМ МАЛ ===";
                 return Result::Success;
             }
         }
@@ -802,7 +805,7 @@ Result checkConvergence(double x_old, double y_old,
         m_y = roundComputation(best_y);
         m_reporter->endTable(iterationTable);
         m_reporter->insertMessage("Метод наискорейшего спуска для градиентного метода завершен - достигнуты ограничения.");
-        std::cout << "=== STEEPEST DESCENT: ДОСТИГНУТЫ ОГРАНИЧЕНИЯ ===" << std::endl;
+        LOG(INFO) << "=== STEEPEST DESCENT: ДОСТИГНУТЫ ОГРАНИЧЕНИЯ ===";
         return checkTerminationCondition();
     }
 
@@ -841,7 +844,7 @@ Result checkConvergence(double x_old, double y_old,
                 m_x = roundResult(best_x);
                 m_y = roundResult(best_y);
 
-                std::cout << "=== RAVINE METHOD ЗАВЕРШЕН (экстремум найден) ===" << std::endl;
+                LOG(INFO) << "=== RAVINE METHOD ЗАВЕРШЕН (экстремум найден) ===";
                 m_reporter->insertMessage("Овражный метод завершён — достигнут экстремум.");
                 ReporterResult(roundResult(best_x), roundResult(best_y) , roundResult(best_f), m_function_calls, m_iterations);
                 m_reporter->insertResult(roundResult(best_x), roundResult(best_y), roundResult(best_f));
@@ -904,15 +907,13 @@ Result checkConvergence(double x_old, double y_old,
             }
 
             m_reporter->insertRow(iterationTable,{m_iterations, x, y, f_current, grad_norm, ravine_factor});
-            /*
              // Отладочный вывод
-            std::cout << "Итерация " << m_iterations
+            VLOG(DEBUG) << "Итерация " << m_iterations
                 << ": x=" << x << ", y=" << y
                 << ", f=" << f_current
                 << ", grad_norm=" << grad_norm
                 << ", ravine_factor=" << ravine_factor
-                << ", ЛУЧШАЯ f=" << best_f << std::endl;
-*/
+                << ", ЛУЧШАЯ f=" << best_f;
             // Проверка сходимости
             Result conv = checkConvergence(x_old, y_old, x, y, f_old, f_current, best_x, best_y, best_f);
             if (conv != Result::Continue) {
@@ -944,7 +945,7 @@ Result checkConvergence(double x_old, double y_old,
             if (!isWithinBounds(x, y)) {
                 m_x = roundResult(best_x);
                 m_y = roundResult(best_y);
-                std::cout << "=== RAVINE METHOD: ВЫХОД ЗА ГРАНИЦЫ ===" << std::endl;
+                LOG(ERROR) << "=== RAVINE METHOD: ВЫХОД ЗА ГРАНИЦЫ ===";
 
                 m_reporter->insertMessage("Овражное расширение градиентного спуска завершено - выход за границы.");
 
@@ -955,7 +956,7 @@ Result checkConvergence(double x_old, double y_old,
         m_x = roundResult(best_x);
         m_y = roundResult(best_y);
         m_reporter->insertMessage("Овражное расширение градиентного спуска завершено - достигнуты ограничения.");
-        std::cout << "=== RAVINE METHOD: ДОСТИГНУТЫ ОГРАНИЧЕНИЯ ===" << std::endl;
+        LOG(INFO) << "=== RAVINE METHOD: ДОСТИГНУТЫ ОГРАНИЧЕНИЯ ===";
         return checkTerminationCondition();
     }
 

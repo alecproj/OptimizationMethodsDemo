@@ -3,6 +3,7 @@
 #include "MainController.hpp"
 
 #include "Tests/TestReporter.hpp"
+#include <glog/logging.h>
 #include <muParser.h>
 
 #include <QGuiApplication>
@@ -10,6 +11,10 @@
 #include <QQmlContext>
 
 #include <iostream>
+
+#ifndef DEBUG
+#define DEBUG 1
+#endif
 
 double MySqr(double a_fVal) {  return a_fVal*a_fVal; }
 
@@ -46,6 +51,20 @@ int main(int argc, char *argv[])
     }
 
     /* ------------- /TEST ------------- */
+    FLAGS_logtostderr = true;
+    FLAGS_alsologtostderr = false;
+    FLAGS_stderrthreshold = 0;
+    FLAGS_log_prefix = false;
+    FLAGS_colorlogtostderr = true;
+    FLAGS_minloglevel = MIN_LOG_LEVEL;
+    google::InitGoogleLogging(argv[0]);
+#ifndef NDEBUG
+    google::SetVLOGLevel("*", DEBUG);
+#endif
+
+    LOG(INFO) << "Логирование включено";
+    VLOG(DEBUG) << "Отладочная сборка";
+
     QGuiApplication app(argc, argv);
 
     qmlRegisterUncreatableType<ExtremumType>("AppEnums", 1, 0, "ExtremumType", "Type of extremum");
@@ -73,5 +92,7 @@ int main(int argc, char *argv[])
         Qt::QueuedConnection);
     engine.loadFromModule("OptimizationMethodsDemo", "Main");
 
-    return app.exec();
+    auto rv = app.exec();
+    google::ShutdownGoogleLogging();
+    return rv;
 }

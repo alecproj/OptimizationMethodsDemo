@@ -4,6 +4,7 @@
 //
 #include <GradientDescent/GradientDescent.hpp>
 #include <GradientDescent/Common.hpp>
+#include <glog/logging.h>
 #include <muParser.h>
 #include <iostream>
 #include <typeinfo>
@@ -71,6 +72,14 @@ StepType stringToStepType(const std::string& str) {
 
 int main()
 {
+    FLAGS_logtostderr = true;
+    FLAGS_alsologtostderr = false;
+    FLAGS_stderrthreshold = 0;
+    FLAGS_log_prefix = false;
+    FLAGS_colorlogtostderr = true;
+    FLAGS_minloglevel = 0;
+    google::InitGoogleLogging(argv[0]);
+    google::SetVLOGLevel("*", DEBUG);
 
     using AlgoType = GradientDescent<MockReporter>;
     MockReporter reporter{};
@@ -200,5 +209,6 @@ int main()
     std::cout << "Значение функции: " << algo.getOptimumValue() << std::endl;
     std::cout << "Итераций: " << algo.getIterations() << ", Вызовов функции: " << algo.getFunctionCalls() << std::endl;
 
+    google::ShutdownGoogleLogging();
     return 0;
 }

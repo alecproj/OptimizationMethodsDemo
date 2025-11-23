@@ -21,6 +21,10 @@ file(GLOB_RECURSE QML_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Qml/*
 find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick)
 qt_standard_project_setup(REQUIRES 6.8)
 
+# -------------- glog --------------
+find_package (glog 0.7.1 REQUIRED)
+option(MIN_LOG_LEVEL "Build ConjugateGradient standalone exe" 3)
+
 # ------------ muparser ------------
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(MUPARSER_TARGET_NAME muparser CACHE STRING "Target name created by muparser CMake")
@@ -93,12 +97,17 @@ target_link_libraries(${PROJECT_NAME}App
         Qt6::Core
         Qt6::Qml
         Qt6::Quick
-
+        glog::glog
 )
 
 if(MSVC)
     target_compile_options(muparser PUBLIC "/UUNICODE" "/U_UNICODE")
 endif()
+
+target_compile_definitions(${PROJECT_NAME}App
+    PUBLIC
+        MIN_LOG_LEVEL=${MIN_LOG_LEVEL}
+)
 
 set_target_properties(${PROJECT_NAME}App PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}

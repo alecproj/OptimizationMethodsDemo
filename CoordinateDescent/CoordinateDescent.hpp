@@ -7,6 +7,7 @@
 #define COORDINATEDESCENT_COORDINATEDESCENT_HPP_
 
 #include <CoordinateDescent/Common.hpp>
+#include <glog/logging.h>
 #include <muParser.h>
 #include <vector>
 #include <cmath>
@@ -14,6 +15,10 @@
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
+#endif
+
+#ifndef DEBUG
+#define DEBUG 1
 #endif
 
 namespace CD {
@@ -310,8 +315,8 @@ private:
             return true;
         }
         catch (...) {
-            std::cout << "Функция не дифференцируема в начальной точке ("
-                << m_inputData->initial_x << ", " << m_inputData->initial_y << ")" << std::endl;
+            LOG(ERROR) << "Функция не дифференцируема в начальной точке ("
+                << m_inputData->initial_x << ", " << m_inputData->initial_y << ")";
             m_reporter->insertMessage("Функция не дифференцируема в начальной точке ("
                 + std::to_string(m_inputData->initial_x) + ", " + std::to_string(m_inputData->initial_y) + ")");
             return false;
@@ -329,7 +334,7 @@ private:
                 std::transform(non_diff_lower.begin(), non_diff_lower.end(), non_diff_lower.begin(), ::tolower);
 
                 if (func_lower.find(non_diff_lower) != std::string::npos) {
-                    std::cout << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func << std::endl;
+                    LOG(ERROR) << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func;
                     m_reporter->insertMessage("Обнаружена потенциально недифференцируемая функция: " + non_diff_func);
                     return Result::NonDifferentiableFunction;
                 }
@@ -381,8 +386,8 @@ private:
                         std::isnan(deriv_y1) || std::isinf(deriv_y1) ||
                         std::isnan(deriv_x2) || std::isinf(deriv_x2) ||
                         std::isnan(deriv_y2) || std::isinf(deriv_y2)) {
-                        std::cout << "Производная не определена в точке ("
-                            << test_x << ", " << test_y << ")" << std::endl;
+                        LOG(ERROR) << "Производная не определена в точке ("
+                            << test_x << ", " << test_y << ")";
 
                         m_reporter->insertMessage("Производная не определена в точке (" 
                         + std::to_string(test_x) + ", " + std::to_string(test_y) + ")");
@@ -391,8 +396,8 @@ private:
                     }
                 }
                 catch (const mu::Parser::exception_type& e) {
-                    std::cout << "Функция не дифференцируема в точке ("
-                        << test_x << ", " << test_y << "): " << e.GetMsg() << std::endl;
+                    LOG(ERROR) << "Функция не дифференцируема в точке ("
+                        << test_x << ", " << test_y << "): " << e.GetMsg();
 
                     m_reporter->insertMessage("Функция не дифференцируема в точке ("
                         + std::to_string(test_x) + ", " + std::to_string(test_y) + ")");
@@ -401,8 +406,8 @@ private:
                 }
                 catch (const std::exception& e) {
 
-                    std::cout << "Ошибка дифференцирования в точке ("
-                        << test_x << ", " << test_y << "): " << e.what() << std::endl;
+                    LOG(ERROR) << "Ошибка дифференцирования в точке ("
+                        << test_x << ", " << test_y << "): " << e.what();
 
                     m_reporter->insertMessage("Ошибка дифференцирования в точке ("
                         + std::to_string(test_x) + ", " + std::to_string(test_y) + ")");
@@ -410,18 +415,18 @@ private:
                     return Result::NonDifferentiableFunction;
                 }
             }
-            std::cout << "Функция прошла проверку дифференцируемости" << std::endl;
+            VLOG(DEBUG) << "Функция прошла проверку дифференцируемости";
             m_reporter->insertMessage("Функция прошла проверку дифференцируемости");
             return Result::Success;
 
         }
         catch (const mu::Parser::exception_type& e) {
-            std::cout << "Ошибка парсера при проверке дифференцируемости: " << e.GetMsg() << std::endl;\
+            LOG(ERROR) << "Ошибка парсера при проверке дифференцируемости: " << e.GetMsg();
             m_reporter->insertMessage("Ошибка парсера при проверке дифференцируемости: ");
             return Result::ParseError;
         }
         catch (const std::exception& e) {
-            std::cout << "Общая ошибка при проверке дифференцируемости: " << e.what() << std::endl;
+            LOG(ERROR) << "Общая ошибка при проверке дифференцируемости: " << e.what();
             m_reporter->insertMessage("Общая ошибка при проверке дифференцируемости: ");
             return Result::ComputeError;
         }
@@ -500,8 +505,8 @@ private:
             }
 
             if (m_oscillation_count > 5) {
-                std::cout << "*** STOP: Oscillation detected after "
-                    << m_oscillation_count << " cycles ***" << std::endl;
+                LOG(INFO) << "*** STOP: Oscillation detected after "
+                    << m_oscillation_count << " cycles ***";
                 m_reporter->insertMessage("СТОП: Обнаружена осцилляция после " + std::to_string(m_oscillation_count) + " циклов");
 
                 // ПРИНУДИТЕЛЬНО УСТАНАВЛИВАЕМ ЛУЧШУЮ ТОЧКУ
@@ -549,7 +554,7 @@ private:
                 best_f = current_f;
             }
 
-            std::cout << "*** CONVERGENCE: Coordinates and function stabilized ***" << std::endl;
+            LOG(INFO) << "*** CONVERGENCE: Coordinates and function stabilized ***";
             m_reporter->insertMessage("СХОДИМОСТЬ: Координаты и функция стабилизировалась");
             return Result::Success;
         }
@@ -814,7 +819,7 @@ private:
             if (consecutive_same_coordinate > 5) {
                 optimize_x = !optimize_x;
                 consecutive_same_coordinate = 0;
-                std::cout << "*** FORCED SWITCH due to consecutive optimizations ***" << std::endl;
+                LOG(INFO) << "*** FORCED SWITCH due to consecutive optimizations ***";
             }
 
             double step_x = 0.0;
@@ -869,12 +874,11 @@ private:
                                   roundComputation(step_x),
                                   roundComputation(step_y)});
             // Отладочный вывод
-            /*std::cout << "Итерация " << m_iterations
+            VLOG(DEBUG) << "Итерация " << m_iterations
                 << ": grad_x=" << grad_x << " (abs=" << abs_grad_x
                 << "), grad_y=" << grad_y << " (abs=" << abs_grad_y
                 << "), выбрана " << (optimize_x ? "X" : "Y")
-                << ", x=" << x << ", y=" << y << ", f=" << f_current
-                << std::endl;*/
+                << ", x=" << x << ", y=" << y << ", f=" << f_current;
             
             if (!isWithinBounds(x, y)) {
                 m_x = roundResult(best_x);
