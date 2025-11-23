@@ -96,7 +96,9 @@ target_link_libraries(${PROJECT_NAME}App
 
 )
 
-target_compile_options(muparser PUBLIC "/UUNICODE" "/U_UNICODE")
+if(MSVC)
+    target_compile_options(muparser PUBLIC "/UUNICODE" "/U_UNICODE")
+endif()
 
 set_target_properties(${PROJECT_NAME}App PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
