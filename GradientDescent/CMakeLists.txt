@@ -49,7 +49,7 @@ else()
 endif()
 
 target_link_libraries(GradientDescent
-    INTERFACE
+    PUBLIC
         ${MUPARSER_TARGET_NAME}
         glog::glog
 )

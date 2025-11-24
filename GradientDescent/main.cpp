@@ -9,13 +9,54 @@
 #include <iostream>
 #include <typeinfo>
 #include <string>
+#include <variant>
 
 using namespace GD;
 // Класс-заглушка - реализовывать не нужно!
 class MockReporter {
+    using Cell = std::variant<std::string, double, long long, bool>;
 public:
-    int begin() { return 0; } // Возвращаем 0
-    int end() { return 0; } // Возвращаем 0, чтобы solve() вернул Success при успешном завершении
+    int begin() { return 0; }
+    int end() { return 0; }
+    void insertValue(const std::string &name, double value)
+    {
+        LOG(WARNING) << name << ": " << value;
+    }
+    void insertMessage(const std::string &text)
+    {
+        LOG(WARNING) << text;
+    }
+    int beginTable(const std::string &title, const std::vector<std::string> &columnHeaders)
+    {
+        static int tid = 0;
+        LOG(WARNING) << "Открыта таблица: " << title;
+        std::ostringstream stream;
+        for (const auto h : columnHeaders) {
+            stream << h << " ";
+        }
+        LOG(WARNING) << stream.str();
+        return ++tid;
+    }
+    int insertRow(int tableId, const std::vector<Cell> &row)
+    {
+        std::ostringstream stream;
+        for (const auto v : row) {
+            std::visit([&stream](auto&& value) {
+                stream << value;
+            }, v);
+            stream << " ";
+        }
+        LOG(WARNING) << tableId << ": " << stream.str();
+        return 0;
+    }
+    void insertResult(double x, double y, double funcValue)
+    {
+        LOG(WARNING) << "Ответ: x=" << x << " y=" << y << " f=" << funcValue;
+    }
+    void endTable(int tableId)
+    {
+        LOG(WARNING) << "Таблица " << tableId << " закрыта";
+    }
 };
 
 double MySqr(const double a_fVal) { return a_fVal * a_fVal; }
@@ -70,7 +111,7 @@ StepType stringToStepType(const std::string& str) {
     throw std::invalid_argument("Неверный тип шага");
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     FLAGS_logtostderr = true;
     FLAGS_alsologtostderr = false;
@@ -79,7 +120,7 @@ int main()
     FLAGS_colorlogtostderr = true;
     FLAGS_minloglevel = 0;
     google::InitGoogleLogging(argv[0]);
-    google::SetVLOGLevel("*", DEBUG);
+    // google::SetVLOGLevel("*", DEBUG);
 
     using AlgoType = GradientDescent<MockReporter>;
     MockReporter reporter{};
