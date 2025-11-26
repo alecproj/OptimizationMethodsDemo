@@ -76,6 +76,13 @@ int main(int argc, char *argv[])
     FLAGS_minloglevel = 0;
     google::InitGoogleLogging(argv[0]);
     google::SetVLOGLevel("*", DEBUG);
+    LOGERR(Result::ComputeError);
+    
+    LOG(WARNING) << "\nПредупреждение!";
+    LOG(ERROR) << "Ошибка!";
+
+    VLOG(DEBUG) << "Дебаг!";
+    //LOG(INFO) << "Информация!";
 
     using AlgoType = GeneticAlgorithm<MockReporter>;
     MockReporter reporter{};
