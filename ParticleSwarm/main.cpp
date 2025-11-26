@@ -77,6 +77,12 @@ int main(int argc, char *argv[])
     google::InitGoogleLogging(argv[0]);
     google::SetVLOGLevel("*", DEBUG);
 
+    LOG(WARNING) << "\nПредупреждение!";
+    LOG(ERROR) << "Ошибка!";
+    VLOG(DEBUG) << "Дебаг!";
+    LOG(INFO) << "Информация!";
+    LOGERR(Result::ComputeError);
+
     using AlgoType = ParticleSwarm<MockReporter>;
     MockReporter reporter{};
     AlgoType algo{ &reporter };
