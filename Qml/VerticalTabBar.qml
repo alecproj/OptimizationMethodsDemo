@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+import Components
+
 Flickable {
     id: root
     signal tabChanged(int tabIndex)

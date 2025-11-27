@@ -1,8 +1,11 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+
 import AppEnums
 import InputData
+import Globals
+import Components
 
 Rectangle {
     id: root

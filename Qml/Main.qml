@@ -2,6 +2,11 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+import Globals
+import Components
+import LocalOptimization as LO
+import GlobalOptimization as GO
+
 ApplicationWindow {
     id: root
     width: 640
@@ -13,6 +18,11 @@ ApplicationWindow {
     ConfirmDialog {
         id: dialog
         anchors.fill: parent
+    }
+
+    Component {
+        id: taskTab
+        LO.TaskTab {}
     }
 
     RowLayout {
@@ -30,10 +40,13 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
             currentIndex: AppStates.currentTabIndex
-    
-            TaskTab {
-                id: taskTab
+
+            Loader {
+                id: taskTabLoader 
+                active: true
+                sourceComponent: taskTab 
             }
+
     
             FolderTab {
                 id: folderTab
@@ -46,7 +59,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
-                    ReportTab {
+                    LO.ReportTab {
                         anchors.fill: parent
                         id: reportTab
                         report: controller.openReports[index]

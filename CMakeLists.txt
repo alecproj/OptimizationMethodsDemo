@@ -48,6 +48,11 @@ endif()
 
 # --------------- Subprojects ---------------
 
+add_subdirectory(Qml/Globals)
+add_subdirectory(Qml/Components)
+add_subdirectory(Qml/Tabs/LocalOptimization)
+add_subdirectory(Qml/Tabs/GlobalOptimization)
+
 add_subdirectory(CoordinateDescent EXCLUDE_FROM_ALL)
 add_subdirectory(GradientDescent EXCLUDE_FROM_ALL)
 add_subdirectory(ConjugateGradient EXCLUDE_FROM_ALL)
@@ -56,11 +61,6 @@ add_subdirectory(Sources)
 
 # --------------- Application (Qt) ---------------
 set(CMAKE_AUTORCC ON)
-
-set_source_files_properties(Qml/Singleton/AppStates.qml
-    PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
-set_source_files_properties(Qml/Singleton/AppPalette.qml
-    PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_executable(${PROJECT_NAME}App
     resources.qrc
@@ -73,26 +73,16 @@ qt_add_qml_module(${PROJECT_NAME}App
     QML_FILES
         Qml/Main.qml
         Qml/VerticalTabBar.qml
-        Qml/Components/TabIconButton.qml
-        Qml/Components/StyledTextField.qml
-        Qml/Components/StyledComboBox.qml
-        Qml/Components/ReportListEntry.qml
-        Qml/Components/ReportList.qml
-        Qml/Components/StyledButton.qml
-        Qml/Components/InputParams.qml
-        Qml/Components/ConfirmDialog.qml
-        Qml/Singleton/AppPalette.qml
-        Qml/Singleton/AppStates.qml
-        Qml/Tabs/TaskTab.qml
-        Qml/Tabs/ReportTab.qml
         Qml/Tabs/FolderTab.qml
-        Qml/Components/TableLoader.qml
-        Qml/Components/TableRow.qml
 )
 
 target_link_libraries(${PROJECT_NAME}App
     PRIVATE
         app_sources
+        Globalsplugin
+        Componentsplugin
+        LocalOptimizationplugin
+        GlobalOptimizationplugin
         ${MUPARSER_TARGET_NAME}
         Qt6::Core
         Qt6::Qml
