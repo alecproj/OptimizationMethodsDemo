@@ -14,10 +14,10 @@ using namespace GA;
 
 // Функция для тестирования кодировщика
 void testGeneticEncoder() {
-    std::cout << "\n=== ТЕСТ КОДИРОВЩИКА (ПРОСТОЙ) ===" << std::endl;
+    std::cout << "\n=== ТЕСТ КОДИРОВЩИКА (ПОЛНЫЙ) ===" << std::endl;
 
     // Создаем конфигурацию кодировщика
-    EncodingConfig config(8, -10.0, 10.0, -5.0, 5.0); // 8 бит для наглядности
+    EncodingConfig config(32, -10.0, 10.0, -5.0, 5.0); // 8 бит для наглядности
     GeneticEncoder encoder(config);
 
     std::cout << "\n--- Тест encodeVariable ---" << std::endl;
@@ -38,15 +38,69 @@ void testGeneticEncoder() {
     std::cout << "\n--- Тест uintToBits ---" << std::endl;
 
     // Тестируем uintToBits
-    uint32_t testUint = 59; // 10101010 в двоичной
-    std::cout << "Число " << testUint << " -> ";
+    uint32_t testUint1 = 59;
+    std::cout << "Число " << testUint1 << " -> ";
 
-    std::vector<bool> bits2 = encoder.uintToBits(testUint, 32);
+    std::vector<bool> bits2 = encoder.uintToBits(testUint1, 8);
 
     for (bool bit : bits2) {
         std::cout << (bit ? "1" : "0");
     }
     std::cout << std::endl;
+
+    std::cout << "\n--- Тест bitsToUint ---" << std::endl;
+
+    // Тестируем bitsToUint - преобразуем биты обратно в число
+    std::vector<bool> testBits = { 0, 0, 1, 1, 1, 0, 1, 1 }; // 59 в двоичной
+    std::cout << "Биты: ";
+    for (bool bit : testBits) {
+        std::cout << (bit ? "1" : "0");
+    }
+
+    uint32_t result = encoder.bitsToUint(testBits);
+    std::cout << " -> Число: " << result << std::endl;
+    std::cout << "=======================================" << std::endl;
+
+    // Проверка обратного преобразования
+    std::cout << "Проверка (uintToBits → bitsToUint): ";
+    uint32_t testUint2 = 59;
+    std::cout << "Число " << testUint2 << " -> ";
+
+    auto bits3 = encoder.uintToBits(testUint2, 8);
+    for (bool bit : bits3) std::cout << (bit ? "1" : "0");
+    uint32_t back = encoder.bitsToUint(bits3);
+    std::cout << " -> " << back << " (должно быть: "<< testUint2 << ")" << std::endl;
+
+    std::cout << "\n--- Тест decodeVariable ---" << std::endl;
+
+    // Тестируем полный цикл: encodeVariable → decodeVariable
+    double originalNumber = 7.9454359;
+    std::cout << "Исходное число: " << originalNumber << std::endl;
+
+    // Кодируем
+    std::vector<bool> encodedBits = encoder.encodeVariable(originalNumber, -10.0, 10.0);
+    std::cout << "Закодированные биты: ";
+    for (bool bit : encodedBits) std::cout << (bit ? "1" : "0");
+    std::cout << std::endl;
+
+    // Декодируем обратно
+    double decodedNumber = encoder.decodeVariable(encodedBits, -10.0, 10.0);
+    std::cout << "Декодированное число: " << decodedNumber << std::endl;
+
+    // Вычисляем ошибку
+    double error = std::abs(originalNumber - decodedNumber);
+    std::cout << "Ошибка: " << error << std::endl;
+
+    // Тест с граничными значениями
+    std::cout << "\n--- Тест граничных значений ---" << std::endl;
+    std::vector<double> testNumbers = { -10.0, 0.0, 10.0, -5.0, 7.5 };
+
+    for (double num : testNumbers) {
+        auto bits = encoder.encodeVariable(num, -10.0, 10.0);
+        double decoded = encoder.decodeVariable(bits, -10.0, 10.0);
+        double err = std::abs(num - decoded);
+        std::cout << num << " -> " << decoded << " (ошибка: " << err << ")" << std::endl;
+    }
 
     std::cout << "=== ТЕСТ КОДИРОВЩИКА ЗАВЕРШЕН ===\n" << std::endl;
 }

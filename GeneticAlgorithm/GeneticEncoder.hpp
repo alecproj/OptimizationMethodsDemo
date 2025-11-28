@@ -51,9 +51,9 @@ namespace GA {
 		// Кодирование координаты
 		std::vector<bool> encodeVariable(double value, double min_val, double max_val) const;
 		// Декодирование координаты
-		std::vector<bool> decodeVariable(const std::vector<bool>& bits, double min_val, double max_val) const;
+		double decodeVariable(const std::vector<bool>& bits, double min_val, double max_val) const;
 		// Преобразование вектора битов в целое число
-		uint32_t bitsToUInt(const std::vector<bool>& bits) const;
+		uint32_t bitsToUint(const std::vector<bool>& bits) const;
 		// Преобразование целого числа в вектор битов фиксированной длины
 		std::vector<bool> uintToBits(uint32_t value, uint32_t num_bits) const;
 
