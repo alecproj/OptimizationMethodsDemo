@@ -43,7 +43,7 @@ if (NOT TARGET ${MUPARSER_TARGET_NAME})
 endif()
 
 if(GD_SOURCES_ALL)
-    add_library(${PROJECT_NAME} STATIC ${GD_SOURCES_ALL} ${GD_HEADERS})
+    add_library(${PROJECT_NAME} STATIC ${GD_SOURCES_ALL} ${GD_HEADERS} "GeneticEncoder.cpp")
 else()
     add_library(${PROJECT_NAME} INTERFACE)
 endif()
@@ -62,7 +62,7 @@ target_include_directories(${PROJECT_NAME}
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
 
 if(GENETIC_BUILD_STANDALONE AND EXISTS ${GD_MAIN})
-    add_executable(${PROJECT_NAME}App ${GD_MAIN})
+    add_executable(${PROJECT_NAME}App ${GD_MAIN} "GeneticEncoder.cpp")
     target_link_libraries(${PROJECT_NAME}App
         PRIVATE
             ${MUPARSER_TARGET_NAME}
