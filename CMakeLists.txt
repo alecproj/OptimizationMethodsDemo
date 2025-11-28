@@ -23,7 +23,7 @@ qt_standard_project_setup(REQUIRES 6.8)
 
 # -------------- glog --------------
 find_package (glog 0.7.1 REQUIRED)
-option(MIN_LOG_LEVEL "Build ConjugateGradient standalone exe" 3)
+set(MIN_LOG_LEVEL 3 CACHE STRING "Minimum log level for output")
 
 # ------------ muparser ------------
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
@@ -72,6 +72,7 @@ qt_add_qml_module(${PROJECT_NAME}App
     VERSION 1.0
     QML_FILES
         Qml/Main.qml
+        Qml/ReportTab.qml
         Qml/VerticalTabBar.qml
         Qml/Tabs/FolderTab.qml
 )

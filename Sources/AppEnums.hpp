@@ -33,12 +33,28 @@ class Result: public QObject {
     Q_OBJECT
 public:
     enum Type {
-        Fail        = -1,
-        Success     = 0,
+        InvalidAlgoType = -4,
+        InvalidPartType = -3,
+        InvalidPointer  = -2,
+        Fail            = -1,
+        Success         = 0,
     };
     Q_ENUM(Type)
 
     explicit Result(QObject *parent = nullptr) : QObject(parent) {}
+};
+
+class PartType : public QObject {
+    Q_OBJECT
+public:
+    enum Type {
+        NONE = 0,
+        LO = 1, // Local Optimization
+        GO = 2  // Global Optimization
+    };
+    Q_ENUM(Type)
+
+    explicit PartType(QObject *parent = nullptr) : QObject(parent) {}
 };
 
 class StepType : public QObject {

@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import AppEnums
-import InputData
+import LOInputData
 import Globals
 import Components
 
@@ -23,6 +23,8 @@ Flickable {
         extensionId: AppStates.selectedExtension
         fullAlgoId: AppStates.selectedFullAlgo
     }
+
+    onInputDataChanged: console.log(inputData)
 
     EnumHelper { id: helper }
 

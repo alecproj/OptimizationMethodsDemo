@@ -6,9 +6,27 @@
 #include "ReportReader.hpp"
 #include "FileManager.hpp"
 
+#include <QtLogging>
 #include <QDateTime>
 #include <QMetaEnum>
 #include <QTextStream>
+
+#define READ_FIELD(obj, key, out, setter, getter, convMethod)                \
+    do {                                                                     \
+        if ((obj).contains(key) && !(obj).value(key).isNull()) {             \
+            (out)->setter((obj).value(key).convMethod((out)->getter()));     \
+        } else {                                                             \
+            qWarning() << "Cannot read" << key;                              \
+            return ReportStatus::InvalidDataStruct;                          \
+        }                                                                    \
+    } while (0)
+
+#define READ_OBJ(parentObj, key, outObj)                                     \
+    QJsonObject outObj = (parentObj).value(key).toObject();                  \
+    if (outObj.isEmpty()) {                                                  \
+        qWarning() << "The" key "object is empty";                           \
+        return ReportStatus::InvalidDataStruct;                              \
+    }
 
 ReportStatus::Status ReportReader::quickInfo(const QString &fileName, QuickInfo *out)
 {
@@ -63,6 +81,7 @@ ReportStatus::Status ReportReader::quickInfo(const QString &fileName, QuickInfo 
 
 ReportStatus::Status ReportReader::inputData(const QString &fileName, InputData *out)
 {
+    qDebug() << "Reading the inputData from" << fileName << "...";
     if (!out) {
         return ReportStatus::NotVerified;
     }
@@ -77,16 +96,23 @@ ReportStatus::Status ReportReader::inputData(const QString &fileName, InputData 
         default:
             return rv;
     }
-    return readInputData(data.json, out);
+    if (data.partType == PartType::LO) {
+        auto idata = dynamic_cast<LO::InputData *>(out);
+        return readInputData(data.json, idata);
+    } else if (data.partType == PartType::GO) {
+        auto idata = dynamic_cast<GO::InputData *>(out);
+        return readInputData(data.json, idata);
+    } else {
+        qCritical() << "Invalid PartType in InputData";
+        return ReportStatus::NotVerified;
+    }
 }
 
 
 ReportStatus::Status ReportReader::reportData(const QString &fileName,
-    InputData *outInput, QJsonArray &outSolution, ResultData *outResult)
+    InputData *&outInput, QJsonArray &outSolution, ResultData *outResult)
 {
-    if (!outInput) {
-        return ReportStatus::NotVerified;
-    }
+    qDebug() << "Reading the report" << fileName << "...";
     FileData data{};
     auto rv = validateFile(fileName, &data);
     switch (rv) {
@@ -97,7 +123,19 @@ ReportStatus::Status ReportReader::reportData(const QString &fileName,
         default:
             return rv;
     }
-    rv = readInputData(data.json, outInput);
+
+    if (data.partType == PartType::LO) {
+        outInput = new LO::InputData();
+        rv = readInputData(data.json,
+            static_cast<LO::InputData *>(outInput));
+    } else if (data.partType == PartType::GO) {
+        outInput = new GO::InputData();
+        rv = readInputData(data.json,
+            static_cast<GO::InputData *>(outInput));
+    } else {
+        qCritical() << "Invalid PartType in FileData";
+        return ReportStatus::NotVerified;
+    }
     if (rv != ReportStatus::Ok) {
         return rv;
     }
@@ -108,148 +146,79 @@ ReportStatus::Status ReportReader::reportData(const QString &fileName,
     return readResult(data.json, outResult);
 }
 
-ReportStatus::Status ReportReader::readInputData(const QJsonObject &obj, InputData *out)
+ReportStatus::Status ReportReader::readInputData(const QJsonObject &obj, LO::InputData *out)
 {
-    QJsonObject dataObj = obj.value("data").toObject();
-    if (dataObj.isEmpty()) {
-        return ReportStatus::InvalidDataStruct;
-    }
+    READ_OBJ(obj, "data", dataObj);
+    READ_OBJ(dataObj, "task", taskObj);
+    READ_OBJ(taskObj, "inputData", inputObj);
 
-    QJsonObject taskObj = dataObj.value("task").toObject();
-    if (taskObj.isEmpty()) {
-        return ReportStatus::InvalidDataStruct;
-    }
+    READ_FIELD(inputObj, "function", out,
+            setFunction, function, toString);
+    READ_FIELD(inputObj, "algorithmId", out,
+            setAlgorithmId, algorithmId, toInt);
+    READ_FIELD(inputObj, "extensionId", out,
+            setExtensionId, extensionId, toInt);
+    READ_FIELD(inputObj, "fullAlgoId", out,
+            setFullAlgoId, fullAlgoId, toInt);
+    READ_FIELD(inputObj, "extremumId", out,
+            setExtremumId, extremumId, toInt);
+    READ_FIELD(inputObj, "stepId", out,
+            setStepId, stepId, toInt);
+    READ_FIELD(inputObj, "maxIterations", out,
+            setMaxIterations, maxIterations, toInt);
+    READ_FIELD(inputObj, "maxFuncCalls", out,
+            setMaxFuncCalls, maxFuncCalls, toInt);
+    READ_FIELD(inputObj, "resultAccuracy", out,
+            setResultAccuracy, resultAccuracy, toInt);
+    READ_FIELD(inputObj, "calcAccuracy", out,
+            setCalcAccuracy, calcAccuracy, toInt);
+    READ_FIELD(inputObj, "startX1", out,
+            setStartX1, startX1, toDouble);
+    READ_FIELD(inputObj, "startY1", out,
+            setStartY1, startY1, toDouble);
+    READ_FIELD(inputObj, "startX2", out,
+            setStartX2, startX2, toDouble);
+    READ_FIELD(inputObj, "startY2", out,
+            setStartY2, startY2, toDouble);
+    READ_FIELD(inputObj, "stepX", out,
+            setStepX, stepX, toDouble);
+    READ_FIELD(inputObj, "stepY", out,
+            setStepY, stepY, toDouble);
+    READ_FIELD(inputObj, "step", out,
+            setStep, step, toDouble);
+    READ_FIELD(inputObj, "minX", out,
+            setMinX, minX, toDouble);
+    READ_FIELD(inputObj, "maxX", out,
+            setMaxX, maxX, toDouble);
+    READ_FIELD(inputObj, "minY", out,
+            setMinY, minY, toDouble);
+    READ_FIELD(inputObj, "maxY", out,
+            setMaxY, maxY, toDouble);
+    return ReportStatus::Ok;
+}
 
-    QJsonObject inputObj = taskObj.value("inputData").toObject();
-    if (inputObj.isEmpty()) {
-        return ReportStatus::InvalidDataStruct;
-    }
+ReportStatus::Status ReportReader::readInputData(const QJsonObject &obj, GO::InputData *out)
+{
+    READ_OBJ(obj, "data", dataObj);
+    READ_OBJ(dataObj, "task", taskObj);
+    READ_OBJ(taskObj, "inputData", inputObj);
 
-    if (inputObj.contains("function") && !inputObj.value("function").isNull()) {
-        out->setFunction(inputObj.value("function").toString());
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("algorithmId") && !inputObj.value("algorithmId").isNull()) {
-        out->setAlgorithmId(inputObj.value("algorithmId").toInt(out->algorithmId()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("extensionId") && !inputObj.value("extensionId").isNull()) {
-        out->setExtensionId(inputObj.value("extensionId").toInt(out->extensionId()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("fullAlgoId") && !inputObj.value("fullAlgoId").isNull()) {
-        out->setFullAlgoId(inputObj.value("fullAlgoId").toInt(out->fullAlgoId()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("extremumId") && !inputObj.value("extremumId").isNull()) {
-        out->setExtremumId(inputObj.value("extremumId").toInt(out->extremumId()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("stepId") && !inputObj.value("stepId").isNull()) {
-        out->setStepId(inputObj.value("stepId").toInt(out->extremumId()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("maxIterations") && !inputObj.value("maxIterations").isNull()) {
-        out->setMaxIterations(inputObj.value("maxIterations").toInt(out->maxIterations()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("maxFuncCalls") && !inputObj.value("maxFuncCalls").isNull()) {
-        out->setMaxFuncCalls(inputObj.value("maxFuncCalls").toInt(out->maxFuncCalls()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("calcAccuracy") && !inputObj.value("calcAccuracy").isNull()) {
-        out->setCalcAccuracy(inputObj.value("calcAccuracy").toInt(out->calcAccuracy()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("resultAccuracy") && !inputObj.value("resultAccuracy").isNull()) {
-        out->setResultAccuracy(inputObj.value("resultAccuracy").toInt(out->resultAccuracy()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("startX1") && !inputObj.value("startX1").isNull()) {
-        out->setStartX1(inputObj.value("startX1").toDouble(out->startX1()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("startY1") && !inputObj.value("startY1").isNull()) {
-        out->setStartY1(inputObj.value("startY1").toDouble(out->startY1()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("startX2") && !inputObj.value("startX2").isNull()) {
-        out->setStartX2(inputObj.value("startX2").toDouble(out->startX2()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("startY2") && !inputObj.value("startY2").isNull()) {
-        out->setStartY2(inputObj.value("startY2").toDouble(out->startY2()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("stepX") && !inputObj.value("stepX").isNull()) {
-        out->setStepX(inputObj.value("stepX").toDouble(out->stepX()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("stepY") && !inputObj.value("stepY").isNull()) {
-        out->setStepY(inputObj.value("stepY").toDouble(out->stepY()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("step") && !inputObj.value("step").isNull()) {
-        out->setStep(inputObj.value("step").toDouble(out->step()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("minX") && !inputObj.value("minX").isNull()) {
-        out->setMinX(inputObj.value("minX").toDouble(out->minX()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("maxX") && !inputObj.value("maxX").isNull()) {
-        out->setMaxX(inputObj.value("maxX").toDouble(out->maxX()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("minY") && !inputObj.value("minY").isNull()) {
-        out->setMinY(inputObj.value("minY").toDouble(out->minY()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
-
-    if (inputObj.contains("maxY") && !inputObj.value("maxY").isNull()) {
-        out->setMaxY(inputObj.value("maxY").toDouble(out->maxY()));
-    } else {
-        return ReportStatus::InvalidDataStruct;
-    }
+    READ_FIELD(inputObj, "function", out,
+            setFunction, function, toString);
+    READ_FIELD(inputObj, "algorithmId", out,
+            setAlgorithmId, algorithmId, toInt);
+    READ_FIELD(inputObj, "extremumId", out,
+            setExtremumId, extremumId, toInt);
+    READ_FIELD(inputObj, "resultAccuracy", out,
+            setResultAccuracy, resultAccuracy, toInt);
+    READ_FIELD(inputObj, "minX", out,
+            setMinX, minX, toDouble);
+    READ_FIELD(inputObj, "maxX", out,
+            setMaxX, maxX, toDouble);
+    READ_FIELD(inputObj, "minY", out,
+            setMinY, minY, toDouble);
+    READ_FIELD(inputObj, "maxY", out,
+            setMaxY, maxY, toDouble);
 
     return ReportStatus::Ok;
 }
@@ -302,65 +271,100 @@ ReportStatus::Status ReportReader::readResult(const QJsonObject &obj, ResultData
 
 ReportStatus::Status ReportReader::validateFile(const QString &fileName, FileData *out)
 {
+    qDebug() << "File validation" << fileName << "...";
     if (!FileManager::fileExists(fileName)) {
         return ReportStatus::FileDoesNotExists;
     }
     if (!validateName(fileName, out)) {
+        qWarning() << "Name validation failed";
         return ReportStatus::InvalidName;
     }
     if (!FileManager::loadJsonFile(fileName, out->json)) {
+        qWarning() << "Unable to load json";
         return ReportStatus::InvalidFile;
     }
     auto dataObj = out->json.value("data").toObject();
     if (dataObj.isEmpty()) {
+        qWarning() << "The data section is empty";
         return ReportStatus::InvalidDataStruct;
     }
     auto solutionArr = dataObj.value("solution").toArray();
     if (solutionArr.isEmpty()) {
+        qWarning() << "The solution section is empty";
         return ReportStatus::NoSolution;
     }
     auto resultObj = dataObj.value("result").toObject();
     if (resultObj.isEmpty()) {
+        qWarning() << "The result section is empty";
         return ReportStatus::NoResult;
     }
-    ReportStatus::Status rv = validateCRC(out->json);
+    auto rv = validateCRC(out->json);
+    if (rv != ReportStatus::Ok) {
+        qWarning() << "Checksum validation failed";
+    }
     return rv;
 }
 
 bool ReportReader::validateName(const QString &fileName, FileData *out)
 {
     static const QRegularExpression re(QStringLiteral(
-        "^([BCDGSR]+)-(\\d{1,2})-(\\d{1,2})-(\\d{4})-(\\d{1,2})-(\\d{1,2})-(\\d{1,2})\\.json$"
+        "^(?:(LO|GO)-)?([BCDGSR]+)-(\\d{1,2})-(\\d{1,2})-(\\d{4})-(\\d{1,2})-(\\d{1,2})-(\\d{1,2})\\.json$"
     ), QRegularExpression::CaseInsensitiveOption);
 
-    QRegularExpressionMatch match;
-    match = re.matchView(QStringView(fileName));
-    if (!match.hasMatch()) return false;
+    QRegularExpressionMatch match = re.matchView(QStringView(fileName));
+    if (!match.hasMatch()) {
+        qWarning() << "The name does not match the format";
+        return false;
+    }
 
-    const QString enumStr = match.captured(1);
-    const int day    = match.captured(2).toInt();
-    const int month  = match.captured(3).toInt();
-    const int year   = match.captured(4).toInt();
-    const int hour   = match.captured(5).toInt();
-    const int minute = match.captured(6).toInt();
-    const int second = match.captured(7).toInt();
+    const QString partStr = match.captured(1).isEmpty() ? "LO" : match.captured(1);
+    const QString algoStr = match.captured(2);
+
+    const int day    = match.captured(3).toInt();
+    const int month  = match.captured(4).toInt();
+    const int year   = match.captured(5).toInt();
+    const int hour   = match.captured(6).toInt();
+    const int minute = match.captured(7).toInt();
+    const int second = match.captured(8).toInt();
 
     QMetaEnum me = QMetaEnum::fromType<FullAlgoType::Type>();
-    int enumVal = me.keyToValue(enumStr.toLatin1().constData());
-    if (enumVal == -1) return false;
+    int algoVal = me.keyToValue(algoStr.toLatin1().constData());
+    if (algoVal == -1) {
+        qWarning() << "Unable to extract algo type";
+        return false;
+    }
 
-    if (!QDate::isValid(year, month, day)) return false;
-    if (!QTime::isValid(hour, minute, second)) return false;
+    me = QMetaEnum::fromType<PartType::Type>();
+    int partVal = me.keyToValue(partStr.toLatin1().constData());
+    if (partVal == -1) {
+        qWarning() << "Unable to extract part type";
+        return false;
+    }
+
+    if (!QDate::isValid(year, month, day)) {
+        qWarning() << "Invalid Date";
+        return false;
+    }
+    if (!QTime::isValid(hour, minute, second)) {
+        qWarning() << "Invalid Time";
+        return false;
+    }
 
     if (out != nullptr) {
-        out->abbreviation = enumStr;
-        out->fullType = static_cast<FullAlgoType::Type>(enumVal);
+        out->partType = static_cast<PartType::Type>(partVal);
+        out->abbreviation = QString("%1 %2").arg(partStr, algoStr);
+        if (out->partType == PartType::LO) {
+            out->algoType.full = static_cast<FullAlgoType::Type>(algoVal);
+        } else if (out->partType == PartType::GO) {
+            out->algoType.base = static_cast<AlgoType::Type>(algoVal);
+        }
         out->date = QDate(year, month, day);
         out->time = QTime(hour, minute, second);
+    } else {
+        qDebug() << "FileData *out is nullptr";
     }
     return true;
 }
-
 
 ReportStatus::Status ReportReader::validateCRC(const QJsonObject &obj)
 {

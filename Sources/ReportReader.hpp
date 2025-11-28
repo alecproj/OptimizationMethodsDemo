@@ -7,6 +7,8 @@
 #define SOURCES_REPORTREADER_HPP_
 
 #include "InputData.hpp"
+#include "LOInputData.hpp"
+#include "GOInputData.hpp"
 #include "QuickInfo.hpp"
 #include "ResultData.hpp"
 #include "AppEnums.hpp"
@@ -19,7 +21,13 @@
 struct FileData {
     QJsonObject json;
     QString abbreviation;
-    FullAlgoType::Type fullType;
+    PartType::Type partType;
+
+    union {
+        FullAlgoType::Type full;
+        AlgoType::Type base;
+    } algoType;
+
     QDate date;
     QTime time;
 };
@@ -31,12 +39,13 @@ public:
     static ReportStatus::Status quickInfo(const QString &fileName, QuickInfo *out);
     static ReportStatus::Status inputData(const QString &fileName, InputData *out);
     static ReportStatus::Status reportData(
-        const QString &fileName, InputData *outInput,
+        const QString &fileName, InputData *&outInput,
         QJsonArray &outSolution, ResultData *outResult
     );
 
 private:
-    static inline ReportStatus::Status readInputData(const QJsonObject &obj, InputData *out);
+    static inline ReportStatus::Status readInputData(const QJsonObject &obj, LO::InputData *out);
+    static inline ReportStatus::Status readInputData(const QJsonObject &obj, GO::InputData *out);
     static inline ReportStatus::Status readSolution(const QJsonObject &obj, QJsonArray *out);
     static inline ReportStatus::Status readResult(const QJsonObject &obj, ResultData *out);
 

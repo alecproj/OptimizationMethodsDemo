@@ -47,23 +47,16 @@ ApplicationWindow {
                 sourceComponent: taskTab 
             }
 
-    
             FolderTab {
                 id: folderTab
             }
 
             Repeater {
-                model: controller.openReportsCount
+                model: controller.openReports
 
-                delegate: Item {
+                delegate: ReportTab {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-
-                    LO.ReportTab {
-                        anchors.fill: parent
-                        id: reportTab
-                        report: controller.openReports[index]
-                    }
                 }
             }
         }

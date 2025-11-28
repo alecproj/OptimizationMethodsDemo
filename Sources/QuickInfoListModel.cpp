@@ -22,6 +22,7 @@ QVariant QuickInfoListModel::data(const QModelIndex &index, int role) const
 
     const auto &obj = m_data.at(index.row());
     switch (role) {
+        case PartitionRole: return obj->partition();
         case NameRole: return obj->name();
         case InfoRole: return obj->info();
         case StatusRole: return obj->status();
@@ -32,6 +33,7 @@ QVariant QuickInfoListModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> QuickInfoListModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
+    roles[PartitionRole] = "partition";
     roles[NameRole] = "name";
     roles[InfoRole] = "info";
     roles[StatusRole] = "status";

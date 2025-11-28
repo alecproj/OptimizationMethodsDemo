@@ -12,51 +12,54 @@ Rectangle {
     id: root
     color: AppPalette.background
 
-    required property var report
+    required property string fileName
+    required property var inputData
+    required property var solution
+    required property var resultData
     property int fontSize: 14
 
     EnumHelper { id: helper }
 
-    property int checkMask: helper.getCheckByFullType(report.inputData.fullAlgoId)
+    property int checkMask: helper.getCheckByFullType(inputData.fullAlgoId)
 
     function buildTaskDescription() {
         var fn = "<не задана>";
-        if (report && report.inputData && report.inputData.function) {
-            fn = report.inputData.function;
+        if (inputData && inputData.function) {
+            fn = inputData.function;
         }
 
-        var extremum = helper.extremumTypeToString(report.inputData.extremumId)
+        var extremum = helper.extremumTypeToString(inputData.extremumId)
         if (extremum) extremum = extremum.toLowerCase()
 
-        var algo = helper.algoTypeToString(report.inputData.algorithmId);
+        var algo = helper.algoTypeToString(inputData.algorithmId);
         if (algo) algo = algo.toLowerCase();
 
         var extensionPart = "";
-        if (report.inputData.extensionId !== ExtensionType.B) {
-            var ext = helper.extensionTypeToString(report.inputData.extensionId);
+        if (inputData.extensionId !== ExtensionType.B) {
+            var ext = helper.extensionTypeToString(inputData.extensionId);
             if (ext) ext = ext.toLowerCase();
             extensionPart = " и его расширение — " + ext;
         }
 
         return "Найти " + extremum + " функции " + fn +
                ", применяя " + (algo || "") + extensionPart +
-               ", за не более чем " + report.inputData.maxIterations +
-               " шагов и не более чем " + report.inputData.maxFuncCalls +
+               ", за не более чем " + inputData.maxIterations +
+               " шагов и не более чем " + inputData.maxFuncCalls +
                " вызовов функции, с точностью вычислений, равной 10^-" +
-               report.inputData.calcAccuracy +
+               inputData.calcAccuracy +
                ", и с учетом заданного набора параметров: ";
     }
     
     function stepTypeDescription() {
-        var stepstr = helper.stepTypeToString(report.inputData.stepId);
+        var stepstr = helper.stepTypeToString(inputData.stepId);
         return "— тип шага — " + stepstr.toLowerCase() + ";";
     }
 
     function buildAnswerDescription() {
-        if (report && report.resultData) {
-            var x = report.resultData.xValue;
-            var y = report.resultData.yValue;
-            var func = report.resultData.funcValue;
+        if (resultData) {
+            var x = resultData.xValue;
+            var y = resultData.yValue;
+            var func = resultData.funcValue;
             return "Ответ: x = " + x + ", y = " + y + ", f(x,y) = " + func + ".";
         }
         return "Ответ не найден."
@@ -92,7 +95,7 @@ Rectangle {
                     Layout.alignment: Qt.AlignHCenter
                     Layout.topMargin: column.spacing
 
-                    text: "Отчет " + root.report.fileName
+                    text: "Отчет " + root.fileName
                     font.pixelSize: 20
                     font.bold: true
                 }
@@ -126,14 +129,14 @@ Rectangle {
                 Text {
                     visible: (root.checkMask & CheckList.StartX1)
                     Layout.preferredWidth: flickable.width
-                    text: "— начальное приближение по X — " + root.report.inputData.startX1 + ";"
+                    text: "— начальное приближение по X — " + root.inputData.startX1 + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
                     visible: (root.checkMask & CheckList.StartY1)
-                    text: "— начальное приближение по Y — " + root.report.inputData.startY1 + ";"
+                    text: "— начальное приближение по Y — " + root.inputData.startY1 + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
@@ -141,14 +144,14 @@ Rectangle {
                 Text {
                     visible: (root.checkMask & CheckList.StartX2)
                     Layout.preferredWidth: flickable.width
-                    text: "— второе начальное приближение по X — " + root.report.inputData.startX2 + ";"
+                    text: "— второе начальное приближение по X — " + root.inputData.startX2 + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
                     visible: (root.checkMask & CheckList.StartY2)
-                    text: "— второе начальное приближение по Y — " + root.report.inputData.startY2 + ";"
+                    text: "— второе начальное приближение по Y — " + root.inputData.startY2 + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
@@ -156,41 +159,41 @@ Rectangle {
                 Text {
                     visible: (root.checkMask & CheckList.StepX)
                     Layout.preferredWidth: flickable.width
-                    text: "— шаг по X — " + root.report.inputData.stepX + ";"
+                    text: "— шаг по X — " + root.inputData.stepX + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
                     visible: (root.checkMask & CheckList.StepY)
-                    text: "— шаг по Y — " + root.report.inputData.stepY + ";"
+                    text: "— шаг по Y — " + root.inputData.stepY + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
                     visible: (root.checkMask & CheckList.Step)
-                    text: "— шаг — " + root.report.inputData.step + ";"
+                    text: "— шаг — " + root.inputData.step + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
                     visible: (root.checkMask & CheckList.MinX) && (root.checkMask & CheckList.MaxX)
-                    text: "— диапазон по X — [" + root.report.inputData.minX + ";" + root.report.inputData.maxX + "];"
+                    text: "— диапазон по X — [" + root.inputData.minX + ";" + root.inputData.maxX + "];"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
                     visible: (root.checkMask & CheckList.MinY) && (root.checkMask & CheckList.MaxY)
-                    text: "— диапазон по Y — [" + root.report.inputData.minY + ";" + root.report.inputData.maxY + "]."
+                    text: "— диапазон по Y — [" + root.inputData.minY + ";" + root.inputData.maxY + "]."
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
-                    text: "Результат представить с точностью: 10^-" + root.report.inputData.resultAccuracy + "."
+                    text: "Результат представить с точностью: 10^-" + root.inputData.resultAccuracy + "."
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
@@ -205,7 +208,7 @@ Rectangle {
                 }
 
                 Repeater {
-                    model: root.report.solution
+                    model: root.solution
 
                     delegate: Item {
                         id: container
@@ -289,7 +292,7 @@ Rectangle {
                 id: closeBtn
                 text: "Закрыть"
                 onReleased: {
-                    controller.closeReport(root.report.fileName)
+                    controller.closeReport(root.fileName)
                     AppStates.currentTabIndex = 1;
                 }
             }
@@ -299,7 +302,7 @@ Rectangle {
                 text: "Удалить"
                 bgcolor: AppPalette.warning
                 onReleased: {
-                    controller.requestDeleteReport(root.report.fileName)
+                    controller.requestDeleteReport(root.fileName)
                 }
             }
         }

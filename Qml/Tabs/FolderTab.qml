@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import AppEnums
-import InputData
 import Globals
 import Components
 

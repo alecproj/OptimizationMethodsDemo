@@ -23,7 +23,8 @@ public:
     }
 
     enum Roles {
-        NameRole = Qt::UserRole + 1,
+        PartitionRole = Qt::UserRole + 1,
+        NameRole,
         InfoRole,
         StatusRole,
     };
@@ -39,6 +40,12 @@ public:
         beginInsertRows(QModelIndex(), 0, 0);
         m_data.prepend(entry);
         endInsertRows();
+    }
+    void clear()
+    {
+        beginResetModel();
+        m_data.clear();
+        endResetModel();
     }
     void deleteEntry(const QString &fileName);
     int count() const { return m_data.count(); }
