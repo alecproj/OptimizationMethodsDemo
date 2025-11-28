@@ -29,8 +29,18 @@ public:
 
     GeneticAlgorithm(Reporter* reporter) :
         m_inputData{ nullptr },
-        m_reporter{ reporter }
+        m_reporter{ reporter },
+        m_parser{},
+        m_x{0.0},
+        m_y{0.0},
+        m_function_calls{0},
+        m_generations{0},
+        m_digitResultPrecision{0},
+        m_digitComputationPrecision{0},
+        m_computationPrecision{0.},
+        m_resultPrecision{0.}
     {
+        resetAlgorithmState();
     }
 
     Result setInputData(const InputData* data)
@@ -105,10 +115,10 @@ public:
         // Сохраняем данные
         m_inputData = data;
         
-        Result rv = initialize(data);
+        rv = initialize(data);
         if (rv != Result::Success) {
             LOGERR(rv);
-            return rv
+            return rv;
         }
 
         LOG(INFO) << "Входные данные установлены.";
@@ -126,8 +136,8 @@ public:
         resetAlgorithmState();
 
         // Округляем результат
-        m_computationDigits = m_inputData->computation_precision;
-        m_resultDigits = m_inputData->result_precision;
+        m_digitComputationPrecision = m_inputData->computation_precision;
+        m_digitResultPrecision = m_inputData->result_precision;
         m_computationPrecision = std::pow(
             10, (-m_inputData->computation_precision));
         m_resultPrecision = std::pow(
@@ -163,8 +173,17 @@ public:
     }
 
 private:
+
     const InputData* m_inputData;
     Reporter* m_reporter;
+    mu::Parser m_parser;
+    double m_x, m_y;                 // Текущие переменные для парсера
+    int m_function_calls;
+    int m_generations;               // Количество поколений (итераций)
+    int m_digitResultPrecision;      // Количество знаков после запятой для результата
+    int m_digitComputationPrecision; // Количество знаков после запятой для вычислений
+    double m_computationPrecision;
+    double m_resultPrecision;
 
     void insertResultInfo(/* ... */) 
     {

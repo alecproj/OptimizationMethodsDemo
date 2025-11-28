@@ -35,14 +35,6 @@ namespace GA {
 
 		// Вспомогательные методы
 		
-		// Кодирование координаты
-		std::vector<bool> endcodeVariable(double value, double min_val, double max_val) const;
-		// Декодирование координаты
-		std::vector<bool> decodeVariable(const std::vector<bool>& bits, double min_val, double max_val) const;
-		// Преобразование вектора битов в целое число
-		uint32_t bitsToUInt(const std::vector<bool>& bits);
-		// Преобразование целого числа в вектор битов фиксированной длины
-		std::vector<bool> uintToBits(uint32_t value, uint32_t num_bits);
 
 	public:
 		GeneticEncoder(const EncodingConfig& config = EncodingConfig());
@@ -55,6 +47,15 @@ namespace GA {
 		Individual decode(const std::vector<bool>& chromosome) const;
 		// Создание случайной особи
 		Individual createRandomIndividual() const;
+
+		// Кодирование координаты
+		std::vector<bool> encodeVariable(double value, double min_val, double max_val) const;
+		// Декодирование координаты
+		std::vector<bool> decodeVariable(const std::vector<bool>& bits, double min_val, double max_val) const;
+		// Преобразование вектора битов в целое число
+		uint32_t bitsToUInt(const std::vector<bool>& bits) const;
+		// Преобразование целого числа в вектор битов фиксированной длины
+		std::vector<bool> uintToBits(uint32_t value, uint32_t num_bits) const;
 
 		// Геттеры
 		const EncodingConfig& getConfig() const { return m_config; }

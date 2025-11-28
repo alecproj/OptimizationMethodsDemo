@@ -32,7 +32,7 @@ public:
     Result runGeneration();
     Result checkFunction(const std::string &function);
 
-    // Методы доступа к результатам
+    // Геттеры
     double getBestX() const;
     double getBestY() const;
     double getBestFitness() const;
@@ -40,8 +40,8 @@ public:
     size_t getFunctionCalls() const { return m_functionCalls; }
     const std::vector<Individual>& getPopulation() const { return m_population; }
 
-    void selection(/* ... */);
-    void crossover(/* ... */);
+    //void selection(/* ... */);
+    //void crossover(/* ... */);
     /* И другие методы, не требующие репортера */
 
 protected:

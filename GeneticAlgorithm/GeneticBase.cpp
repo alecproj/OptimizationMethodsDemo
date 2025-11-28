@@ -59,7 +59,7 @@ Result GeneticBase::initialize(const InputData* inputData, const GAConfig* confi
     m_encoder = GeneticEncoder(encoderConfig);
 
     // Инициализация популяции
-    initializePopulation();
+    //initializePopulation();
     LOG(INFO) << "Генетический алгоритм начал работу с количеством популяций: "
               << m_config.population_size;
 

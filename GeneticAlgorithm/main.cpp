@@ -3,6 +3,7 @@
 // by alecproj
 //
 #include <GeneticAlgorithm/GeneticAlgorithm.hpp>
+#include <GeneticAlgorithm/GeneticEncoder.hpp>
 #include <glog/logging.h>
 #include <muParser.h>
 #include <iostream>
@@ -10,6 +11,47 @@
 #include <variant>
 
 using namespace GA;
+
+// Функция для тестирования кодировщика
+void testGeneticEncoder() {
+    std::cout << "\n=== ТЕСТ КОДИРОВЩИКА (ПРОСТОЙ) ===" << std::endl;
+
+    // Создаем конфигурацию кодировщика
+    EncodingConfig config(8, -10.0, 10.0, -5.0, 5.0); // 8 бит для наглядности
+    GeneticEncoder encoder(config);
+
+    std::cout << "\n--- Тест encodeVariable ---" << std::endl;
+
+    // Тестируем encodeVariable с разными числами
+    double testNumber = -5.32145;
+    std::cout << "Число: " << testNumber << " -> ";
+
+    // Кодируем число в биты
+    std::vector<bool> bits = encoder.encodeVariable(testNumber, -10.0, 10.0);
+
+    // Выводим биты
+    for (bool bit : bits) {
+        std::cout << (bit ? "1" : "0");
+    }
+    std::cout << std::endl;
+
+    std::cout << "\n--- Тест uintToBits ---" << std::endl;
+
+    // Тестируем uintToBits
+    uint32_t testUint = 59; // 10101010 в двоичной
+    std::cout << "Число " << testUint << " -> ";
+
+    std::vector<bool> bits2 = encoder.uintToBits(testUint, 32);
+
+    for (bool bit : bits2) {
+        std::cout << (bit ? "1" : "0");
+    }
+    std::cout << std::endl;
+
+    std::cout << "=== ТЕСТ КОДИРОВЩИКА ЗАВЕРШЕН ===\n" << std::endl;
+}
+
+
 // Класс-заглушка - реализовывать не нужно!
 class MockReporter {
     using Cell = std::variant<std::string, double, long long, bool>;
@@ -76,12 +118,14 @@ int main(int argc, char *argv[])
     FLAGS_minloglevel = 0;
     google::InitGoogleLogging(argv[0]);
     google::SetVLOGLevel("*", DEBUG);
-    LOGERR(Result::ComputeError);
-    
-    LOG(WARNING) << "\nПредупреждение!";
-    LOG(ERROR) << "Ошибка!";
 
-    VLOG(DEBUG) << "Дебаг!";
+    testGeneticEncoder();
+    //LOGERR(Result::ComputeError);
+    
+    //LOG(WARNING) << "\nПредупреждение!";
+    //LOG(ERROR) << "Ошибка!";
+
+    //LOG(DEBUG) << "Дебаг!";
     //LOG(INFO) << "Информация!";
 
     using AlgoType = GeneticAlgorithm<MockReporter>;
