@@ -25,8 +25,6 @@ static inline void LOGERR(Result result)
 template<typename Reporter>
 class GeneticAlgorithm : public GeneticBase {
 
-    static constexpr double CONST_EXAMPLE{ 0 };
-
 public:
 
     GeneticAlgorithm(Reporter* reporter) :
@@ -38,6 +36,7 @@ public:
     Result setInputData(const InputData* data)
     {
         Result rv = Result::Fail;
+
         if (!data) {
             rv = Result::InvalidInput;
             LOGERR(rv);
@@ -56,13 +55,6 @@ public:
         Result syntax_check = validateFunctionSyntax(data->function);
         if (syntax_check != Result::Success) {
             rv = Result::ParseError;
-            LOGERR(rv);
-            return rv;
-        }
-
-        // Проверка на дифференцируемость
-        rv = checkFunctionDifferentiability(data->function);
-        if (rv != Result::Success) {
             LOGERR(rv);
             return rv;
         }
@@ -112,6 +104,13 @@ public:
 
         // Сохраняем данные
         m_inputData = data;
+        
+        Result rv = initialize(data);
+        if (rv != Result::Success) {
+            LOGERR(rv);
+            return rv
+        }
+
         LOG(INFO) << "Входные данные установлены.";
         return Result::Success;
     }
@@ -125,6 +124,8 @@ public:
         }
         
         resetAlgorithmState();
+
+        // Округляем результат
         m_computationDigits = m_inputData->computation_precision;
         m_resultDigits = m_inputData->result_precision;
         m_computationPrecision = std::pow(
@@ -132,10 +133,19 @@ public:
         m_resultPrecision = std::pow(
             10, (-m_inputData->result_precision));
 
+        m_reporter->begin();
+
         try {
+            // Основной цикл генетического алгоритма
             initializeParser(m_inputData->function);
 
             // ...
+
+              // TODO: Добавить репортинг прогресса
+              // m_reporter->insertRow(gen, getBestFitness());
+
+             // Финальный результат c округлением добавить
+             //m_reporter->insertResult(getBestX(), getBestY(), getBestFitness());
         }
         catch (const mu::Parser::exception_type& e) {
             rv = Result::ParseError;
@@ -146,7 +156,8 @@ public:
             LOGERR(rv);
         }
 
-        m_reporter->insertResult(0, 0, 0);
+        //m_reporter->insertResult(0, 0, 0);
+        m_reporter->end();
         LOG(INFO) << "Алгоритм успешно завершил работу.";
         return Result::Success;
     }

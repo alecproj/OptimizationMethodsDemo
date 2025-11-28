@@ -7,6 +7,9 @@
 #define GENETICALGORITHM_GENETICBASE_HPP_
 
 #include "Common.hpp"
+#include "GeneticEncoder.hpp"
+#include "vector"
+#include <random>
 #include <muParser.h>
 
 #ifndef M_PI
@@ -17,37 +20,63 @@ namespace GA {
 
 class GeneticBase {
 
-    static constexpr double gradient_epsilon{ 1e-16 };
 
 public:
 
     GeneticBase();
-
+    // Метод инициализации
+    Result initialize(const InputData* inputData, const GAConfig* config = nullptr);
+    
+    // Метод очистки
+    void clear();
+    Result runGeneration();
     Result checkFunction(const std::string &function);
+
+    // Методы доступа к результатам
+    double getBestX() const;
+    double getBestY() const;
+    double getBestFitness() const;
+    size_t getIteraionts()    const { return m_currentGeneration; }
+    size_t getFunctionCalls() const { return m_functionCalls; }
+    const std::vector<Individual>& getPopulation() const { return m_population; }
 
     void selection(/* ... */);
     void crossover(/* ... */);
     /* И другие методы, не требующие репортера */
 
 protected:
+
     mu::Parser m_parser;
     double m_x, m_y;
-    std::vector<std::string> m_non_diff_functions; // TODO -> static constexpr
-    double m_computationPrecision;
-    double m_resultPrecision;
-    int m_computationDigits;
-    int m_resultDigits;
+   
+    // Данные алгоритма
+    const InputData* m_inputData;
+    GAConfig m_config;
+    GeneticEncoder m_encoder;
+    std::vector<Individual> m_population;
 
+    // Статистика
+    size_t m_currentGeneration;
+    size_t m_functionCalls;
+
+    //ГСЧ
+    std::mt19937 m_rnd;
+
+    // Вспомогательные методы
     void resetAlgorithmState();
-
     void initializeParser(const std::string& function);
-    double evaluateFunction(double x, double y);
-
-    double partialDerivativeX(double x, double y);
-    double partialDerivativeY(double x, double y);
+    void initializePopulation();
+    double evaluateFitness(double x, double y);
+    double worstPossibleFitness() const;
+    void sortPopulation();
+   
+    // Генетические операторы (coming soon)
+    void selection();
+    void crossover();
+    void mutation();
+    void applyElitism();
 
     Result validateFunctionSyntax(const std::string& function);
-    Result checkFunctionDifferentiability(const std::string& function);
 };
 
 } // namespace GA

@@ -7,6 +7,9 @@
 #define GENETICALGORITHM_COMMON_HPP_
 
 #include <string>
+#include <vector>
+#include <cstdint>
+#include <cstddef>
 
 namespace GA {
 
@@ -48,6 +51,34 @@ struct InputData {
     int result_precision;           // Точность результата
     int computation_precision;      // Точность вычислений
 };
+
+struct Individual {
+    double x, y;
+    std::vector<bool> chromosome; // Вектор булевых значений (кодирование точки)
+    double fitness;               // Значение приспособленности (f(x,y))
+
+    // Конструктор с параметрами по умолчанию
+    Individual(double x_val = 0.0, double y_val = 0.0, double fit = 0.0)
+        :x(x_val), y(y_val), fitness(fit) {}
+};
+
+struct GAConfig {
+    size_t   population_size;   // Количество особей в популяции (сколько решений (точек) одновременно обрабатывается)
+    size_t   generations;       // Количество поколений (Сколько раз обновляем популяцию-максимальное количество итераций алгоритма)
+    double   crossover_rate;    // Вероятность кроссовера (Вероятность скрещивания двух родительских особей)
+    double   mutation_rate;     // Вероятность мутации (Вероятность изменения случайного бита в хромосоме)
+    uint32_t bits_per_variable; // Точность представления чисел в двоичном коде
+    size_t   elite_count;       // Количество элитных особей (Количество лучших особей, которые переходят в следующее поколение без изменений)
+
+    // Конструктор с параметрами по умолчанию
+    GAConfig(size_t pop_size = 50, size_t gens = 100, 
+             double cross_rate = 0.8, double mut_rate = 0.01,
+             uint32_t bits = 32, size_t elite = 2)
+        : population_size(pop_size), generations(gens),
+          crossover_rate(cross_rate), mutation_rate(mut_rate),
+          bits_per_variable(bits), elite_count(elite) {}
+};
+
 
 inline std::string resultToString(Result result) {
     switch (result) {

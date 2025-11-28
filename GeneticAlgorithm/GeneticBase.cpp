@@ -8,62 +8,70 @@
 
 namespace GA {
 
-GeneticBase::GeneticBase()
+GeneticBase::GeneticBase() : m_rnd(std::random_device{}())
 {
+    resetAlgorithmState();
 }
 
 void GeneticBase::resetAlgorithmState()
 {
     m_x = 0.0;
     m_y = 0.0;
-    // Инициализация списка недифференцируемых функций
-    // TODO Сделать static constexpr
-    m_non_diff_functions = {
-        "abs(", "|", "sign(", "floor(", "ceil(", "round(",
-        "fmod(", "mod(", "rand(", "max(", "min(", "random"
-    };
-    // TODO
-}
-
-void GeneticBase::initializeParser(const std::string& function)
-{
-    m_parser.SetExpr(function);
-    m_parser.DefineVar("x", &m_x);
-    m_parser.DefineVar("y", &m_y);
-}
-
-double GeneticBase::evaluateFunction(double x, double y)
-{
-    m_x = x;
-    m_y = y;
+    m_inputData = nullptr;
+    m_config = GAConfig();
+    m_population.clear();
+    m_currentGeneration = 0;
+    m_functionCalls = 0;
+    
     try {
-        return m_parser.Eval();
+        m_parser.SetExpr("0");
+        m_parser.DefineVar("x", &m_x);
+        m_parser.DefineVar("y", &m_y);
+    }catch (...) {
+
     }
-    catch (...) {
-        throw std::runtime_error("Ошибка вычисления функции в точке");
+}
+
+// Инициализация 
+Result GeneticBase::initialize(const InputData* inputData, const GAConfig* config)
+{
+    if (!inputData) {
+        return Result::InvalidInput;
     }
+
+    m_inputData = inputData;
+    m_config = config ? *config : GAConfig();
+
+    // Инициализация парсера
+    try {
+        initializeParser(inputData->function);
+    }catch (const mu::Parser::exception_type& e) {
+        LOG(ERROR) << "Ошибка Парсера: " << e.GetMsg();
+        return Result::ParseError;
+    }
+
+    // Инициализация кодировщика 
+    EncodingConfig encoderConfig(
+        m_config.bits_per_variable,
+        inputData->x_left_bound, inputData->x_right_bound,
+        inputData->y_left_bound, inputData->y_right_bound
+    );
+    m_encoder = GeneticEncoder(encoderConfig);
+
+    // Инициализация популяции
+    initializePopulation();
+    LOG(INFO) << "Генетический алгоритм начал работу с количеством популяций: "
+              << m_config.population_size;
+
+    return Result::Success;
 }
 
-double GeneticBase::partialDerivativeX(double x, double y)
+void GeneticBase::clear()
 {
-    double x_old = m_x, y_old = m_y;
-    m_y = y; // Фиксируем y
-    double derivative = m_parser.Diff(&m_x, x, m_computationPrecision);
-    m_x = x_old;
-    m_y = y_old;
-    return derivative;
+    resetAlgorithmState();
 }
 
-double GeneticBase::partialDerivativeY(double x, double y)
-{
-    double x_old = m_x, y_old = m_y;
-    m_x = x; // Фиксируем x
-    double derivative = m_parser.Diff(&m_y, y, m_computationPrecision);
-    m_x = x_old;
-    m_y = y_old;
-    return derivative;
-}
-
+// Проверка на корректность валидации функции 
 Result GeneticBase::validateFunctionSyntax(const std::string& function)
 {
     try {
@@ -87,122 +95,70 @@ Result GeneticBase::validateFunctionSyntax(const std::string& function)
     }
 }
 
-Result GeneticBase::checkFunctionDifferentiability(const std::string& function)
+
+void GeneticBase::initializeParser(const std::string& function)
+{
+    m_parser.SetExpr(function);
+    m_parser.DefineVar("x", &m_x);
+    m_parser.DefineVar("y", &m_y);
+    m_functionCalls = 0;
+    m_currentGeneration = 0;
+}
+
+double GeneticBase::evaluateFitness(double x, double y)
 {
     try {
+        m_x = x;
+        m_y = y;
+        double functionValue = m_parser.Eval();
+        m_functionCalls++;
+        return functionValue;
 
-        // Предварительная проверка на известные недифференцируемые функции
-        std::vector<std::string> non_diff_functions = {
-            "abs(", "|", "sign(", "floor(", "ceil(", "round(",
-            "fmod(", "mod(", "rand(", "max(", "min(", "random"
-        };
-
-        std::string func_lower = function;
-        std::transform(func_lower.begin(), func_lower.end(), func_lower.begin(), ::tolower);
-
-        for (const auto& non_diff_func : m_non_diff_functions) {
-            std::string non_diff_lower = non_diff_func;
-            std::transform(non_diff_lower.begin(), non_diff_lower.end(), non_diff_lower.begin(), ::tolower);
-
-            if (func_lower.find(non_diff_lower) != std::string::npos) {
-                LOG(ERROR) << "Обнаружена потенциально недифференцируемая функция: " << non_diff_func;
-                // TODO Перенести в GeneticAlgorithm
-                // m_reporter->insertMessage("Обнаружена потенциально недифференцируемая функция");
-                return Result::NonDifferentiableFunction;
-            }
-        }
-
-        // Проверка численной дифференцируемости
-        mu::Parser test_parser;
-        double test_x = 0.0;
-        double test_y = 0.0;
-        test_parser.SetExpr(function);
-        test_parser.DefineVar("x", &test_x);
-        test_parser.DefineVar("y", &test_y);
-
-        const int TEST_POINTS = 8;
-        std::vector<std::pair<double, double>> test_points;
-
-        // TODO Учесть изменения
-        double center_x = /* m_inputData ? m_inputData->initial_x :*/ 0.0;
-        double center_y = /*m_inputData ? m_inputData->initial_y :*/ 0.0;
-
-        for (int i = 0; i < TEST_POINTS; i++) {
-            double angle = 2.0 * M_PI * i / TEST_POINTS;
-            double radius = 0.1;
-            test_points.push_back({
-                center_x + radius * std::cos(angle),
-                center_y + radius * std::sin(angle)
-                });
-        }
-
-        for (const auto& point : test_points) {
-            test_x = point.first;
-            test_y = point.second;
-
-            try {
-                double func_value = test_parser.Eval();
-                // Проверяем производные с разной точностью
-                double deriv_x1 = 0.0, deriv_x2 = 0.0;
-                double deriv_y1 = 0.0, deriv_y2 = 0.0;
-
-                // Первая попытка с обычной точностью
-                deriv_x1 = test_parser.Diff(&test_x, test_x, 1e-6);
-                deriv_y1 = test_parser.Diff(&test_y, test_y, 1e-6);
-
-                // Вторая попытка с другой точностью для проверки стабильности
-                deriv_x2 = test_parser.Diff(&test_x, test_x, 1e-7);
-                deriv_y2 = test_parser.Diff(&test_y, test_y, 1e-7);
-
-                // Проверяем, что производные не "взрываются"
-                if (std::isnan(deriv_x1) || std::isinf(deriv_x1) ||
-                    std::isnan(deriv_y1) || std::isinf(deriv_y1) ||
-                    std::isnan(deriv_x2) || std::isinf(deriv_x2) ||
-                    std::isnan(deriv_y2) || std::isinf(deriv_y2)) {
-                    // TODO Перенести в GeneticAlgorithm
-                    // LOG(ERROR) << "Производная не определена в точке ("
-                    //     << test_x << ", " << test_y << ")";
-                    // m_reporter->insertMessage("Производная не определена в точке ("
-                    //     + std::to_string(test_x) + ", " + std::to_string(test_y) + ")");
-                    return Result::NonDifferentiableFunction;
-                }
-            }
-            catch (const mu::Parser::exception_type& e) {
-                LOG(ERROR) << "Функция не дифференцируема в точке ("
-                    << test_x << ", " << test_y << "): " << e.GetMsg();
-                // TODO Перенести в GeneticAlgorithm
-                // m_reporter->insertMessage("Функция не дифференцируема в точке ("
-                //     + std::to_string(test_x) + ", " + std::to_string(test_y) + ")");
-                return Result::NonDifferentiableFunction;
-            }
-            catch (const std::exception& e) {
-                LOG(ERROR) << "Ошибка дифференцирования в точке ("
-                    << test_x << ", " << test_y << "): " << e.what();
-                // TODO Перенести в GeneticAlgorithm
-                // m_reporter->insertMessage("Ошибка дифференцирования в точке ("
-                //     + std::to_string(test_x) + ", " + std::to_string(test_y) + ")");
-
-                return Result::NonDifferentiableFunction;
-            }
-        }
-        // TODO Перенести в GeneticAlgorithm
-        // LOG(INFO) << "Функция прошла проверку дифференцируемости";
-        // m_reporter->insertMessage("Функция прошла проверку дифференцируемости");
-        return Result::Success;
-
+    }catch (const std::exception& e) {
+        LOG(ERROR) << "Ошибка вычисления функции в точке (" << x << ", " << y << "): " << e.what();
+        return worstPossibleFitness();
     }
-    catch (const mu::Parser::exception_type& e) {
-        LOG(ERROR) << "Ошибка парсера при проверке дифференцируемости: " << e.GetMsg();
-        // TODO Перенести в GeneticAlgorithm
-        // m_reporter->insertMessage("Ошибка парсера при проверке дифференцируемости: ");
-        return Result::ParseError;
+}
+
+// Возвращение худших значений при ошибке
+double GeneticBase::worstPossibleFitness() const {
+    if (m_inputData->extremum_type == ExtremumType::MAXIMUM) {
+        // Для максимума - худшее значение это -∞
+        return -std::numeric_limits<double>::max();
     }
-    catch (const std::exception& e) {
-        LOG(ERROR) << "Ошибка при проверке дифференцируемости: " << e.what();
-        // TODO Перенести в GeneticAlgorithm
-        // m_reporter->insertMessage("Общая ошибка при проверке дифференцируемости: ");
-        return Result::ComputeError;
+    else {
+        // Для минимума - худшее значение это +∞
+        return std::numeric_limits<double>::max();
     }
+}
+
+// Cортировка популяции в зависимости от вида экстремума
+void GeneticBase::sortPopulation()
+{
+    if (m_inputData->extremum_type == ExtremumType::MAXIMUM) {
+        // Для максимума - сортируем по УБЫВАНИЮ fitness
+        // Чем БОЛЬШЕ значение функции, тем ЛУЧШЕ особь
+        std::sort(m_population.begin(), m_population.end(),
+            [](const Individual& a, const Individual& b) {
+                return a.fitness > b.fitness;
+            });
+    }else {
+        // Для минимума - сортируем по ВОЗРАСТАНИЮ fitness
+        // Чем МЕНЬШЕ значение функции, тем ЛУЧШЕ особь
+        std::sort(m_population.begin(), m_population.end(),
+            [](const Individual& a, const Individual& b) {
+                return a.fitness < b.fitness;
+            });
+    }
+    // После сортировка первая особь [0] - всегда лучшая
+}
+
+//Возвращение лучшего значения функции
+double GeneticBase::getBestFitness() const
+{
+    if (m_population.empty()) return 0.0;
+    // Возвращаем реальное значение функции лучшей особи
+    return m_population[0].fitness;
 }
 
 } // namespace GA
