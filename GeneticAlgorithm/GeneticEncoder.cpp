@@ -94,17 +94,23 @@ namespace GA {
 		return result;
 	}
 
-	// Кодирование числа в код
-	/*std::vector<bool> GeneticEncoder::encode(double x, double y) const
+	// Кодирование точки (x, y) в код
+	std::vector<bool> GeneticEncoder::encode(double x, double y) const
 	{
 		std::vector<bool> chromosome;
+		// Выделение памяти, почему так называется
 		chromosome.reserve(m_config.total_bits);
 
 		// Кодируем X
-		
-	}*/
+		auto x_bits = encodeVariable(x, m_config.x_left_bound, m_config.x_right_bound);
+		chromosome.insert(chromosome.end(), x_bits.begin(), x_bits.end());
 
+		// Кодируем Y
+		auto y_bits = encodeVariable(y, m_config.y_left_bound, m_config.y_right_bound);
+		chromosome.insert(chromosome.end(), y_bits.begin(), y_bits.end());
 
+		return chromosome;
+	}
 
 
 } // namespace GA
