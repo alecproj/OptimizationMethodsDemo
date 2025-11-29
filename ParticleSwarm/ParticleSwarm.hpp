@@ -162,40 +162,41 @@ public:
             LOGERR(rv);
             return rv;
         }
-        
-        resetAlgorithmState();
 
+        resetAlgorithmState();
 
         m_computationDigits = m_inputData->computation_precision;
         m_resultDigits = m_inputData->result_precision;
-        m_computationPrecision = std::pow(
-            10, (-m_inputData->computation_precision));
-        m_resultPrecision = std::pow(
-            10, (-m_inputData->result_precision));
+        m_computationPrecision = std::pow(10, (-m_inputData->computation_precision));
+        m_resultPrecision = std::pow(10, (-m_inputData->result_precision));
 
         try {
             initializeParser(m_inputData->function);
 
-            // В начале solve(), после initializeParser():
-            m_swarm.resize(m_swarm_size); // Используем установленный размер роя
+            m_swarm.resize(m_swarm_size);
             initializeSwarmPositions();
+            
+            initializeSwarmVelocities();
 
-            LOG(INFO) << "Тест инициализации позиций (первые 5 частиц):";
+            LOG(INFO) << "Тест инициализации скоростей (первые 5 частиц):";
             for (int i = 0; i < std::min(5, m_swarm_size); ++i) {
-                LOG(INFO) << "Частица " << i << ": (" << m_swarm[i].x << ", " << m_swarm[i].y << ")";
+                LOG(INFO) << "Частица " << i << ": vx=" << m_swarm[i].vx << ", vy=" << m_swarm[i].vy;
             }
 
-            // Проверка границ
-            bool all_in_bounds = true;
+            // Проверка разумности скоростей (не слишком большие)
+            bool reasonable_velocities = true;
+            double x_range = m_inputData->x_right_bound - m_inputData->x_left_bound;
+            double y_range = m_inputData->y_right_bound - m_inputData->y_left_bound;
+            double vx_max = 0.1 * x_range;
+            double vy_max = 0.1 * y_range;
+
             for (const auto& particle : m_swarm) {
-                if (particle.x < m_inputData->x_left_bound || particle.x > m_inputData->x_right_bound ||
-                    particle.y < m_inputData->y_left_bound || particle.y > m_inputData->y_right_bound) {
-                    all_in_bounds = false;
+                if (std::abs(particle.vx) > vx_max || std::abs(particle.vy) > vy_max) {
+                    reasonable_velocities = false;
                     break;
-                    }
+                }
             }
-            LOG(INFO) << "Все частицы в границах: " << (all_in_bounds ? "ДА" : "НЕТ");
-
+            LOG(INFO) << "Скорости в разумных пределах: " << (reasonable_velocities ? "ДА" : "НЕТ");
         }
         catch (const mu::Parser::exception_type& e) {
             rv = Result::ParseError;
@@ -233,6 +234,24 @@ private:
             // Инициализируем лучшие позиции текущими
             particle.best_x = particle.x;
             particle.best_y = particle.y;
+        }
+    }
+    void initializeSwarmVelocities() {
+        // Вычислим диапазоны по x и y для задания начальных скоростей
+        double x_range = m_inputData->x_right_bound - m_inputData->x_left_bound;
+        double y_range = m_inputData->y_right_bound - m_inputData->y_left_bound;
+
+        // Начальные скорости зададим в пределах [-v_max, v_max], где v_max = 0.1 * диапазон
+        double vx_max = 0.1 * x_range;
+        double vy_max = 0.1 * y_range;
+
+        for (auto& particle : m_swarm) {
+            // Генерируем случайные скорости в заданном диапазоне
+            double rand1 = static_cast<double>(rand()) / RAND_MAX; // 0..1
+            double rand2 = static_cast<double>(rand()) / RAND_MAX; // 0..1
+
+            particle.vx = -vx_max + rand1 * 2 * vx_max; // от -vx_max до vx_max
+            particle.vy = -vy_max + rand2 * 2 * vy_max;
         }
     }
 
