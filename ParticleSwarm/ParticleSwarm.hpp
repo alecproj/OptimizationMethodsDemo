@@ -165,17 +165,6 @@ public:
         
         resetAlgorithmState();
 
-        // Тестирование структуры ParticleData
-        m_swarm.resize(2); // Создаем 2 тестовые частицы
-        m_swarm[0].x = 1.0; m_swarm[0].y = 2.0;
-        m_swarm[1].x = 3.0; m_swarm[1].y = 4.0;
-
-        LOG(INFO) << "Тест структуры ParticleData:";
-        LOG(INFO) << "Частица 0: (" << m_swarm[0].x << ", " << m_swarm[0].y << ")";
-        LOG(INFO) << "Частица 1: (" << m_swarm[1].x << ", " << m_swarm[1].y << ")";
-        LOG(INFO) << "Размер роя: " << m_swarm.size();
-        LOG(INFO) << "Параметры PSO: w=" << m_inertia_weight
-                  << ", c1=" << m_cognitive_coeff << ", c2=" << m_social_coeff;
 
         m_computationDigits = m_inputData->computation_precision;
         m_resultDigits = m_inputData->result_precision;
@@ -187,7 +176,26 @@ public:
         try {
             initializeParser(m_inputData->function);
 
-            // ...
+            // В начале solve(), после initializeParser():
+            m_swarm.resize(m_swarm_size); // Используем установленный размер роя
+            initializeSwarmPositions();
+
+            LOG(INFO) << "Тест инициализации позиций (первые 5 частиц):";
+            for (int i = 0; i < std::min(5, m_swarm_size); ++i) {
+                LOG(INFO) << "Частица " << i << ": (" << m_swarm[i].x << ", " << m_swarm[i].y << ")";
+            }
+
+            // Проверка границ
+            bool all_in_bounds = true;
+            for (const auto& particle : m_swarm) {
+                if (particle.x < m_inputData->x_left_bound || particle.x > m_inputData->x_right_bound ||
+                    particle.y < m_inputData->y_left_bound || particle.y > m_inputData->y_right_bound) {
+                    all_in_bounds = false;
+                    break;
+                    }
+            }
+            LOG(INFO) << "Все частицы в границах: " << (all_in_bounds ? "ДА" : "НЕТ");
+
         }
         catch (const mu::Parser::exception_type& e) {
             rv = Result::ParseError;
@@ -206,6 +214,27 @@ public:
 private:
     const InputData* m_inputData;
     Reporter* m_reporter;
+
+
+private:
+    void initializeSwarmPositions() {
+        // Для простоты начнем с псевдослучайных чисел, потом добавим <random>
+        double x_range = m_inputData->x_right_bound - m_inputData->x_left_bound;
+        double y_range = m_inputData->y_right_bound - m_inputData->y_left_bound;
+
+        for (auto& particle : m_swarm) {
+            // Простой способ получить псевдослучайные числа
+            double rand1 = static_cast<double>(rand()) / RAND_MAX; // 0..1
+            double rand2 = static_cast<double>(rand()) / RAND_MAX; // 0..1
+
+            particle.x = m_inputData->x_left_bound + rand1 * x_range;
+            particle.y = m_inputData->y_left_bound + rand2 * y_range;
+
+            // Инициализируем лучшие позиции текущими
+            particle.best_x = particle.x;
+            particle.best_y = particle.y;
+        }
+    }
 
     struct ParticleData {
         double x, y;           // Текущая позиция
