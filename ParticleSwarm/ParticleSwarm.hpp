@@ -29,6 +29,35 @@ class ParticleSwarm : public ParticleBase {
 
 public:
 
+public:
+    // Методы для установки параметров PSO
+    void setSwarmSize(int size) {
+        if (size > 0) m_swarm_size = size;
+    }
+
+    void setInertiaWeight(double w) {
+        m_inertia_weight = w;
+    }
+
+    void setCognitiveCoeff(double c1) {
+        m_cognitive_coeff = c1;
+    }
+
+    void setSocialCoeff(double c2) {
+        m_social_coeff = c2;
+    }
+
+    void setMaxIterations(int iterations) {
+        m_max_iterations = iterations;
+    }
+
+    // Методы для получения текущих параметров (для тестирования)
+    int getSwarmSize() const { return m_swarm_size; }
+    double getInertiaWeight() const { return m_inertia_weight; }
+    double getCognitiveCoeff() const { return m_cognitive_coeff; }
+    double getSocialCoeff() const { return m_social_coeff; }
+    int getMaxIterations() const { return m_max_iterations; }
+
     ParticleSwarm(Reporter* reporter) :
         m_inputData{ nullptr },
         m_reporter{ reporter },

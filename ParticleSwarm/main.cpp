@@ -76,12 +76,13 @@ int main(int argc, char *argv[])
     FLAGS_minloglevel = 0;
     google::InitGoogleLogging(argv[0]);
     google::SetVLOGLevel("*", DEBUG);
-
+    /*
     LOG(WARNING) << "\nПредупреждение!";
     LOG(ERROR) << "Ошибка!";
     VLOG(DEBUG) << "Дебаг!";
     LOG(INFO) << "Информация!";
     LOGERR(Result::ComputeError);
+    */
 
     using AlgoType = ParticleSwarm<MockReporter>;
     MockReporter reporter{};
@@ -92,6 +93,20 @@ int main(int argc, char *argv[])
     std::cout << "Введите функцию (например, x^2 + y^2): ";
     std::getline(std::cin, data.function);
     std::string input_str;
+
+    // Тестирование методов управления параметрами
+    algo.setSwarmSize(50);
+    algo.setInertiaWeight(0.8);
+    algo.setCognitiveCoeff(2.0);
+    algo.setSocialCoeff(2.0);
+    algo.setMaxIterations(200);
+
+    LOG(INFO) << "Параметры после изменения:";
+    LOG(INFO) << "Размер роя: " << algo.getSwarmSize();
+    LOG(INFO) << "Инерция: " << algo.getInertiaWeight();
+    LOG(INFO) << "Когнитивный: " << algo.getCognitiveCoeff();
+    LOG(INFO) << "Социальный: " << algo.getSocialCoeff();
+    LOG(INFO) << "Макс. итераций: " << algo.getMaxIterations();
 
     try {
         std::cout << "Введите тип экстремума (MINIMUM или MAXIMUM): ";
