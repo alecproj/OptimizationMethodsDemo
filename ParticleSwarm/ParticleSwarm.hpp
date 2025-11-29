@@ -31,7 +31,17 @@ public:
 
     ParticleSwarm(Reporter* reporter) :
         m_inputData{ nullptr },
-        m_reporter{ reporter }
+        m_reporter{ reporter },
+        m_swarm_size(30),
+        m_inertia_weight(0.7),
+        m_cognitive_coeff(1.5),
+        m_social_coeff(1.5),
+        m_max_iterations(100),
+        m_global_best_x(0),
+        m_global_best_y(0),
+        m_global_best_value(0),
+        m_iterations(0),
+        m_function_calls(0)
     {
     }
 
@@ -125,6 +135,19 @@ public:
         }
         
         resetAlgorithmState();
+
+        // Тестирование структуры ParticleData
+        m_swarm.resize(2); // Создаем 2 тестовые частицы
+        m_swarm[0].x = 1.0; m_swarm[0].y = 2.0;
+        m_swarm[1].x = 3.0; m_swarm[1].y = 4.0;
+
+        LOG(INFO) << "Тест структуры ParticleData:";
+        LOG(INFO) << "Частица 0: (" << m_swarm[0].x << ", " << m_swarm[0].y << ")";
+        LOG(INFO) << "Частица 1: (" << m_swarm[1].x << ", " << m_swarm[1].y << ")";
+        LOG(INFO) << "Размер роя: " << m_swarm.size();
+        LOG(INFO) << "Параметры PSO: w=" << m_inertia_weight
+                  << ", c1=" << m_cognitive_coeff << ", c2=" << m_social_coeff;
+
         m_computationDigits = m_inputData->computation_precision;
         m_resultDigits = m_inputData->result_precision;
         m_computationPrecision = std::pow(
@@ -154,6 +177,29 @@ public:
 private:
     const InputData* m_inputData;
     Reporter* m_reporter;
+
+    struct ParticleData {
+        double x, y;           // Текущая позиция
+        double vx, vy;         // Текущая скорость
+        double best_x, best_y; // Лучшая найденная позиция
+        double best_value;     // Лучшее значение функции
+
+        ParticleData() : x(0), y(0), vx(0), vy(0),
+                        best_x(0), best_y(0), best_value(0) {}
+    };
+
+    // Параметры алгоритма PSO
+    int m_swarm_size;                    // Размер роя
+    double m_inertia_weight;             // Инерционный вес (w)
+    double m_cognitive_coeff;            // Когнитивный коэффициент (c1)
+    double m_social_coeff;               // Социальный коэффициент (c2)
+    int m_max_iterations;                // Максимальное число итераций
+
+    // Состояние алгоритма
+    std::vector<ParticleData> m_swarm;
+    double m_global_best_x, m_global_best_y, m_global_best_value;
+    int m_iterations;
+    int m_function_calls;
 
     void insertResultInfo(/* ... */) 
     {
