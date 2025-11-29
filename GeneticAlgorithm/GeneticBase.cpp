@@ -158,12 +158,4 @@ void GeneticBase::sortPopulation()
     // После сортировка первая особь [0] - всегда лучшая
 }
 
-//Возвращение лучшего значения функции
-double GeneticBase::getBestFitness() const
-{
-    if (m_population.empty()) return 0.0;
-    // Возвращаем реальное значение функции лучшей особи
-    return m_population[0].fitness;
-}
-
 } // namespace GA
