@@ -29,6 +29,9 @@ public:
     
     // Метод очистки
     void clear();
+    // Создание популяции
+    void initializePopulation();
+
     Result runGeneration();
     Result checkFunction(const std::string &function);
 
@@ -65,7 +68,6 @@ protected:
     // Вспомогательные методы
     void resetAlgorithmState();
     void initializeParser(const std::string& function);
-    void initializePopulation();
     double evaluateFitness(double x, double y);
     double worstPossibleFitness() const;
     void sortPopulation();

@@ -267,6 +267,133 @@ namespace GA {
 
             std::cout << "\n=== ТЕСТ СОЗДАНИЯ СЛУЧАЙНЫХ ОСОБЕЙ ЗАВЕРШЕН ===\n" << std::endl;
         }
+
+        // Тест инициализации популяции
+        static void testInitializePopulation() {
+            std::cout << "\n=== ТЕСТ ИНИЦИАЛИЗАЦИИ ПОПУЛЯЦИИ ===" << std::endl;
+
+            // Подготавливаем тестовые данные
+            InputData data;
+            data.function = "x^2 + y^2";
+            data.extremum_type = ExtremumType::MINIMUM;
+            data.x_left_bound = -10.0;
+            data.x_right_bound = 10.0;
+            data.y_left_bound = -10.0;
+            data.y_right_bound = 10.0;
+            data.result_precision = 8;
+            data.computation_precision = 15;
+
+            // Конфигурация с маленькой популяцией для теста
+            GAConfig config(10, 5, 0.8, 0.05, 16, 2);
+
+            GeneticBase ga;
+            Result result = ga.initialize(&data, &config);
+
+            if (result != Result::Success) {
+                std::cout << "❌ Ошибка инициализации: " << resultToString(result) << std::endl;
+                return;
+            }
+
+            // Тестируем инициализацию популяции
+            std::cout << "\n--- Проверка до инициализации ---" << std::endl;
+            std::cout << "Размер популяции до: " << ga.getPopulation().size() << std::endl;
+            std::cout << "Лучший fitness до: " << ga.getBestFitness() << std::endl;
+
+            // Вызываем тестируемый метод
+            ga.initializePopulation();
+
+            std::cout << "\n--- Результаты инициализации ---" << std::endl;
+            const auto& population = ga.getPopulation();
+            std::cout << "Размер популяции после: " << population.size() << std::endl;
+            std::cout << "Ожидаемый размер: " << config.population_size << std::endl;
+
+            // Проверяем размер популяции
+            if (population.size() == config.population_size) {
+                std::cout << "✅ Размер популяции корректен" << std::endl;
+            }
+            else {
+                std::cout << "❌ Ошибка: неверный размер популяции" << std::endl;
+            }
+
+            // Проверяем, что все особи в пределах границ
+            bool all_in_bounds = true;
+            for (size_t i = 0; i < population.size(); ++i) {
+                const Individual& ind = population[i];
+                bool x_ok = (ind.x >= data.x_left_bound && ind.x <= data.x_right_bound);
+                bool y_ok = (ind.y >= data.y_left_bound && ind.y <= data.y_right_bound);
+
+                if (!x_ok || !y_ok) {
+                    all_in_bounds = false;
+                    std::cout << "❌ Особь " << i << " вне границ: ("
+                        << ind.x << ", " << ind.y << ")" << std::endl;
+                }
+            }
+
+            if (all_in_bounds) {
+                std::cout << "✅ Все особи в пределах границ" << std::endl;
+            }
+
+            // Проверяем, что fitness вычислен для всех особей
+            bool all_have_fitness = true;
+            for (size_t i = 0; i < population.size(); ++i) {
+                if (population[i].fitness == 0.0 && i > 0) { // Первая особь может иметь fitness = 0
+                    all_have_fitness = false;
+                    std::cout << "❌ Особь " << i << " не имеет fitness" << std::endl;
+                }
+            }
+
+            if (all_have_fitness) {
+                std::cout << "✅ Fitness вычислен для всех особей" << std::endl;
+            }
+
+            // Проверяем сортировку (для минимума первая особь должна иметь наименьший fitness)
+            bool correctly_sorted = true;
+            for (size_t i = 1; i < population.size(); ++i) {
+                if (population[i].fitness < population[0].fitness) {
+                    correctly_sorted = false;
+                    std::cout << "❌ Популяция не отсортирована правильно" << std::endl;
+                    break;
+                }
+            }
+
+            if (correctly_sorted) {
+                std::cout << "✅ Популяция правильно отсортирована" << std::endl;
+            }
+
+            // Выводим информацию о лучшей особи
+            std::cout << "\n--- Лучшая особь ---" << std::endl;
+            std::cout << "Координаты: (" << ga.getBestX() << ", " << ga.getBestY() << ")" << std::endl;
+            std::cout << "Fitness: " << ga.getBestFitness() << std::endl;
+            std::cout << "Хромосома: ";
+
+            if (!population.empty()) {
+                const auto& best_chromosome = population[0].chromosome;
+                for (size_t i = 0; i < std::min(best_chromosome.size(), size_t(20)); ++i) {
+                    std::cout << (best_chromosome[i] ? "1" : "0");
+                }
+                if (best_chromosome.size() > 20) {
+                    std::cout << "...";
+                }
+                std::cout << " (" << best_chromosome.size() << " бит)" << std::endl;
+            }
+
+            // Выводим статистику по популяции
+            std::cout << "\n--- Статистика популяции ---" << std::endl;
+            double min_fitness = population[0].fitness;
+            double max_fitness = population.back().fitness;
+            double avg_fitness = 0.0;
+
+            for (const auto& ind : population) {
+                avg_fitness += ind.fitness;
+            }
+            avg_fitness /= population.size();
+
+            std::cout << "Min fitness: " << min_fitness << std::endl;
+            std::cout << "Max fitness: " << max_fitness << std::endl;
+            std::cout << "Avg fitness: " << avg_fitness << std::endl;
+
+            std::cout << "=== ТЕСТ ИНИЦИАЛИЗАЦИИ ПОПУЛЯЦИИ ЗАВЕРШЕН ===\n" << std::endl;
+        }
     };
 } // namespace GA
 

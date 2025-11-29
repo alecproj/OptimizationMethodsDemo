@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
     //GeneticTester::testGeneticEncoder();         // Тест кодирования/декодирования переменной, преобразования x --> 010...01 и преобразования 1010...001 --> x
     //GeneticTester::testEncodeMethod();           // Тест кодирования/декодирования точки, (x, y) --> 010...01;  1010...001 --> (x, y)
     //GeneticTester::testCreateRandomIndividual(); // Тест генерации особей и их кодирования и декодирования
-    
+    //GeneticTester::testInitializePopulation();   // Тест инициализации популяции
     
     //LOGERR(Result::ComputeError);
     
