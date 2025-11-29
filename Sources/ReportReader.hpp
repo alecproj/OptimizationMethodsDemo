@@ -36,12 +36,12 @@ class ReportReader {
 
 public:
 
-    static ReportStatus::Status quickInfo(const QString &fileName, QuickInfo *out);
-    static ReportStatus::Status inputData(const QString &fileName, InputData *out);
-    static ReportStatus::Status reportData(
-        const QString &fileName, InputData *&outInput,
-        QJsonArray &outSolution, ResultData *outResult
-    );
+    static ReportStatus::Status quickInfo(const QString &fileName,
+        QuickInfo *out, PartType::Type type = PartType::NONE);
+    static ReportStatus::Status inputData(const QString &fileName,
+        InputData *out);
+    static ReportStatus::Status reportData(const QString &fileName,
+        InputData *&outInput, QJsonArray &outSolution, ResultData *outResult);
 
 private:
     static inline ReportStatus::Status readInputData(const QJsonObject &obj, LO::InputData *out);

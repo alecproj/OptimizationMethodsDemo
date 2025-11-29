@@ -23,7 +23,8 @@ public:
         InvalidName         = -2,
         FileDoesNotExists   = -1,
         Ok                  = 0,
-        NotVerified         = 1
+        NotVerified         = 1,
+        AnotherPartType     = 2
     };
     Q_ENUM(Status)
 
@@ -386,6 +387,8 @@ public:
                 return "Файл корректен";
             case ReportStatus::NotVerified:
                 return "Проверка файла не выполнена";
+            case ReportStatus::AnotherPartType:
+                return "Отчет из другого раздела";
             default:
                 return "";
         }

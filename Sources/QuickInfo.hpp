@@ -20,9 +20,11 @@ class QuickInfo: public QObject
     Q_PROPERTY(QString info READ info WRITE setInfo NOTIFY infoChanged)
     Q_PROPERTY(int status READ status WRITE setStatus NOTIFY statusChanged)
 public:
+    bool marked;
 
     explicit QuickInfo(QObject* parent = nullptr)
         : QObject(parent)
+        , marked{false}
         , m_partition{PartType::NONE}
         , m_name{}
         , m_info{}

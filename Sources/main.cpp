@@ -1,5 +1,5 @@
 #include "AppEnums.hpp"
-#include "InputData.hpp"
+#include "FileManager.hpp"
 #include "MainController.hpp"
 
 #include <glog/logging.h>
@@ -139,8 +139,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<GO::InputData>("GOInputData", 1, 0, "InputData");
 
     MainController controller{};
-    controller.updateQuickInfoModel();
-    qDebug() << "Files count: " << controller.quickInfoModel()->count();
+    qDebug() << "Files count: " << FileManager::listFiles().count();
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("controller", &controller);

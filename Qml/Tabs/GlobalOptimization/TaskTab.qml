@@ -117,8 +117,11 @@ Rectangle {
                 if (rv !== 0) {
                     return;
                 }
-                controller.solve();
-                controller.updateQuickInfoModel();
+                rv = controller.solve();
+                if (rv === 0) {
+                    AppStates.currentTabIndex = controller.openReportsCount + 2
+                    controller.updateQuickInfoModel();
+                }
             }
         }
 

@@ -95,14 +95,39 @@ Status MainController::solveGO()
     return Status::Fail;
 }
 
+void MainController::setPartition(PartType::Type partition)
+{
+    if (partition != m_currPartition) {
+        m_currPartition = partition;
+        initQuickInfoModel();
+    }
+}
+
+void MainController::initQuickInfoModel()
+{
+    m_quickInfoModel.clear();
+    QStringList files = FileManager::listFiles();
+    for (const auto file : files) {
+        auto info = new QuickInfo(&m_quickInfoModel);
+        auto rv = ReportReader::quickInfo(file, info, m_currPartition);
+        if (rv == ReportStatus::Ok) {
+            m_quickInfoModel.prepend(info);
+        } else {
+            delete info;
+        }
+    }
+    emit quickInfoModelChanged();
+}
+
 void MainController::updateQuickInfoModel()
 {
     bool updates = false;
     QStringList files = FileManager::listFiles();
+    m_quickInfoModel.beginTraversing();
     for (const auto file : files) {
-        if (!m_quickInfoModel.exists(file)) {
+        if (!m_quickInfoModel.mark(file)) {
             auto info = new QuickInfo(&m_quickInfoModel);
-            auto rv = ReportReader::quickInfo(file, info);
+            auto rv = ReportReader::quickInfo(file, info, m_currPartition);
             if (rv == ReportStatus::Ok) {
                 m_quickInfoModel.prepend(info);
                 updates = true;
@@ -114,6 +139,7 @@ void MainController::updateQuickInfoModel()
     if (updates) {
         emit quickInfoModelChanged();
     }
+    m_quickInfoModel.endTraversing();
 }
 
 Status MainController::openReport(const QString &fileName)

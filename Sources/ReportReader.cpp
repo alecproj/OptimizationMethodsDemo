@@ -28,13 +28,17 @@
         return ReportStatus::InvalidDataStruct;                              \
     }
 
-ReportStatus::Status ReportReader::quickInfo(const QString &fileName, QuickInfo *out)
+ReportStatus::Status ReportReader::quickInfo(
+    const QString &fileName, QuickInfo *out, PartType::Type type)
 {
     if (!out) {
         return ReportStatus::NotVerified;
     }
     FileData data;
     ReportStatus::Status rv = validateFile(fileName, &data);
+    if (data.partType != type) {
+        return ReportStatus::AnotherPartType;
+    }
     switch (rv) {
         case ReportStatus::Ok:
         case ReportStatus::InvalidCRC:

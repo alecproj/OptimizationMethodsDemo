@@ -37,6 +37,8 @@ public:
 
     Q_INVOKABLE Status setInputData(const InputData *data);
     Q_INVOKABLE Status solve();
+    Q_INVOKABLE void setPartition(PartType::Type partition);
+    Q_INVOKABLE void initQuickInfoModel();
     Q_INVOKABLE void updateQuickInfoModel();
     Q_INVOKABLE Status inputDataFromFile(const QString &fileName, InputData *out);
     Q_INVOKABLE Status openReport(const QString &fileName);

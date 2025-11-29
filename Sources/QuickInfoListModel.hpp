@@ -34,6 +34,10 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     RoleNames roleNames() const override;
 
+    void beginTraversing();
+    bool mark(const QString &fileName);
+    void endTraversing();
+
     bool exists(const QString &fileName) const;
     void prepend(QuickInfo *entry) 
     {
