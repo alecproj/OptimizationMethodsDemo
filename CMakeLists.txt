@@ -72,9 +72,9 @@ qt_add_qml_module(${PROJECT_NAME}App
     VERSION 1.0
     QML_FILES
         Qml/Main.qml
-        Qml/ReportTab.qml
         Qml/VerticalTabBar.qml
         Qml/Tabs/FolderTab.qml
+        Qml/Tabs/ReportTab.qml
 )
 
 target_link_libraries(${PROJECT_NAME}App

@@ -5,6 +5,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import AppEnums
+import LOInputData
 import Globals
 import Components
 

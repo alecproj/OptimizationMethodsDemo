@@ -57,7 +57,7 @@ int ReportWriter::begin()
         qDebug() << "Begin writing a report with LO InputData";
         auto data = dynamic_cast<const LO::InputData *>(m_inputData);
         m_fileName = fileNameLO(
-            static_cast<FullAlgoType::Type>(data->fullAlgoId())
+            static_cast<LO::FullAlgoType::Type>(data->fullAlgoId())
         );
     } else if (partType == PartType::GO) {
         qDebug() << "Begin writing a report with GO InputData";
@@ -238,9 +238,9 @@ void ReportWriter::writeCRC()
     m_report.insert("checksum", hex);
 }
 
-QString ReportWriter::fileNameLO(FullAlgoType::Type type)
+QString ReportWriter::fileNameLO(LO::FullAlgoType::Type type)
 {
-    QMetaEnum meta = QMetaEnum::fromType<FullAlgoType::Type>();
+    QMetaEnum meta = QMetaEnum::fromType<LO::FullAlgoType::Type>();
     const char *key = meta.valueToKey(static_cast<int>(type));
     QString enumName = key ? QString::fromLatin1(key) : QString::number(static_cast<int>(type));
 

@@ -14,6 +14,10 @@ Rectangle {
 
     color: AppPalette.background
 
+    function algoToStr(algoType) {
+        return helper.algoTypeToString(algoType)
+    }
+
     ColumnLayout {
         id: column
         anchors.fill: parent
@@ -37,9 +41,9 @@ Rectangle {
             Layout.preferredWidth: 250
 
             model: [
-                { value: AlgoType.CD, text: "Метод покоординатного спуска" },
-                { value: AlgoType.GD, text: "Метод градиентного спуска" },
-                { value: AlgoType.CG, text: "Метод сопряженных градиентов" }
+                { value: AlgoType.CD, text: root.algoToStr(AlgoType.CD) },
+                { value: AlgoType.GD, text: root.algoToStr(AlgoType.GD) },
+                { value: AlgoType.CG, text: root.algoToStr(AlgoType.CG) }
             ]
 
             textRole: "text"

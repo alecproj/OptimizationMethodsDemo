@@ -62,7 +62,7 @@ private:
     ReportWriter m_writer;
     PartType::Type m_currPartition;
     AlgoType::Type m_currAlgorithm;
-    ExtensionType::Type m_currExtension;
+    LO::ExtensionType::Type m_currExtension;
     CDAlgoType m_cdAlgo;
     CD::InputData m_cdData;
     GDAlgoType m_gdAlgo;

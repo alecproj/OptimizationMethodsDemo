@@ -327,7 +327,7 @@ bool ReportReader::validateName(const QString &fileName, FileData *out)
     const int minute = match.captured(7).toInt();
     const int second = match.captured(8).toInt();
 
-    QMetaEnum me = QMetaEnum::fromType<FullAlgoType::Type>();
+    QMetaEnum me = QMetaEnum::fromType<LO::FullAlgoType::Type>();
     int algoVal = me.keyToValue(algoStr.toLatin1().constData());
     if (algoVal == -1) {
         qWarning() << "Unable to extract algo type";
@@ -354,7 +354,7 @@ bool ReportReader::validateName(const QString &fileName, FileData *out)
         out->partType = static_cast<PartType::Type>(partVal);
         out->abbreviation = QString("%1 %2").arg(partStr, algoStr);
         if (out->partType == PartType::LO) {
-            out->algoType.full = static_cast<FullAlgoType::Type>(algoVal);
+            out->algoType.full = static_cast<LO::FullAlgoType::Type>(algoVal);
         } else if (out->partType == PartType::GO) {
             out->algoType.base = static_cast<AlgoType::Type>(algoVal);
         }

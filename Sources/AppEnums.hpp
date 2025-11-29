@@ -7,6 +7,7 @@
 #define SOURCES_APPENUMS_HPP_
 
 #include <QObject>
+#include <QDebug>
 #include <cassert>
 
 class ReportStatus: public QObject {
@@ -57,19 +58,6 @@ public:
     explicit PartType(QObject *parent = nullptr) : QObject(parent) {}
 };
 
-class StepType : public QObject {
-    Q_OBJECT
-public:
-    enum Type {
-        CONSTANT    = 0,
-        COEFFICIENT = 1,
-        ADAPTIVE    = 2
-    };
-    Q_ENUM(Type)
-
-    explicit StepType(QObject *parent = nullptr) : QObject(parent) {}
-};
-
 class ExtremumType : public QObject {
     Q_OBJECT
 public:
@@ -89,12 +77,47 @@ public:
         ALL = 0,
         CD  = 1, // Coordinate Descent
         GD  = 2, // Gradient Descent
-        CG  = 3  // Conjugate Gradient
+        CG  = 3, // Conjugate Gradient
+        GA  = 4, // Genetic Algorithm
+        PS  = 5  // Particle Swarm
     };
     Q_ENUM(Type)
 
     explicit AlgoType(QObject *parent = nullptr) : QObject(parent) {}
 };
+
+namespace GO {
+
+class CheckList : public QObject {
+    Q_OBJECT
+public:
+    enum Check { 
+        Error               = -1,
+        CalcAccuracy        = (1 << 0),  // GA,PS
+        ResultAccuracy      = (1 << 1),  // GA,PS
+        MinX                = (1 << 2),  // GA,PS
+        MaxX                = (1 << 3),  // GA,PS
+        MinY                = (1 << 4),  // GA,PS
+        MaxY                = (1 << 5),  // GA,PS
+
+        GACheck             = 63,
+        PSCheck             = 63
+    };
+    Q_ENUM(Check)
+
+    explicit CheckList(QObject *parent = nullptr) : QObject(parent) {
+        static_assert( GACheck == (
+            CalcAccuracy + ResultAccuracy + MinX + MaxX + MinY + MaxY
+        ), "Invalid GACheck");
+        static_assert( PSCheck == (
+            CalcAccuracy + ResultAccuracy + MinX + MaxX + MinY + MaxY
+        ), "Invalid PSCheck");
+    }
+};
+
+} // namespace GO
+
+namespace LO {
 
 class ExtensionType : public QObject {
     Q_OBJECT
@@ -107,6 +130,19 @@ public:
     Q_ENUM(Type)
 
     explicit ExtensionType(QObject *parent = nullptr) : QObject(parent) {}
+};
+
+class StepType : public QObject {
+    Q_OBJECT
+public:
+    enum Type {
+        CONSTANT    = 0,
+        COEFFICIENT = 1,
+        ADAPTIVE    = 2
+    };
+    Q_ENUM(Type)
+
+    explicit StepType(QObject *parent = nullptr) : QObject(parent) {}
 };
 
 class FullAlgoType : public QObject {
@@ -187,8 +223,9 @@ public:
             MaxY            + Iterations     + FuncCalls
         ), "Invalid CGBCheck");
     }
-
 };
+
+} // namespace LO
 
 class EnumHelper : public QObject {
     Q_OBJECT
@@ -196,8 +233,10 @@ public:
 
     explicit EnumHelper(QObject *parent = nullptr) : QObject(parent) {}
 
-    Q_INVOKABLE FullAlgoType::Type calculateFullType(AlgoType::Type algo, ExtensionType::Type extension)
+    Q_INVOKABLE LO::FullAlgoType::Type calculateFullType(AlgoType::Type algo, LO::ExtensionType::Type extension)
     {
+        using namespace LO;
+
         if (algo == AlgoType::CD) {
             if (extension == ExtensionType::B) {
                 return FullAlgoType::CDB;
@@ -218,8 +257,22 @@ public:
         return FullAlgoType::INVALID;
     }
 
-    Q_INVOKABLE CheckList::Check getCheckByFullType(FullAlgoType::Type type) 
+    Q_INVOKABLE GO::CheckList::Check getCheckByAlgoType(AlgoType::Type type) 
     {
+        using namespace GO;
+        if (type == AlgoType::GA) {
+            return CheckList::GACheck;
+        } else if (type == AlgoType::PS) {
+            return CheckList::PSCheck;
+        }
+        qCritical() << "Trying to get a checklist for an unsupported algo: " << type;
+        return CheckList::Error;
+    }
+
+    Q_INVOKABLE LO::CheckList::Check getCheckByFullType(LO::FullAlgoType::Type type) 
+    {
+        using namespace LO;
+
         if (type == FullAlgoType::CDB) {
             return CheckList::CDBCheck;
         } else if (type == FullAlgoType::CDS) {
@@ -233,6 +286,7 @@ public:
         } else if (type == FullAlgoType::CGB) {
             return CheckList::CGBCheck;
         }
+        qCritical() << "Trying to get a checklist for an unsupported full algo: " << type;
         return CheckList::Error;
     }
 
@@ -245,13 +299,18 @@ public:
                 return "Метод градиентного спуска";
             case AlgoType::CG:
                 return "Метод сопряженных градиентов";
+            case AlgoType::GA:
+                return "Генетический алгоритм";
+            case AlgoType::PS:
+                return "Рой частиц";
             default:
                 return "";
         }
     }
 
-    Q_INVOKABLE QString extensionTypeToString(ExtensionType::Type type)
+    Q_INVOKABLE QString extensionTypeToString(LO::ExtensionType::Type type)
     {
+        using namespace LO;
         switch (type) {
             case ExtensionType::B:
                 return "Базовый";
@@ -264,8 +323,9 @@ public:
         }
     }
 
-    Q_INVOKABLE QString stepTypeToString(StepType::Type type)
+    Q_INVOKABLE QString stepTypeToString(LO::StepType::Type type)
     {
+        using namespace LO;
         switch (type) {
             case StepType::CONSTANT:
                 return "Константный";

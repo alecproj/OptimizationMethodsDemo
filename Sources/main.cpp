@@ -126,15 +126,16 @@ int main(int argc, char *argv[])
     qInstallMessageHandler(msgHandler);
     qDebug() << "Отладочная сборка";
     qmlRegisterUncreatableType<ExtremumType>("AppEnums", 1, 0, "ExtremumType", "Type of extremum");
-    qmlRegisterUncreatableType<StepType>("AppEnums", 1, 0, "StepType", "Type of step");
     qmlRegisterUncreatableType<AlgoType>("AppEnums", 1, 0, "AlgoType", "Algo type ID");
-    qmlRegisterUncreatableType<ExtensionType>("AppEnums", 1, 0, "ExtensionType", "Extension type ID");
-    qmlRegisterUncreatableType<FullAlgoType>("AppEnums", 1, 0, "FullAlgoType", "Full algo type ID");
-    qmlRegisterUncreatableType<CheckList>("AppEnums", 1, 0, "CheckList", "Input data check list");
     qmlRegisterUncreatableType<Result>("AppEnums", 1, 0, "Result", "Result of MainController methods");
     qmlRegisterType<EnumHelper>("AppEnums", 1, 0, "EnumHelper");
     qmlRegisterType<PartType>("AppEnums", 1, 0, "PartType");
+    qmlRegisterUncreatableType<LO::ExtensionType>("AppEnums", 1, 0, "ExtensionType", "Extension type ID");
+    qmlRegisterUncreatableType<LO::StepType>("AppEnums", 1, 0, "StepType", "Type of step");
+    qmlRegisterUncreatableType<LO::FullAlgoType>("AppEnums", 1, 0, "FullAlgoType", "Full algo type ID");
+    qmlRegisterUncreatableType<LO::CheckList>("LOInputData", 1, 0, "CheckList", "LO input data check list");
     qmlRegisterType<LO::InputData>("LOInputData", 1, 0, "InputData");
+    qmlRegisterUncreatableType<GO::CheckList>("GOInputData", 1, 0, "CheckList", "GO input data check list");
     qmlRegisterType<GO::InputData>("GOInputData", 1, 0, "InputData");
 
     MainController controller{};

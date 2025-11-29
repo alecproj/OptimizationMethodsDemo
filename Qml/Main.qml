@@ -21,8 +21,13 @@ ApplicationWindow {
     }
 
     Component {
-        id: taskTab
+        id: loTaskTab
         LO.TaskTab {}
+    }
+
+    Component {
+        id: goTaskTab
+        GO.TaskTab {}
     }
 
     RowLayout {
@@ -43,8 +48,7 @@ ApplicationWindow {
 
             Loader {
                 id: taskTabLoader 
-                active: true
-                sourceComponent: taskTab 
+                sourceComponent: loTaskTab 
             }
 
             FolderTab {

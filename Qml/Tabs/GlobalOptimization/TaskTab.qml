@@ -1,8 +1,11 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+
 import AppEnums
-import InputData
+import GOInputData
+import Globals
+import Components
 
 Rectangle {
     id: root
@@ -10,6 +13,10 @@ Rectangle {
     EnumHelper { id: helper }
 
     color: AppPalette.background
+
+    function algoToStr(algoType) {
+        return helper.algoTypeToString(algoType)
+    }
 
     ColumnLayout {
         id: column
@@ -34,9 +41,8 @@ Rectangle {
             Layout.preferredWidth: 250
 
             model: [
-                { value: AlgoType.CD, text: "Метод покоординатного спуска" },
-                { value: AlgoType.GD, text: "Метод градиентного спуска" },
-                { value: AlgoType.CG, text: "Метод сопряженных градиентов" }
+                { value: AlgoType.GA, text: root.algoToStr(AlgoType.GA) },
+                { value: AlgoType.PS, text: root.algoToStr(AlgoType.PS) }
             ]
 
             textRole: "text"
@@ -44,12 +50,6 @@ Rectangle {
             currentValue: AppStates.selectedAlgorithm
             onActivated: {
                 AppStates.selectedAlgorithm = currentValue;
-                AppStates.selectedExtension = ExtensionType.B;
-                AppStates.selectedFullAlgo 
-                    = helper.calculateFullType(
-                        AppStates.selectedAlgorithm, 
-                        AppStates.selectedExtension
-                    );
             }
         }
 
@@ -113,8 +113,6 @@ Rectangle {
             onReleased: {
                 inputParams.inputData.function = func.text;
                 inputParams.inputData.algorithmId = AppStates.selectedAlgorithm;
-                inputParams.inputData.extensionId = AppStates.selectedExtension;
-                inputParams.inputData.fullAlgoId = AppStates.selectedFullAlgo;
                 var rv = controller.setInputData(inputParams.inputData.instance());
                 if (rv !== 0) {
                     return;
@@ -144,11 +142,6 @@ Rectangle {
                 var rv = controller.inputDataFromFile(fileName, sourceInputData);
                 if (rv === Result.Success) {
                     AppStates.selectedAlgorithm = sourceInputData.algorithmId;
-                    AppStates.selectedExtension = sourceInputData.extensionId;
-                    AppStates.selectedFullAlgo = helper.calculateFullType(
-                        AppStates.selectedAlgorithm,
-                        AppStates.selectedExtension
-                    );
                     func.text = sourceInputData.function;
                     if (func.text !== "") {
                         func.valid = true;

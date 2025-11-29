@@ -84,7 +84,7 @@ private:
      */
     inline void writeCRC();
 
-    inline QString fileNameLO(FullAlgoType::Type fullAlgo);
+    inline QString fileNameLO(LO::FullAlgoType::Type fullAlgo);
     inline QString fileNameGO(AlgoType::Type algo);
     /**
      * Calculates a checksum from the entire contents of the data section

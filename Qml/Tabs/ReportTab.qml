@@ -1,6 +1,4 @@
 import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
 
 import AppEnums
 import Globals
@@ -30,11 +28,31 @@ Item {
         }
     }
 
+    Component {
+        id: go
+
+        GO.ReportTab {
+            id: reportTab
+
+            fileName: root.fileName
+            inputData: root.inputData
+            solution: root.solution
+            resultData: root.resultData
+        }
+    }
+
     Loader {
         id: loader
         anchors.fill: parent
-        active: (root.partition === PartType.LO)
-        sourceComponent: lo
+        sourceComponent: {
+            if (root.partition === PartType.LO) {
+                lo
+            } else if (root.partition === PartType.GO) {
+                go
+            } else {
+                null
+            }
+        }
     }
 }
 

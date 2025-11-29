@@ -24,7 +24,7 @@ struct FileData {
     PartType::Type partType;
 
     union {
-        FullAlgoType::Type full;
+        LO::FullAlgoType::Type full;
         AlgoType::Type base;
     } algoType;
 

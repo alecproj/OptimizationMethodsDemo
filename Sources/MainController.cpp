@@ -9,7 +9,7 @@ MainController::MainController(QObject *parent)
     , m_writer{}
     , m_currPartition{PartType::NONE}
     , m_currAlgorithm{AlgoType::ALL}
-    , m_currExtension{ExtensionType::B}
+    , m_currExtension{LO::ExtensionType::B}
     , m_cdAlgo{&m_writer}
     , m_cdData{}
     , m_gdAlgo{&m_writer}
