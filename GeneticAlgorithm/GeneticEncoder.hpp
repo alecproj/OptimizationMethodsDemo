@@ -59,7 +59,7 @@ namespace GA {
 
 		// Геттеры
 		const EncodingConfig& getConfig() const { return m_config; }
-		uint64_t getChromosomeLenght() const { return m_config.total_bits; }
+		uint64_t getChromosomeLength() const { return m_config.total_bits; }
 
 
 	};
