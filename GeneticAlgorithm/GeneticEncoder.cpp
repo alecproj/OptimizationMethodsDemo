@@ -112,5 +112,33 @@ namespace GA {
 		return chromosome;
 	}
 
+	Individual GeneticEncoder::decode(const std::vector<bool>& chromosome) const
+	{
+		// Проверка на длину хромосомы
+		if (chromosome.size() != m_config.total_bits) {
+			throw std::invalid_argument("Неверная длина хромосомы");
+		}
+
+		Individual individual;
+
+		// Декодируем X (первая часть хромосомы)
+		std::vector<bool> x_bits(
+			chromosome.begin(),
+			chromosome.begin() + m_config.bits_per_variable
+		);
+		individual.x = decodeVariable(x_bits, m_config.x_left_bound, m_config.x_right_bound);
+
+		// Декодируем Y (вторая часть хромосомы)
+		std::vector<bool> y_bits(
+			chromosome.begin() + m_config.bits_per_variable,
+			chromosome.end()
+		);
+		individual.y = decodeVariable(y_bits, m_config.y_left_bound, m_config.y_right_bound);
+
+		individual.chromosome = chromosome;
+
+		return individual;
+	}
+
 
 } // namespace GA

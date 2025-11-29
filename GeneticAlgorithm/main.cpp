@@ -109,26 +109,25 @@ void testEncodeMethod() {
     std::cout << "=== ТЕСТ МЕТОДА ENCODE ===" << std::endl;
 
     // Конфигурация: 4 бита на переменную для наглядности
-    double x_left_bound = -10.0;
-    double x_right_bound = 10.0;
-    double y_left_bound = -5.0;
-    double y_right_bound = 5.0;
+    double x_left_bound = -1000.0;
+    double x_right_bound = 1000.0;
+    double y_left_bound = -500.0;
+    double y_right_bound = 500.0;
 
-    EncodingConfig config(52, x_left_bound, x_right_bound, y_left_bound, y_right_bound);
+    EncodingConfig config(32, x_left_bound, x_right_bound, y_left_bound, y_right_bound);
     GeneticEncoder encoder(config);
 
-    double x = 2.553463, y = -4.25345223;
+    double x = 0.553463243, y = -1.253452243243;
     std::cout << "Исходная точка: (" << x << ", " << y << ")" << std::endl;
 
     // Кодируем точку
     std::cout << "Исходное число: " << x << std::endl;
-
     // Кодируем
     std::vector<bool> encodedBits = encoder.encodeVariable(x, x_left_bound, x_right_bound);
     std::cout << "Закодированные биты: ";
     for (bool bit : encodedBits) std::cout << (bit ? "1" : "0");
     std::cout << std::endl;
-
+    std::cout << "Исходное число: " << y << std::endl;
     encodedBits = encoder.encodeVariable(y, y_left_bound, y_right_bound);
     std::cout << "Закодированные биты: ";
     for (bool bit : encodedBits) std::cout << (bit ? "1" : "0");
@@ -146,9 +145,9 @@ void testEncodeMethod() {
     std::cout << "Разбивка: " << config.bits_per_variable << " бит X + "
         << config.bits_per_variable << " бит Y" << std::endl;
 
-    // Декодируем обратно для проверки
-    //Individual decoded = encoder.decode(chromosome);
-    //std::cout << "Декодированная точка: (" << decoded.x << ", " << decoded.y << ")" << std::endl;
+    //Декодируем обратно для проверки
+    Individual decoded = encoder.decode(chromosome);
+    std::cout << "Декодированная точка: (" << decoded.x << ", " << decoded.y << ")" << std::endl;
 }
 
 
