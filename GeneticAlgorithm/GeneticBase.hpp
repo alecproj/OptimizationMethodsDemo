@@ -33,9 +33,9 @@ public:
     Result checkFunction(const std::string &function);
 
     // Геттеры
-    double getBestX() const;
-    double getBestY() const;
-    double getBestFitness() const;
+    double getBestX()         const { return m_population.empty() ? 0.0 : m_population[0].x; }
+    double getBestY()         const { return m_population.empty() ? 0.0 : m_population[0].y; }
+    double getBestFitness()   const { return m_population.empty() ? 0.0 : m_population[0].fitness; }
     size_t getIteraionts()    const { return m_currentGeneration; }
     size_t getFunctionCalls() const { return m_functionCalls; }
     const std::vector<Individual>& getPopulation() const { return m_population; }
