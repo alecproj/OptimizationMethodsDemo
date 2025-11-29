@@ -140,5 +140,24 @@ namespace GA {
 		return individual;
 	}
 
+	Individual GeneticEncoder::createRandomIndividual() const
+	{
+		// Генерируем случайные диапазоны для X и для Y
+		std::uniform_real_distribution<double> x_dist(m_config.x_left_bound, m_config.x_right_bound);
+		std::uniform_real_distribution<double> y_dist(m_config.y_left_bound, m_config.y_right_bound);
+
+		// Генерируем случайные координаты особи
+		double x = x_dist(m_rnd);
+		double y = y_dist(m_rnd);
+
+		// Находим местоположение особи
+		Individual individ(x, y);
+
+		// Кодируем местоположение особи
+		individ.chromosome = encode(x, y);
+
+		return individ;
+	}
+
 
 } // namespace GA
