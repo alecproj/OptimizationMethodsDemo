@@ -75,6 +75,8 @@ qt_add_qml_module(${PROJECT_NAME}App
         Qml/VerticalTabBar.qml
         Qml/Tabs/FolderTab.qml
         Qml/Tabs/ReportTab.qml
+        Qml/Tabs/HomeTab.qml
+        Qml/Tabs/PartsList.qml
 )
 
 target_link_libraries(${PROJECT_NAME}App

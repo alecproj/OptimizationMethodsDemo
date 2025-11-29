@@ -4,9 +4,14 @@
         <file>icons/file-alt.svg</file>
         <file>icons/file-xmark.svg</file>
         <file>icons/file-check.svg</file>
+        <file>icons/file.svg</file>
         <file>icons/xmark.svg</file>
         <file>icons/flask.svg</file>
+        <file>icons/flask-empty.svg</file>
         <file>icons/trash.svg</file>
+        <file>icons/grid.svg</file>
+        <file>icons/home.svg</file>
+        <file>icons/copy.svg</file>
     </qresource>
 </RCC>
 

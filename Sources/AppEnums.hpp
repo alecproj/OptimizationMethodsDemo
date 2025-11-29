@@ -290,6 +290,19 @@ public:
         return CheckList::Error;
     }
 
+    Q_INVOKABLE QString partTypeToString(PartType::Type type)
+    {
+        switch (type) {
+            case PartType::LO:
+                return "Локальная оптимизация";
+            case PartType::GO:
+                return "Глобальная оптимизация";
+            default:
+                qWarning() << "No string name fo type: " << type;
+                return "";
+        }
+    }
+
     Q_INVOKABLE QString algoTypeToString(AlgoType::Type type)
     {
         switch (type) {

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+import AppEnums
 import Globals
 import Components
 import LocalOptimization as LO
@@ -46,9 +47,23 @@ ApplicationWindow {
             Layout.fillHeight: true
             currentIndex: AppStates.currentTabIndex
 
+            HomeTab {
+                id: partTab
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
+
             Loader {
                 id: taskTabLoader 
-                sourceComponent: loTaskTab 
+                sourceComponent: {
+                    if (AppStates.selectedPartition === PartType.LO) {
+                        loTaskTab
+                    } else if (AppStates.selectedPartition === PartType.GO) {
+                        goTaskTab
+                    } else {
+                        null
+                    }
+                }
             }
 
             FolderTab {

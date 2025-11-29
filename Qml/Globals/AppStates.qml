@@ -8,4 +8,5 @@ QtObject {
     property int selectedAlgorithm: AlgoType.CD
     property int selectedExtension: ExtensionType.B
     property int selectedFullAlgo: FullAlgoType.CDB
+    property int selectedPartition: PartType.NONE
 }

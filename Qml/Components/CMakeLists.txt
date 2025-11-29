@@ -13,4 +13,5 @@ qt_add_qml_module(${PROJECT_NAME}
        TabIconButton.qml
        TableLoader.qml
        TableRow.qml
+       SquareButton.qml
 )
