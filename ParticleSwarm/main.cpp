@@ -8,8 +8,10 @@
 #include <iostream>
 #include <string>
 #include <variant>
+#include <sstream>
 
 using namespace PS;
+
 // Класс-заглушка - реализовывать не нужно!
 class MockReporter {
     using Cell = std::variant<std::string, double, long long, bool>;
@@ -76,13 +78,6 @@ int main(int argc, char *argv[])
     FLAGS_minloglevel = 0;
     google::InitGoogleLogging(argv[0]);
     google::SetVLOGLevel("*", DEBUG);
-    /*
-    LOG(WARNING) << "\nПредупреждение!";
-    LOG(ERROR) << "Ошибка!";
-    VLOG(DEBUG) << "Дебаг!";
-    LOG(INFO) << "Информация!";
-    LOGERR(Result::ComputeError);
-    */
 
     using AlgoType = ParticleSwarm<MockReporter>;
     MockReporter reporter{};
@@ -94,18 +89,18 @@ int main(int argc, char *argv[])
     std::getline(std::cin, data.function);
     std::string input_str;
 
-    // Тестирование методов управления параметрами
+    // Настройка параметров PSO
     algo.setSwarmSize(50);
     algo.setInertiaWeight(0.8);
     algo.setCognitiveCoeff(2.0);
     algo.setSocialCoeff(2.0);
     algo.setMaxIterations(200);
 
-    LOG(INFO) << "Параметры после изменения:";
+    LOG(INFO) << "Параметры алгоритма PSO:";
     LOG(INFO) << "Размер роя: " << algo.getSwarmSize();
     LOG(INFO) << "Инерция: " << algo.getInertiaWeight();
-    LOG(INFO) << "Когнитивный: " << algo.getCognitiveCoeff();
-    LOG(INFO) << "Социальный: " << algo.getSocialCoeff();
+    LOG(INFO) << "Когнитивный коэффициент: " << algo.getCognitiveCoeff();
+    LOG(INFO) << "Социальный коэффициент: " << algo.getSocialCoeff();
     LOG(INFO) << "Макс. итераций: " << algo.getMaxIterations();
 
     try {
@@ -113,11 +108,7 @@ int main(int argc, char *argv[])
         std::cin >> input_str;
         data.extremum_type = stringToExtremumType(input_str);
 
-        // НАСТРОЙКИ ГРАДИЕНТНЫХ МЕТОДОВ
-        std::cout << "=== НАСТРОЙКИ ГРАДИЕНТНОГО МЕТОДА ===" << std::endl;
-
-        // ОБЩИЕ ПАРАМЕТРЫ ДЛЯ ВСЕХ АЛГОРИТМОВ
-        std::cout << "=== ОБЩИЕ ПАРАМЕТРЫ ===" << std::endl;
+        std::cout << "=== ПАРАМЕТРЫ АЛГОРИТМА ===" << std::endl;
         std::cout << "Введите левую границу X: ";
         std::cin >> data.x_left_bound;
         std::cout << "Введите правую границу X: ";
@@ -136,7 +127,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Проверка и установка данных (вызовет ошибки из GradientDescent, если неверно)
+    // Проверка и установка данных
     auto rv = algo.setInputData(&data);
     if (rv != Result::Success) {
         std::cout << "Ошибка установки данных: " << resultToString(rv) << std::endl;
@@ -148,9 +139,9 @@ int main(int argc, char *argv[])
 
     // Вывод результатов
     std::cout << std::endl << "=== РЕЗУЛЬТАТЫ ===" << std::endl;
-    // std::cout << "Оптимум в точке: (" << algo.getX() << ", " << algo.getY() << ")" << std::endl;
-    // std::cout << "Значение функции: " << algo.getOptimumValue() << std::endl;
-    // std::cout << "Итераций: " << algo.getIterations() << ", Вызовов функции: " << algo.getFunctionCalls() << std::endl;
+    std::cout << "Оптимум в точке: (" << algo.getX() << ", " << algo.getY() << ")" << std::endl;
+    std::cout << "Значение функции: " << algo.getOptimumValue() << std::endl;
+    std::cout << "Итераций: " << algo.getIterations() << ", Вызовов функции: " << algo.getFunctionCalls() << std::endl;
 
     google::ShutdownGoogleLogging();
     return 0;
