@@ -11,13 +11,13 @@ namespace GA {
 
 	// Конфигурация кодирования
 	struct EncodingConfig {
-		uint32_t bits_per_variable;			// Количество бит на переменную
-		uint32_t total_bits;				// Количество бит в хромосоме (2 * bits_per_variable)
+		uint64_t bits_per_variable;			// Количество бит на переменную
+		uint64_t total_bits;				// Количество бит в хромосоме (2 * bits_per_variable)
 		double x_left_bound, x_right_bound; // Границы для X
 		double y_left_bound, y_right_bound;	// Границы для Y
 
 		// Инициализация конструктора по умолчанию
-		EncodingConfig(uint32_t bits = 32,
+		EncodingConfig(uint64_t bits = 32,
 					   double x_min = -10.0, double x_max = 10.0,
 					   double y_min = -10.0, double y_max = 10.0)
 			: bits_per_variable(bits),
@@ -33,8 +33,8 @@ namespace GA {
 		EncodingConfig m_config;
 		mutable std::mt19937 m_rnd;
 
-		// Вспомогательные методы
 		
+		static constexpr uint64_t MAX_SAFE_BITS = 52; // Максимальное количество бит
 
 	public:
 		GeneticEncoder(const EncodingConfig& config = EncodingConfig());
@@ -53,13 +53,13 @@ namespace GA {
 		// Декодирование координаты
 		double decodeVariable(const std::vector<bool>& bits, double min_val, double max_val) const;
 		// Преобразование вектора битов в целое число
-		uint32_t bitsToUint(const std::vector<bool>& bits) const;
+		uint64_t bitsToUint(const std::vector<bool>& bits) const;
 		// Преобразование целого числа в вектор битов фиксированной длины
-		std::vector<bool> uintToBits(uint32_t value, uint32_t num_bits) const;
+		std::vector<bool> uintToBits(uint64_t value, uint64_t num_bits) const;
 
 		// Геттеры
 		const EncodingConfig& getConfig() const { return m_config; }
-		uint32_t getChromosomeLenght() const { return m_config.total_bits; }
+		uint64_t getChromosomeLenght() const { return m_config.total_bits; }
 
 
 	};

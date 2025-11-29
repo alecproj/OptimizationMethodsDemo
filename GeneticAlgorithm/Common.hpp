@@ -10,6 +10,7 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
+#include <stdexcept>
 
 namespace GA {
 
@@ -67,16 +68,21 @@ struct GAConfig {
     size_t   generations;       // Количество поколений (Сколько раз обновляем популяцию-максимальное количество итераций алгоритма)
     double   crossover_rate;    // Вероятность кроссовера (Вероятность скрещивания двух родительских особей)
     double   mutation_rate;     // Вероятность мутации (Вероятность изменения случайного бита в хромосоме)
-    uint32_t bits_per_variable; // Точность представления чисел в двоичном коде
+    uint64_t bits_per_variable; // Точность представления чисел в двоичном коде
     size_t   elite_count;       // Количество элитных особей (Количество лучших особей, которые переходят в следующее поколение без изменений)
 
     // Конструктор с параметрами по умолчанию
     GAConfig(size_t pop_size = 50, size_t gens = 100, 
              double cross_rate = 0.8, double mut_rate = 0.01,
-             uint32_t bits = 32, size_t elite = 2)
+             uint64_t bits = 32, size_t elite = 2)
         : population_size(pop_size), generations(gens),
           crossover_rate(cross_rate), mutation_rate(mut_rate),
-          bits_per_variable(bits), elite_count(elite) {}
+          bits_per_variable(bits), elite_count(elite) 
+    {
+        if (bits > 52) {
+            throw std::invalid_argument("Количество бит не может превышать 52");
+        }
+    }
 };
 
 

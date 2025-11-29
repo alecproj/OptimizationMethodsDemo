@@ -17,17 +17,17 @@ void testGeneticEncoder() {
     std::cout << "\n=== ТЕСТ КОДИРОВЩИКА (ПОЛНЫЙ) ===" << std::endl;
 
     // Создаем конфигурацию кодировщика
-    EncodingConfig config(32, -10.0, 10.0, -5.0, 5.0); // 8 бит для наглядности
+    EncodingConfig config(52, -1000000.0, 1000000.0, -5000000.0, 5000000.0); // 8 бит для наглядности
     GeneticEncoder encoder(config);
 
     std::cout << "\n--- Тест encodeVariable ---" << std::endl;
 
     // Тестируем encodeVariable с разными числами
-    double testNumber = -5.32145;
+    double testNumber = -599955.32145645;
     std::cout << "Число: " << testNumber << " -> ";
 
     // Кодируем число в биты
-    std::vector<bool> bits = encoder.encodeVariable(testNumber, -10.0, 10.0);
+    std::vector<bool> bits = encoder.encodeVariable(testNumber, -900000.0, 900000.0);
 
     // Выводим биты
     for (bool bit : bits) {
@@ -74,17 +74,17 @@ void testGeneticEncoder() {
     std::cout << "\n--- Тест decodeVariable ---" << std::endl;
 
     // Тестируем полный цикл: encodeVariable → decodeVariable
-    double originalNumber = 7.9454359;
+    double originalNumber = 8995436.945435965;
     std::cout << "Исходное число: " << originalNumber << std::endl;
 
     // Кодируем
-    std::vector<bool> encodedBits = encoder.encodeVariable(originalNumber, -10.0, 10.0);
+    std::vector<bool> encodedBits = encoder.encodeVariable(originalNumber, -9000000.0, 9000000.0);
     std::cout << "Закодированные биты: ";
     for (bool bit : encodedBits) std::cout << (bit ? "1" : "0");
     std::cout << std::endl;
 
     // Декодируем обратно
-    double decodedNumber = encoder.decodeVariable(encodedBits, -10.0, 10.0);
+    double decodedNumber = encoder.decodeVariable(encodedBits, -9000000.0, 9000000.0);
     std::cout << "Декодированное число: " << decodedNumber << std::endl;
 
     // Вычисляем ошибку
@@ -93,11 +93,11 @@ void testGeneticEncoder() {
 
     // Тест с граничными значениями
     std::cout << "\n--- Тест граничных значений ---" << std::endl;
-    std::vector<double> testNumbers = { -10.0, 0.0, 10.0, -5.0, 7.5 };
+    std::vector<double> testNumbers = { -10000.0, 0.0, 10000.0, -500.0, 700.500 };
 
     for (double num : testNumbers) {
-        auto bits = encoder.encodeVariable(num, -10.0, 10.0);
-        double decoded = encoder.decodeVariable(bits, -10.0, 10.0);
+        auto bits = encoder.encodeVariable(num, -1000.0, 1000.0);
+        double decoded = encoder.decodeVariable(bits, -1000.0, 1000.0);
         double err = std::abs(num - decoded);
         std::cout << num << " -> " << decoded << " (ошибка: " << err << ")" << std::endl;
     }
