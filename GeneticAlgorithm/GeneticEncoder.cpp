@@ -37,9 +37,6 @@ namespace GA {
 		uint64_t max_int = (1ULL << m_config.bits_per_variable) - 1;
 		uint64_t int_value = static_cast<uint64_t>(normalized * max_int);
 
-		if (int_value > max_int) {
-			int_value = max_int;
-		}
 		// Преобразуем в биты
 		return uintToBits(int_value, m_config.bits_per_variable);
 	}

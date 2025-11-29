@@ -56,8 +56,13 @@ Result GeneticBase::initialize(const InputData* inputData, const GAConfig* confi
         inputData->x_left_bound, inputData->x_right_bound,
         inputData->y_left_bound, inputData->y_right_bound
     );
-    m_encoder = GeneticEncoder(encoderConfig);
-
+    try {
+        m_encoder = GeneticEncoder(encoderConfig);
+    } catch (const std::exception& e) {
+        LOG(ERROR) << "Ошибка создания кодировщика: " << e.what();
+        return Result::InvalidInput;
+    }
+    
     // Инициализация популяции
     //initializePopulation();
     LOG(INFO) << "Генетический алгоритм начал работу с количеством популяций: "
