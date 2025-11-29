@@ -84,26 +84,36 @@ int main(int argc, char *argv[])
     AlgoType algo{ &reporter };
     InputData data{};
 
-    // Ввод данных от пользователя
-    std::cout << "Введите функцию (например, x^2 + y^2): ";
-    std::getline(std::cin, data.function);
-    std::string input_str;
 
-    // Настройка параметров PSO
-    algo.setSwarmSize(50);
-    algo.setInertiaWeight(0.8);
-    algo.setCognitiveCoeff(2.0);
-    algo.setSocialCoeff(2.0);
-    algo.setMaxIterations(200);
 
+
+    /*
     LOG(INFO) << "Параметры алгоритма PSO:";
     LOG(INFO) << "Размер роя: " << algo.getSwarmSize();
     LOG(INFO) << "Инерция: " << algo.getInertiaWeight();
     LOG(INFO) << "Когнитивный коэффициент: " << algo.getCognitiveCoeff();
     LOG(INFO) << "Социальный коэффициент: " << algo.getSocialCoeff();
     LOG(INFO) << "Макс. итераций: " << algo.getMaxIterations();
+    */
 
     try {
+        // Ввод данных от пользователя
+        std::cout << "Введите функцию (например, x^2 + y^2): ";
+        std::getline(std::cin, data.function);
+        std::string input_str;
+
+        std::cout << "Используемые параметры:" << std::endl;
+        std::cout << "Размер роя: (50)" << std::endl;
+        algo.setSwarmSize(50);
+        std::cout << "Коэффициент инерции: (0.8)" << std::endl;
+        algo.setInertiaWeight(0.8);
+        std::cout << "Когнитивный коэффициент: (2.0)" << std::endl;
+        algo.setCognitiveCoeff(2.0);
+        std::cout << "Социальный коэффициент: (2.0)" << std::endl;
+        algo.setSocialCoeff(2.0);
+        std::cout << "Максимальное число итераций: (200)" << std::endl;
+        algo.setMaxIterations(200);
+
         std::cout << "Введите тип экстремума (MINIMUM или MAXIMUM): ";
         std::cin >> input_str;
         data.extremum_type = stringToExtremumType(input_str);
