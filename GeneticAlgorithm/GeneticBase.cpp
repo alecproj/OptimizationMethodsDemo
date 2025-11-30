@@ -331,6 +331,28 @@ namespace GA {
             individual.fitness = evaluateFitness(individual.x, individual.y);
         }
     }
+
+    // Работа генетического алгортима одного поколения
+    Result GeneticBase::runGeneration()
+    {
+        if (m_population.empty()) {
+            initializePopulation();
+        }
+
+        // Применяем генетические операторы
+        selection(); // Селекция
+        crossover(); // Кроссовер
+        mutation();  // Мутация
+
+        sortPopulation();
+        m_currentGeneration++;
+
+        LOG(INFO) << "Поколение: " << m_currentGeneration
+                  << " - Лучшая fitness: " << getBestFitness()
+                  << " в точке (" << getBestX() << ", " << getBestY() << ")";
+
+        return Result::Success;
+    }
     
 
 } // namespace GA
