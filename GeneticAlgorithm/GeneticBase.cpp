@@ -195,6 +195,45 @@ namespace GA {
             }
         }
     }
+
+    // Турнирная селекция для выявления наилучших будущих родителей
+    void GeneticBase::selection()
+    {
+        std::vector<Individual> selected;
+        
+        // Выделяем память под будущих родителей
+        selected.reserve(m_config.population_size);
+
+        // Турнирная селекция (диапазон выбора особей из всей популяции для сражения на турнире)
+        std::uniform_int_distribution<size_t> dist(0, m_population.size() - 1);
+        
+        for (size_t i = 0; i < m_config.population_size; ++i) {
+            
+            // Выбираем двух случайных особей для турнира
+            size_t index1 = dist(m_rnd);
+            size_t index2 = dist(m_rnd);
+
+            // Получаем их характеристики
+            const Individual& candidate1 = m_population[index1];
+            const Individual& candidate2 = m_population[index2];
+
+            // Выбираем лучшего будущего родителя от наших условий
+            if (m_inputData->extremum_type == ExtremumType::MAXIMUM) {
+
+                // Для максимума выбираем будущего родителя с большей приспособленностью
+                selected.push_back(candidate1.fitness > candidate2.fitness ? candidate1 : candidate2);
+            } else {
+               
+                // Для минимума выбираем будущего родителя с меньшей приспособленностью
+                selected.push_back(candidate1.fitness < candidate2.fitness ? candidate1 : candidate2);
+            }
+        }
+        // Умный перенос особей: когда особь перебрасывается из A в B, то из A она удаляется и появляется в B (смена указателей)
+        m_population = std::move(selected);
+        
+        // Теперь популяция содержит отобранных будущих родителей, которые отважно боролись на турнире, для кроссовера
+        // Некоторые особи могут дублироваться, что характерно для селекции
+    }
     
 
 } // namespace GA
