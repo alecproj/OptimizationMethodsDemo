@@ -146,16 +146,24 @@ public:
         m_reporter->begin();
 
         try {
-            // Основной цикл генетического алгоритма
+
             initializeParser(m_inputData->function);
 
-            // ...
+            // Основной цикл генетического алгоритма
+            for (size_t generation = 0; generation < m_config.generations; ++generation) {
+                runGeneration();
 
-              // TODO: Добавить репортинг прогресса
-              // m_reporter->insertRow(gen, getBestFitness());
+                // Репортинг процесса
+                //m_reporter->insertRow({})
+  
+            }
+            // Финальный результат (с округлением)
+            double best_x = getBestX;
+            double best_y = getBestY;
+            double best_fitness = getBestFitness();
 
              // Финальный результат c округлением добавить
-             //m_reporter->insertResult(getBestX(), getBestY(), getBestFitness());
+             //m_reporter->insertResult(best_x, best_y, best_fitness);
         }
         catch (const mu::Parser::exception_type& e) {
             rv = Result::ParseError;
