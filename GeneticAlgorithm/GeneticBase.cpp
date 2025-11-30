@@ -308,6 +308,29 @@ namespace GA {
         m_population = std::move(offspring);
         // Теперь популяции содержит потомков с новыми генами от родителей
     }
+
+    // Мутация: внесения случайных изменений в генах особей для поддержания генетического разнообразия
+    void GeneticBase::mutation()
+    {
+        // Случайная вероятность мутации
+        std::uniform_real_distribution<double> prob_dist(0.0, 1.0);
+        
+        // Проходим по всем особям из популяции
+        for (Individual& individual : m_population) {
+            // Поточная мутация: проверяем каждый бит
+            for (size_t i = 0; i < individual.chromosome.size(); ++i) {
+                if (prob_dist(m_rnd) < m_config.mutation_rate) {
+                    individual.chromosome[i] = !individual.chromosome[i];
+                }
+            }
+
+            // Получаем новую мутирующую особь
+            Individual mutated = m_encoder.decode(individual.chromosome);
+            individual.x = mutated.x;
+            individual.y = mutated.y;
+            individual.fitness = evaluateFitness(individual.x, individual.y);
+        }
+    }
     
 
 } // namespace GA
