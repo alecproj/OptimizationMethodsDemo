@@ -234,6 +234,80 @@ namespace GA {
         // Теперь популяция содержит отобранных будущих родителей, которые отважно боролись на турнире, для кроссовера
         // Некоторые особи могут дублироваться, что характерно для селекции
     }
+
+    // Кроссовер: Скрещивание родителей для создания потомков со смешанными генами
+    void GeneticBase::crossover()
+    {
+        // Список потомков
+        std::vector<Individual> offspring;
+        // Выделение памяти под потомков
+        offspring.reserve(m_config.population_size);
+
+        // Случайная вероятность происхождения кроссовера
+        std::uniform_real_distribution<double> prob_dist(0.0, 1.0);
+        // Точка разрыва хромосомы для обмены генами
+        std::uniform_int_distribution<size_t> crossover_point_dist(1, m_encoder.getChromosomeLength() - 2);
+
+        // Проходим по популяции парами
+        for (size_t i = 0; i < m_population.size() - 1; i += 2) {
+            
+            const Individual& parent1 = m_population[i];
+            const Individual& parent2 = m_population[i + 1];
+
+            // Проверка: произойдёт ли кроссовер
+            if (prob_dist(m_rnd) < m_config.crossover_rate) {
+
+                // Выбираем точку разрыва хромосомы для обмены генами
+                size_t crossover_point = crossover_point_dist(m_rnd);
+
+                // Создаём хромосомы потомков
+                std::vector<bool> child1_chromosome, child2_chromosome;
+                child1_chromosome.reserve(m_encoder.getChromosomeLength());
+                child2_chromosome.reserve(m_encoder.getChromosomeLength());
+
+                // Первый потомок: первая часть генов от parent1, вторая часть генов от parent2
+                child1_chromosome.insert(child1_chromosome.end(),
+                                         parent1.chromosome.begin(),
+                                         parent1.chromosome.begin() + crossover_point);
+                child1_chromosome.insert(child1_chromosome.end(),
+                                         parent2.chromosome.begin() + crossover_point,
+                                         parent2.chromosome.end());
+                
+                // Второй потомок: первая часть генов от parent2, вторая часть генов от parent1
+                child2_chromosome.insert(child2_chromosome.end(),
+                                         parent2.chromosome.begin(),
+                                         parent2.chromosome.begin() + crossover_point);
+                child2_chromosome.insert(child2_chromosome.end(),
+                                         parent1.chromosome.begin() + crossover_point,
+                                         parent1.chromosome.end());
+
+                // Создаём потомков с изменёнными хромосомами
+                Individual child1 = m_encoder.decode(child1_chromosome);
+                Individual child2 = m_encoder.decode(child2_chromosome);
+
+                // Вычисляем приспособленность f(x, y) потомков
+                child1.fitness = evaluateFitness(child1.x, child1.y);
+                child2.fitness = evaluateFitness(child2.x, child2.y);
+
+                // Добавляем потомков в список
+                offspring.push_back(child1);
+                offspring.push_back(child2);
+
+            } else {
+
+                // Если кроссовер не произошёл, то просто добавляем изначальных родителей
+                offspring.push_back(parent1);
+                offspring.push_back(parent2);
+            }
+        }
+        // Проверка на нечётное количество потомков: добавляем последнего родителя
+        if (offspring.size() < m_config.population_size && !m_population.empty()) {
+            offspring.push_back(m_population.back());
+        }
+
+        m_population = std::move(offspring);
+        // Теперь популяции содержит потомков с новыми генами от родителей
+    }
     
 
 } // namespace GA
