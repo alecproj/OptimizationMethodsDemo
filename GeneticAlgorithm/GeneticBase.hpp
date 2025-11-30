@@ -72,11 +72,16 @@ protected:
     double worstPossibleFitness() const;
     void sortPopulation();
    
-    // Генетические операторы (coming soon)
+    // === Генетические операторы =====
+
+    // Турнирная селекция для выявления наилучших будущих родителей
     void selection();
+
     void crossover();
     void mutation();
-    void applyElitism();
+
+    // Копирование наилучших особей из текущего поколения в следующее поколение
+    void applyElitism(std::vector<Individual>& newPopulation);
 
     Result validateFunctionSyntax(const std::string& function);
 };

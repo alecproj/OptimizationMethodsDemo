@@ -184,5 +184,17 @@ namespace GA {
         LOG(INFO) << "Лучшая fitness: " << m_population[0].fitness
             << " в точке (" << m_population[0].x << ", " << m_population[0].y << ")";
     }
+    
+    // Копирование наилучших особей из текущего поколения в следующее поколение
+    void GeneticBase::applyElitism(std::vector<Individual>& newPopulation)
+    {
+        // Копируем лучших особей из текущего поколения
+        for (size_t i = 0; i < m_config.elite_count && i < m_population.size(); ++i) {
+            if (newPopulation.size() < m_config.population_size) {
+                newPopulation.push_back(m_population[i]);
+            }
+        }
+    }
+    
 
 } // namespace GA
