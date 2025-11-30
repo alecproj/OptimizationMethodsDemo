@@ -28,13 +28,13 @@ class GeneticAlgorithm : public GeneticBase {
 public:
 
     GeneticAlgorithm(Reporter* reporter) :
-        m_inputData{ nullptr },
+        //m_inputData{ nullptr },
+        //m_parser{},
+        //m_x{0.0},
+        //m_y{0.0},
+        //m_function_calls{ 0 },
+        //m_generations{ 0 },
         m_reporter{ reporter },
-        m_parser{},
-        m_x{0.0},
-        m_y{0.0},
-        m_function_calls{0},
-        m_generations{0},
         m_digitResultPrecision{0},
         m_digitComputationPrecision{0},
         m_computationPrecision{0.},
@@ -43,7 +43,7 @@ public:
         resetAlgorithmState();
     }
 
-    Result setInputData(const InputData* data)
+    Result setInputData(const InputData* data, const GAConfig* config = nullptr)
     {
         Result rv = Result::Fail;
 
@@ -115,7 +115,7 @@ public:
         // Сохраняем данные
         m_inputData = data;
         
-        rv = initialize(data);
+        rv = initialize(data, config);
         if (rv != Result::Success) {
             LOGERR(rv);
             return rv;
@@ -148,18 +148,24 @@ public:
         try {
 
             initializeParser(m_inputData->function);
-
+            initializePopulation();
             // Основной цикл генетического алгоритма
             for (size_t generation = 0; generation < m_config.generations; ++generation) {
+                
                 runGeneration();
+
+                if (checkConvergence()) {
+                    LOG(INFO) << "Алгоритм сошелся досрочно на поколении " << generation;
+                    break;
+                }
 
                 // Репортинг процесса
                 //m_reporter->insertRow({})
   
             }
             // Финальный результат (с округлением)
-            double best_x = getBestX;
-            double best_y = getBestY;
+            double best_x = getBestX();
+            double best_y = getBestY();
             double best_fitness = getBestFitness();
 
              // Финальный результат c округлением добавить
@@ -174,25 +180,24 @@ public:
             LOGERR(rv);
         }
 
-        //m_reporter->insertResult(0, 0, 0);
         m_reporter->end();
-        LOG(INFO) << "Алгоритм успешно завершил работу.";
+        LOG(INFO) << "Алгоритм успешно завершил работу. Поколений: "
+                  << m_currentGeneration << ", Вызовов функции: " << m_functionCalls;
         return Result::Success;
     }
 
 private:
-
-    const InputData* m_inputData;
+    //const InputData* m_inputData;
+    //mu::Parser m_parser;
+    //double m_x, m_y;                             
+    //int m_function_calls;                         
+    //int m_generations; 
     Reporter* m_reporter;
-    mu::Parser m_parser;
-    double m_x, m_y;                 // Текущие переменные для парсера
-    int m_function_calls;
-    int m_generations;               // Количество поколений (итераций)
-    int m_digitResultPrecision;      // Количество знаков после запятой для результата
-    int m_digitComputationPrecision; // Количество знаков после запятой для вычислений
+    int m_digitResultPrecision;                  // Количество знаков после запятой для результата
+    int m_digitComputationPrecision;             // Количество знаков после запятой для вычислений
     double m_computationPrecision;
     double m_resultPrecision;
-
+    
     void insertResultInfo(/* ... */) 
     {
     }

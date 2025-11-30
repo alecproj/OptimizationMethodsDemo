@@ -51,6 +51,8 @@ struct InputData {
     // --- ПАРАМЕТРЫ ТОЧНОСТИ ---
     int result_precision;           // Точность результата
     int computation_precision;      // Точность вычислений
+
+    int count_function_calls;       // Количество вызовов фунции
 };
 
 struct Individual {
@@ -72,7 +74,7 @@ struct GAConfig {
     size_t   elite_count;       // Количество элитных особей (Количество лучших особей, которые переходят в следующее поколение без изменений)
 
     // Конструктор с параметрами по умолчанию
-    GAConfig(size_t pop_size = 50, size_t gens = 100, 
+    GAConfig(size_t pop_size = 50, size_t gens = 10, 
              double cross_rate = 0.8, double mut_rate = 0.01,
              uint64_t bits = 32, size_t elite = 2)
         : population_size(pop_size), generations(gens),

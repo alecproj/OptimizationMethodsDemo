@@ -10,7 +10,9 @@
 
 namespace GA {
 
-    GeneticBase::GeneticBase() : m_rnd(std::random_device{}())
+    GeneticBase::GeneticBase() : 
+        m_inputData(nullptr),
+        m_rnd(std::random_device{}())
     {
         resetAlgorithmState();
     }
@@ -19,8 +21,8 @@ namespace GA {
     {
         m_x = 0.0;
         m_y = 0.0;
-        m_inputData = nullptr;
-        m_config = GAConfig();
+        //GeneticBase::m_inputData = nullptr;
+        //m_config = GAConfig();
         m_population.clear();
         m_currentGeneration = 0;
         m_functionCalls = 0;
@@ -29,7 +31,11 @@ namespace GA {
         resetConvergenceTracking();
     
         try {
-            m_parser.SetExpr("0");
+            if (m_inputData && !m_inputData->function.empty()) {
+                m_parser.SetExpr(m_inputData->function);
+            } else {
+                m_parser.SetExpr("0");
+            }
             m_parser.DefineVar("x", &m_x);
             m_parser.DefineVar("y", &m_y);
         }catch (...) {
@@ -69,7 +75,7 @@ namespace GA {
         } else {
             // Нет улучшения - увеличиваем счетчик
             m_stagnationCounter++;
-            LOG(INFO) << "Стагнация " << m_stagnationCounter << "/" << MAX_STAGNATION
+            LOG(WARNING) << "Стагнация " << m_stagnationCounter << "/" << MAX_STAGNATION
                       << " на поколении " << m_currentGeneration;
 
             // Проверяем различные критерии остановки
@@ -217,6 +223,11 @@ namespace GA {
 
     // Возвращение худших значений при ошибке
     double GeneticBase::worstPossibleFitness() const {
+        
+        if (!m_inputData) {
+            LOG(ERROR) << "Ошибка: worstPossibleFitness вызван без m_inputData";
+            return std::numeric_limits<double>::max();
+        }
         if (m_inputData->extremum_type == ExtremumType::MAXIMUM) {
             // Для максимума - худшее значение это -∞
             return -std::numeric_limits<double>::max();
@@ -230,6 +241,10 @@ namespace GA {
     // Cортировка популяции в зависимости от вида экстремума
     void GeneticBase::sortPopulation()
     {
+        if (!m_inputData) {
+            LOG(ERROR) << "Ошибка: попытка сортировки без инициализации m_inputData";
+            return;
+        }
         if (m_inputData->extremum_type == ExtremumType::MAXIMUM) {
             // Для максимума - сортируем по УБЫВАНИЮ fitness
             // Чем БОЛЬШЕ значение функции, тем ЛУЧШЕ особь
@@ -288,6 +303,10 @@ namespace GA {
     // Турнирная селекция для выявления наилучших будущих родителей
     void GeneticBase::selection()
     {
+        if (!m_inputData) {
+            LOG(ERROR) << "Ошибка: попытка селекции без инициализации m_inputData";
+            return;
+        }
         std::vector<Individual> selected;
         
         // Выделяем память под будущих родителей
@@ -327,6 +346,10 @@ namespace GA {
     // Кроссовер: Скрещивание родителей для создания потомков со смешанными генами
     void GeneticBase::crossover()
     {
+        if (!m_inputData) {
+            LOG(ERROR) << "Ошибка: попытка кроссовера без инициализации m_inputData";
+            return;
+        }
         // Список потомков
         std::vector<Individual> offspring;
         // Выделение памяти под потомков
@@ -424,6 +447,10 @@ namespace GA {
     // Работа генетического алгортима одного поколения
     Result GeneticBase::runGeneration()
     {
+        if (!m_inputData) {
+            LOG(ERROR) << "Ошибка: попытка запуска поколения без инициализации m_inputData";
+            return Result::InvalidInput;
+        }
         if (m_population.empty()) {
             initializePopulation();
         }
