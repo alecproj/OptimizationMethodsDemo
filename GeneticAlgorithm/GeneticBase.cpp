@@ -4,6 +4,7 @@
 //
 
 #include "GeneticBase.hpp"
+#include "GeneticAlgorithm.hpp"
 #include <glog/logging.h>
 #include <cstddef>
 
@@ -23,6 +24,9 @@ namespace GA {
         m_population.clear();
         m_currentGeneration = 0;
         m_functionCalls = 0;
+
+        // Сбрасываем отслеживание сходимости
+        resetConvergenceTracking();
     
         try {
             m_parser.SetExpr("0");
@@ -33,11 +37,96 @@ namespace GA {
         }
     }
 
+    // Сброс отслеживания сходимости
+    void GeneticBase::resetConvergenceTracking() {
+        m_bestFitnessHistory = std::numeric_limits<double>::max();
+        m_stagnationCounter = 0;
+    }
+
+    // Метод проверк сходимости
+    bool GeneticBase::checkConvergence()
+    {
+        if (m_population.empty()) return false;
+
+        double currentBestFitness = getBestFitness();
+
+        // Проверка улучшения fitness
+        bool improved = false;
+        if (m_inputData->extremum_type == ExtremumType::MINIMUM) {
+            improved = currentBestFitness < m_bestFitnessHistory;
+        } else {
+            improved = currentBestFitness > m_bestFitnessHistory;
+        }
+
+        if (improved) {
+            // Есть улучшение - сбрасываем счетчик стагнации
+            m_bestFitnessHistory = currentBestFitness;
+            m_stagnationCounter = 0;
+
+            LOG(INFO) << "Улучшение на поколении " << m_currentGeneration
+                << ": fitness: " << currentBestFitness;
+            return false;
+        } else {
+            // Нет улучшения - увеличиваем счетчик
+            m_stagnationCounter++;
+            LOG(INFO) << "Стагнация " << m_stagnationCounter << "/" << MAX_STAGNATION
+                      << " на поколении " << m_currentGeneration;
+
+            // Проверяем различные критерии остановки
+
+            // Достигнут максимум по стагнациям
+            if (m_stagnationCounter >= MAX_STAGNATION) {
+                LOG(INFO) << "Сходимость по стагнации: " << m_stagnationCounter << " поколений без улучшений";
+                return true;
+            }
+
+            // Низкое генетическое разнообразие
+            if (hasLowDiversity()) {
+                LOG(INFO) << "Сходимость по разнообразию: популяция стала однородной";
+                return true;
+            }
+
+        }
+        return false;
+    }
+
+    // Проверка генетического разнообразия
+    bool GeneticBase::hasLowDiversity() const
+    {
+        if (m_population.size() < 2) return true;
+        if (!m_inputData) return false;
+        double best_fitness = m_population[0].fitness;
+        double worst_fitness = m_population.back().fitness;
+
+        double computationPrecision = std::pow(10, -m_inputData->computation_precision);
+        double precision_tolerance = computationPrecision * 10;
+
+        // Деление на ноль
+        if (std::abs(best_fitness) < precision_tolerance && 
+            std::abs(worst_fitness) < precision_tolerance) {
+            return true;
+        }
+
+        // Относительное разнообразие между лучшей и худшей особью
+        double diversity = std::abs(best_fitness - worst_fitness) /
+                          (std::abs(best_fitness) + std::abs(worst_fitness) + precision_tolerance);
+        
+        // 1% разнообразия считается низким
+        return diversity < 0.01;
+    }
+
     // Инициализация 
     Result GeneticBase::initialize(const InputData* inputData, const GAConfig* config)
     {
         if (!inputData) {
             return Result::InvalidInput;
+        }
+
+        if (inputData->computation_precision < 1 || inputData->computation_precision > 15) {
+            return Result::InvalidComputationPrecision;
+        }
+        if (inputData->result_precision < 1 || inputData->result_precision > 15) {
+            return Result::InvalidResultPrecision;
         }
 
         m_inputData = inputData;
@@ -354,5 +443,7 @@ namespace GA {
         return Result::Success;
     }
     
+    // === Методы проверки сходимости ===
+
 
 } // namespace GA

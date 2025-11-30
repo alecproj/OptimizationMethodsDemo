@@ -35,6 +35,14 @@ public:
     Result runGeneration();
     Result checkFunction(const std::string &function);
 
+    // == Сходимость ===
+
+    // Метод проверки сходимости
+    bool checkConvergence();
+
+    // Проверка генетического разнообразия
+    bool hasLowDiversity() const;
+
     // Геттеры
     double getBestX()         const { return m_population.empty() ? 0.0 : m_population[0].x; }
     double getBestY()         const { return m_population.empty() ? 0.0 : m_population[0].y; }
@@ -62,8 +70,14 @@ protected:
     size_t m_currentGeneration;
     size_t m_functionCalls;
 
-    //ГСЧ
+    // ГСЧ
     std::mt19937 m_rnd;
+
+    // Для отслеживания сходимости
+    double m_bestFitnessHistory;                 // Лучшее приспособление предыдущего поколения
+    size_t m_stagnationCounter;                  // Счётчик поколений без улучшений
+    static constexpr size_t MAX_STAGNATION = 50; // Максимум поколений без улучшений
+
 
     // Вспомогательные методы
     void resetAlgorithmState();
@@ -71,6 +85,8 @@ protected:
     double evaluateFitness(double x, double y);
     double worstPossibleFitness() const;
     void sortPopulation();
+    // Сброс отслеживания сходимости
+    void resetConvergenceTracking();
    
     // === Генетические операторы =====
 
