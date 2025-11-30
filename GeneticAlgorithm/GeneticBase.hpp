@@ -44,9 +44,9 @@ public:
     bool hasLowDiversity() const;
 
     // Геттеры
-    double getBestX()         const { return m_population.empty() ? 0.0 : m_population[0].x; }
-    double getBestY()         const { return m_population.empty() ? 0.0 : m_population[0].y; }
-    double getBestFitness()   const { return m_population.empty() ? 0.0 : m_population[0].fitness; }
+    double getBestX()         const { return m_historicalBest.x; }
+    double getBestY()         const { return m_historicalBest.y; }
+    double getBestFitness()   const { return m_historicalBest.fitness; }
     size_t getIteraionts()    const { return m_currentGeneration; }
     size_t getFunctionCalls() const { return m_functionCalls; }
     const std::vector<Individual>& getPopulation() const { return m_population; }
@@ -77,8 +77,8 @@ protected:
     double m_bestFitnessHistory;                 // Лучшее приспособление предыдущего поколения
     size_t m_stagnationCounter;                  // Счётчик поколений без улучшений
     static constexpr size_t MAX_STAGNATION = 50; // Максимум поколений без улучшений
-
-
+    Individual m_historicalBest;                 // Исторически лучшая особь
+    
     // Вспомогательные методы
     void resetAlgorithmState();
     void initializeParser(const std::string& function);
@@ -87,6 +87,8 @@ protected:
     void sortPopulation();
     // Сброс отслеживания сходимости
     void resetConvergenceTracking();
+
+    void updateHistoricalBest();
    
     // === Генетические операторы =====
 

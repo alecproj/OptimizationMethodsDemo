@@ -47,6 +47,14 @@ namespace GA {
     void GeneticBase::resetConvergenceTracking() {
         m_bestFitnessHistory = std::numeric_limits<double>::max();
         m_stagnationCounter = 0;
+        
+        if (m_inputData && m_inputData->extremum_type == ExtremumType::MINIMUM) {
+            // Для минимума худшее значение это +∞
+            m_historicalBest = Individual(0, 0, std::numeric_limits<double>::max());
+        } else {
+            // Для максимума - худшее значение это -∞
+            m_historicalBest = Individual(0, 0, -std::numeric_limits<double>::max());
+        }
     }
 
     // Метод проверк сходимости
@@ -54,23 +62,23 @@ namespace GA {
     {
         if (m_population.empty()) return false;
 
-        double currentBestFitness = getBestFitness();
+        double currentHistoricalBest = m_historicalBest.fitness;
 
         // Проверка улучшения fitness
         bool improved = false;
         if (m_inputData->extremum_type == ExtremumType::MINIMUM) {
-            improved = currentBestFitness < m_bestFitnessHistory;
+            improved = currentHistoricalBest < m_bestFitnessHistory;
         } else {
-            improved = currentBestFitness > m_bestFitnessHistory;
+            improved = currentHistoricalBest > m_bestFitnessHistory;
         }
 
         if (improved) {
             // Есть улучшение - сбрасываем счетчик стагнации
-            m_bestFitnessHistory = currentBestFitness;
+            m_bestFitnessHistory = currentHistoricalBest;
             m_stagnationCounter = 0;
 
             LOG(INFO) << "Улучшение на поколении " << m_currentGeneration
-                << ": fitness: " << currentBestFitness;
+                << ": fitness: " << currentHistoricalBest;
             return false;
         } else {
             // Нет улучшения - увеличиваем счетчик
@@ -463,14 +471,36 @@ namespace GA {
         sortPopulation();
         m_currentGeneration++;
 
+        // Обновляем исторически лучшее решение
+        updateHistoricalBest();
+
         LOG(INFO) << "Поколение: " << m_currentGeneration
                   << " - Лучшая fitness: " << getBestFitness()
                   << " в точке (" << getBestX() << ", " << getBestY() << ")";
-
+       
+        LOG(INFO) << "Исторически лучшая fitness: " << m_historicalBest.fitness
+                  << " в точке (" << m_historicalBest.x << ", " << m_historicalBest.y << ")";
         return Result::Success;
     }
-    
-    // === Методы проверки сходимости ===
+
+    void GeneticBase::updateHistoricalBest()
+    {
+        if (m_population.empty()) return;
+
+        const Individual& currentBest = m_population[0];
+
+        if (m_inputData->extremum_type == ExtremumType::MINIMUM) {
+            // Для минимума ищем наименьшее значение
+            if (currentBest.fitness < m_historicalBest.fitness) {
+                m_historicalBest = currentBest;
+            }
+        } else {
+            // Для максимума ищем наибольшее значение
+            if (currentBest.fitness > m_historicalBest.fitness) {
+                m_historicalBest = currentBest;
+            }
+        }
+    }
 
 
 } // namespace GA
