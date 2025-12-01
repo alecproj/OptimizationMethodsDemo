@@ -143,8 +143,8 @@ int main(int argc, char* argv[])
 
     // Ввод параметров генетического алгоритма
     std::cout << "\n=== ПАРАМЕТРЫ ГЕНЕТИЧЕСКОГО АЛГОРИТМА ===" << std::endl;
-    config.population_size = safeInput<size_t>("Размер популяции (рекомендуется 50-200): ", 10, 1000);
-    config.generations = safeInput<size_t>("Максимальное количество поколений (рекомендуется 100-1000): ", 10, 10000);
+    config.population_size = safeInput<size_t>("Размер популяции (рекомендуется 50-200): ", 10, 100000);
+    config.generations = safeInput<size_t>("Максимальное количество поколений (рекомендуется 100-1000): ", 10, 1000);
     config.crossover_rate = safeInput<double>("Вероятность кроссовера (0.0-1.0, рекомендуется 0.7-0.9): ", 0.0, 1.0);
     config.mutation_rate = safeInput<double>("Вероятность мутации (0.0-0.1, рекомендуется 0.01-0.05): ", 0.0, 0.1);
     config.bits_per_variable = safeInput<uint64_t>("Бит на переменную (1-52, рекомендуется 16-32): ", 1, 52);
