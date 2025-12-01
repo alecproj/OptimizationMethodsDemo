@@ -97,22 +97,31 @@ int main(int argc, char *argv[])
     */
 
     try {
+        int tmp_int;
+        double tmp_dbl;
         // Ввод данных от пользователя
         std::cout << "Введите функцию (например, x^2 + y^2): ";
         std::getline(std::cin, data.function);
         std::string input_str;
 
         std::cout << "Используемые параметры:" << std::endl;
-        std::cout << "Размер роя: (50)" << std::endl;
-        algo.setSwarmSize(50);
-        std::cout << "Коэффициент инерции: (0.8)" << std::endl;
-        algo.setInertiaWeight(0.8);
-        std::cout << "Когнитивный коэффициент: (2.0)" << std::endl;
-        algo.setCognitiveCoeff(2.0);
-        std::cout << "Социальный коэффициент: (2.0)" << std::endl;
-        algo.setSocialCoeff(2.0);
-        std::cout << "Максимальное число итераций: (200)" << std::endl;
-        algo.setMaxIterations(200);
+        std::cout << "Введите размер роя (например, 50): ";
+        std::cin >> tmp_int;
+        algo.setSwarmSize(tmp_int);
+        std::cout << "Введите коэффициент инерции (например, 0.8): ";
+        std::cin >> tmp_dbl;
+        algo.setInertiaWeight(tmp_dbl);
+        std::cout << "Введите когнитивный коэффициент (например, 2.0): ";
+        std::cin >> tmp_dbl;
+        algo.setCognitiveCoeff(tmp_dbl);
+        std::cout << "Введите социальный коэффициент (например, 2.0): ";
+        std::cin >> tmp_dbl;
+        algo.setSocialCoeff(tmp_dbl);
+        std::cout << "Введите максимальное число итераций (например, 200): ";
+        std::cin >> tmp_int;
+        algo.setMaxIterations(tmp_int);
+        tmp_int = NULL;
+        tmp_dbl = NULL;
 
         std::cout << "Введите тип экстремума (MINIMUM или MAXIMUM): ";
         std::cin >> input_str;
