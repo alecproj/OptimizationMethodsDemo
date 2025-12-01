@@ -262,6 +262,7 @@ private:
     double m_cognitive_coeff;
     double m_social_coeff;
     int m_max_iterations;
+    double m_velocity_limit_factor = 0.1;
 
     // Состояние алгоритма
     std::vector<ParticleData> m_swarm;
@@ -298,8 +299,8 @@ private:
         double x_range = m_inputData->x_right_bound - m_inputData->x_left_bound;
         double y_range = m_inputData->y_right_bound - m_inputData->y_left_bound;
 
-        double vx_max = 0.1 * x_range;
-        double vy_max = 0.1 * y_range;
+        double vx_max = m_velocity_limit_factor * x_range;
+        double vy_max = m_velocity_limit_factor * y_range;
 
         for (auto& particle : m_swarm) {
             double rand1 = static_cast<double>(rand()) / RAND_MAX;
@@ -342,9 +343,10 @@ private:
                      m_social_coeff * r2 * (m_global_best_y - particle.y);
 
         // Ограничение скорости
-        double v_max = 0.2 * (m_inputData->x_right_bound - m_inputData->x_left_bound);
-        particle.vx = std::max(std::min(particle.vx, v_max), -v_max);
-        particle.vy = std::max(std::min(particle.vy, v_max), -v_max);
+        double vx_max = m_velocity_limit_factor * (m_inputData->x_right_bound - m_inputData->x_left_bound);
+        double vy_max = m_velocity_limit_factor * (m_inputData->y_right_bound - m_inputData->y_left_bound);
+        particle.vx = std::max(std::min(particle.vx, vx_max), -vx_max);
+        particle.vy = std::max(std::min(particle.vy, vy_max), -vy_max);
     }
 
     void updateSwarmVelocities() {
