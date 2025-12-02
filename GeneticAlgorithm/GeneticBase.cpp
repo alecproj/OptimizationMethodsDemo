@@ -77,26 +77,32 @@ namespace GA {
             m_bestFitnessHistory = currentHistoricalBest;
             m_stagnationCounter = 0;
 
-            LOG(INFO) << "Улучшение на поколении " << m_currentGeneration
-                << ": fitness: " << currentHistoricalBest;
+            /*LOG(INFO) << "Улучшение на поколении " << m_currentGeneration
+                << ": fitness: " << currentHistoricalBest;*/
             return false;
         } else {
             // Нет улучшения - увеличиваем счетчик
             m_stagnationCounter++;
-            LOG(WARNING) << "Стагнация " << m_stagnationCounter << "/" << MAX_STAGNATION
-                      << " на поколении " << m_currentGeneration;
+            /*LOG(ERROR) << "Стагнация " << m_stagnationCounter << "/" << MAX_STAGNATION
+                      << " на поколении " << m_currentGeneration;*/
 
             // Проверяем различные критерии остановки
 
             // Достигнут максимум по стагнациям
             if (m_stagnationCounter >= MAX_STAGNATION) {
-                LOG(INFO) << "Сходимость по стагнации: " << m_stagnationCounter << " поколений без улучшений";
+                std::stringstream msg;
+                msg << "✅ Сходимость по стагнации: " << m_stagnationCounter
+                    << " поколений без улучшений на поколении " << m_currentGeneration;
+                reportConvergence(msg.str());
                 return true;
             }
 
             // Низкое генетическое разнообразие
             if (hasLowDiversity()) {
-                LOG(INFO) << "Сходимость по разнообразию: популяция стала однородной";
+                std::stringstream msg;
+                msg << "✅ Сходимость по разнообразию: популяция стала однородной на поколении "
+                    << m_currentGeneration;
+                reportConvergence(msg.str());
                 return true;
             }
 
@@ -474,12 +480,12 @@ namespace GA {
         // Обновляем исторически лучшее решение
         updateHistoricalBest();
 
-        LOG(INFO) << "Поколение: " << m_currentGeneration
+       /* LOG(INFO) << "Поколение: " << m_currentGeneration
                   << " - Лучшая fitness: " << getBestFitness()
                   << " в точке (" << getBestX() << ", " << getBestY() << ")";
        
         LOG(INFO) << "Исторически лучшая fitness: " << m_historicalBest.fitness
-                  << " в точке (" << m_historicalBest.x << ", " << m_historicalBest.y << ")";
+                  << " в точке (" << m_historicalBest.x << ", " << m_historicalBest.y << ")";*/
         return Result::Success;
     }
 

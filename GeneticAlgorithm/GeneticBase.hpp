@@ -11,6 +11,7 @@
 #include "vector"
 #include <random>
 #include <muParser.h>
+#include <glog/logging.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -77,8 +78,13 @@ protected:
     double m_bestFitnessHistory;                 // Лучшее приспособление предыдущего поколения
     size_t m_stagnationCounter;                  // Счётчик поколений без улучшений
     static constexpr size_t MAX_STAGNATION = 50; // Максимум поколений без улучшений
-    Individual m_historicalBest;                 // Исторически лучшая особь
-    
+    Individual m_historicalBest;  
+
+    virtual void reportConvergence(const std::string& message) {
+        // Базовая реализация - просто логирует
+        LOG(INFO) << message;
+    }
+
     // Вспомогательные методы
     void resetAlgorithmState();
     void initializeParser(const std::string& function);
