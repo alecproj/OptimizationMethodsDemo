@@ -18,7 +18,7 @@ file(GLOB_RECURSE QML_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Qml/*
 
 # --------------- Qt ---------------
 
-find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick)
+find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick Core5Compat)
 qt_standard_project_setup(REQUIRES 6.8)
 
 # -------------- glog --------------
@@ -88,6 +88,7 @@ target_link_libraries(${PROJECT_NAME}App
         GlobalOptimizationplugin
         ${MUPARSER_TARGET_NAME}
         Qt6::Core
+        Qt6::Core5Compat
         Qt6::Qml
         Qt6::Quick
         glog::glog

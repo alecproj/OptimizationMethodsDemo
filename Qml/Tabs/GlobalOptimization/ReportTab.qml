@@ -5,6 +5,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import AppEnums
+import GOInputData
 import Globals
 import Components
 
@@ -78,10 +79,9 @@ Rectangle {
             Layout.fillHeight: true
             contentWidth: column.implicitWidth
             contentHeight: column.implicitHeight
-            flickableDirection: Flickable.HorizontalAndVerticalFlick
-            flickDeceleration: 0.0000001
 
             clip: true
+            flickableDirection: Flickable.AutoFlickIfNeeded
 
             ColumnLayout {
                 id: column
@@ -210,58 +210,8 @@ Rectangle {
                 Repeater {
                     model: root.solution
 
-                    delegate: Item {
-                        id: container
-
-                        required property string type
-                        required property string title
-                        required property string text
-                        required property double value
-                        required property var columns
-                        required property var rows
-
-                        implicitWidth: (valueLoader.active 
-                            ? valueLoader.implicitWidth : messageLoader.active
-                                ? messageLoader.implicitWidth : flickable.width)
-                        implicitHeight: (valueLoader.active
-                            ? valueLoader.implicitHeight : messageLoader.active
-                                ? messageLoader.implicitHeight : tableLoader.implicitHeight)
-
-                        Loader {
-                            id: valueLoader
-                            active: (type === "value")
-
-                            sourceComponent: Text {
-                                text: container.title + ": " + container.value
-                                font.pixelSize: root.fontSize
-                                wrapMode: Text.WordWrap
-                            }
-                        }
-
-                        Loader {
-                            id: messageLoader
-                            active: (type === "message")
-
-                            sourceComponent: Text {
-                                width: flickable.width
-                                text: container.text
-                                font.pixelSize: root.fontSize
-                                wrapMode: Text.WordWrap
-                            }
-                        }
-
-                        TableLoader {
-                            id: tableLoader
-                            active: (type === "table")
-
-                            anchors.centerIn: parent
-
-                            title: container.title
-                            columns: container.columns
-                            rows: container.rows
-
-                            fontSize: root.fontSize
-                        }
+                    delegate: SolutionDelegate {
+                        Layout.fillWidth: true
                     }
                 } // Repeater
 

@@ -49,10 +49,11 @@ set_target_properties(app_sources PROPERTIES
     AUTORCC ON
 )
 
-find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core Core5Compat)
 target_link_libraries(app_sources
     PUBLIC
         Qt6::Core
+        Qt6::Core5Compat
         CoordinateDescent
         GradientDescent
         ConjugateGradient

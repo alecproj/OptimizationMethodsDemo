@@ -4,6 +4,9 @@
 //
 
 #include "SolutionModel.hpp"
+#include "SolutionMessage.hpp"
+#include "SolutionValue.hpp"
+#include "SolutionTable.hpp"
 
 #include <QVariant>
 
@@ -23,50 +26,53 @@ QVariant SolutionModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid()) return {};
     if (index.row() < 0 || index.row() >= m_items.size()) return {};
-    QJsonObject obj = m_items.at(index.row()).toObject();
+    auto entry = m_items.at(index.row());
 
     switch (role) {
-    case TypeRole: return obj.value("type").toString();
-    case TitleRole: return obj.value("title").toString();
-    case ValueRole: return obj.value("value").toDouble();
-    case TextRole: return obj.value("text").toString();
-    case ColumnsRole: {
-        QJsonArray cols = obj.value("columns").toArray();
-        QStringList list;
-        for (const QJsonValue &v : cols) list << v.toString();
-        return list;
-    }
-    case RowsRole: {
-        QJsonArray rows = obj.value("rows").toArray();
-        QVariantList out;
-        for (const QJsonValue &r : rows) {
-            QJsonArray row = r.toArray();
-            QVariantList rowList;
-            for (const QJsonValue &cell : row) rowList << cell.toVariant();
-            out << QVariant::fromValue(rowList);
-        }
-        return out;
-    }
-    default:
-        return {};
+        case EntryRole:
+            return QVariant::fromValue<QObject*>(entry);
+        default:
+            return {};
     }
 }
 
 QHash<int, QByteArray> SolutionModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
-    roles[TypeRole] = "type";
-    roles[TitleRole] = "title";
-    roles[ValueRole] = "value";
-    roles[TextRole] = "text";
-    roles[ColumnsRole] = "columns";
-    roles[RowsRole] = "rows";
+    roles[EntryRole] = "entry";
     return roles;
 }
 
 void SolutionModel::setData(const QJsonArray &arr)
 {
     beginResetModel();
-    m_items = arr;
+    m_items.clear();
+    endResetModel();
+
+    for (const auto item : arr) {
+        QJsonObject obj = item.toObject();
+        QString type = obj.value("type").toString();
+
+        if (QString::compare(type, "message") == 0) {
+            QString text = obj.value("text").toString();
+            auto entry = new SolutionMessage(text, this);
+            m_items.append(entry);
+        } else if (QString::compare(type, "value") == 0) {
+            QString title = obj.value("title").toString();
+            double value = obj.value("value").toDouble();
+            auto entry = new SolutionValue(value, title, this);
+            m_items.append(entry);
+        } else if (QString::compare(type, "table") == 0) {
+            QString title = obj.value("title").toString();
+            auto table = new SolutionTableModel();
+            table->loadFromJsonObject(obj);
+            auto entry = new SolutionTable(table, title, this);
+            table->setParent(entry);
+            m_items.append(entry);
+        } else {
+            qWarning() << "Unknown type received: " << type;
+        }
+    }
+    beginResetModel();
     endResetModel();
 }

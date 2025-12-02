@@ -14,4 +14,5 @@ qt_add_qml_module(${PROJECT_NAME}
        TableLoader.qml
        TableRow.qml
        SquareButton.qml
+       SolutionDelegate.qml
 )
