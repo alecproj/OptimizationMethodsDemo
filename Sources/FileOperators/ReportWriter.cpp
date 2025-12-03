@@ -61,7 +61,7 @@ int ReportWriter::begin()
         );
     } else if (partType == PartType::GO) {
         qDebug() << "Begin writing a report with GO InputData";
-        auto data = dynamic_cast<const LO::InputData *>(m_inputData);
+        auto data = dynamic_cast<const GO::InputData *>(m_inputData);
         m_fileName = fileNameGO(
             static_cast<AlgoType::Type>(data->algorithmId())
         );
@@ -209,6 +209,14 @@ void ReportWriter::writeInputData()
         inputData.insert("maxX", idata->maxX());
         inputData.insert("minY", idata->minY());
         inputData.insert("maxY", idata->maxY());
+        inputData.insert("size", idata->size());
+        inputData.insert("maxIterations", idata->maxIterations());
+        inputData.insert("crossoverProb", idata->crossoverProb());
+        inputData.insert("mutationProb", idata->mutationProb());
+        inputData.insert("elitism", idata->elitism());
+        inputData.insert("inertiaCoef", idata->inertiaCoef());
+        inputData.insert("cognitiveCoef", idata->cognitiveCoef());
+        inputData.insert("socialCoef", idata->socialCoef());
         qDebug() << "Writing GO Input Data";
     } else {
         qCritical() << "Unable to write Input Data. Invalid type.";

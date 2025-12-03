@@ -215,6 +215,8 @@ ReportStatus::Status ReportReader::readInputData(const QJsonObject &obj, GO::Inp
             setExtremumId, extremumId, toInt);
     READ_FIELD(inputObj, "resultAccuracy", out,
             setResultAccuracy, resultAccuracy, toInt);
+    READ_FIELD(inputObj, "calcAccuracy", out,
+            setCalcAccuracy, calcAccuracy, toInt);
     READ_FIELD(inputObj, "minX", out,
             setMinX, minX, toDouble);
     READ_FIELD(inputObj, "maxX", out,
@@ -223,7 +225,22 @@ ReportStatus::Status ReportReader::readInputData(const QJsonObject &obj, GO::Inp
             setMinY, minY, toDouble);
     READ_FIELD(inputObj, "maxY", out,
             setMaxY, maxY, toDouble);
-
+    READ_FIELD(inputObj, "size", out,
+            setSize, size, toInt);
+    READ_FIELD(inputObj, "maxIterations", out,
+            setMaxIterations, maxIterations, toInt);
+    READ_FIELD(inputObj, "crossoverProb", out,
+            setCrossoverProb, crossoverProb, toDouble);
+    READ_FIELD(inputObj, "mutationProb", out,
+            setMutationProb, mutationProb, toDouble);
+    READ_FIELD(inputObj, "elitism", out,
+            setElitism, elitism, toInt);
+    READ_FIELD(inputObj, "inertiaCoef", out,
+            setInertiaCoef, inertiaCoef, toDouble);
+    READ_FIELD(inputObj, "cognitiveCoef", out,
+            setCognitiveCoef, cognitiveCoef, toDouble);
+    READ_FIELD(inputObj, "socialCoef", out,
+            setSocialCoef, socialCoef, toDouble);
     return ReportStatus::Ok;
 }
 
@@ -312,7 +329,7 @@ ReportStatus::Status ReportReader::validateFile(const QString &fileName, FileDat
 bool ReportReader::validateName(const QString &fileName, FileData *out)
 {
     static const QRegularExpression re(QStringLiteral(
-        "^(?:(LO|GO)-)?([BCDGSR]+)-(\\d{1,2})-(\\d{1,2})-(\\d{4})-(\\d{1,2})-(\\d{1,2})-(\\d{1,2})\\.json$"
+        "^(?:(LO|GO)-)?([ABCDGPRS]+)-(\\d{1,2})-(\\d{1,2})-(\\d{4})-(\\d{1,2})-(\\d{1,2})-(\\d{1,2})\\.json$"
     ), QRegularExpression::CaseInsensitiveOption);
 
     QRegularExpressionMatch match = re.matchView(QStringView(fileName));
@@ -331,17 +348,30 @@ bool ReportReader::validateName(const QString &fileName, FileData *out)
     const int minute = match.captured(7).toInt();
     const int second = match.captured(8).toInt();
 
-    QMetaEnum me = QMetaEnum::fromType<LO::FullAlgoType::Type>();
-    int algoVal = me.keyToValue(algoStr.toLatin1().constData());
-    if (algoVal == -1) {
-        qWarning() << "Unable to extract algo type";
-        return false;
-    }
-
-    me = QMetaEnum::fromType<PartType::Type>();
+    QMetaEnum me = QMetaEnum::fromType<PartType::Type>();
     int partVal = me.keyToValue(partStr.toLatin1().constData());
     if (partVal == -1) {
         qWarning() << "Unable to extract part type";
+        return false;
+    }
+
+    int algoVal = -1;
+    if (partVal == PartType::LO) {
+        me = QMetaEnum::fromType<LO::FullAlgoType::Type>();
+        algoVal = me.keyToValue(algoStr.toLatin1().constData());
+        if (algoVal == -1) {
+            qWarning() << "Unable to extract LO algo type";
+            return false;
+        }
+    } else if (partVal == PartType::GO) {
+        me = QMetaEnum::fromType<AlgoType::Type>();
+        algoVal = me.keyToValue(algoStr.toLatin1().constData());
+        if (algoVal == -1) {
+            qWarning() << "Unable to extract GO algo type";
+            return false;
+        }
+    } else {
+        qWarning() << "Invalid part type";
         return false;
     }
 
