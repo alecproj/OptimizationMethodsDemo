@@ -281,7 +281,6 @@ namespace GA {
             data.y_left_bound = -10.0;
             data.y_right_bound = 10.0;
             data.result_precision = 8;
-            data.computation_precision = 15;
 
             // Конфигурация с маленькой популяцией для теста
             GAConfig config(10, 5, 0.8, 0.05, 16, 2);

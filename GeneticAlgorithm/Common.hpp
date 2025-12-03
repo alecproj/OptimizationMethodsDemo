@@ -22,14 +22,18 @@ enum class Result : int {
     NoConvergence = -3,                // Нет сходимости
     ParseError = -7,                   // Ошибка парсинга функции
     ComputeError = -8,                 // Вычислительная ошибка
-    NonDifferentiableFunction = -9,    // Функция не явл. дифференцируемой
     EmptyFunction = -10,               // Функция пустая
     InvalidExtremumType = -12,         // Неверный ввод типа экстремума
     InvalidXBound = -14,               // Неверный ввод границ X
     InvalidYBound = -15,               // Неверный ввод границ Y
     InvalidResultPrecision = -18,      // Неверный ввод точности результата
-    InvalidComputationPrecision = -19, // Неверный ввод точности вычислений
-    InvalidLogicPrecision = -20,       // Неверный ввод точностей
+    InvalidPopulationSize = -40,       // Неверный ввод размера популяции
+    InvaligGenerationsCount = -41,     // Неверный ввод количества поколений
+    InvalidCrossoverRate = -42,        // Неверный ввод вероятности кроссовера
+    InvalidMutationRate = -43,         // Неверный ввод вероятности мутации
+    InvalidBits = -44,                 // Неверный ввод количества бит на переменную
+    InvalidElite = -45,                // Неверный ввод количества элитных особей
+    InvalidEliteLogic = -46            // Количество элитных особей должно быть меньше размера популяции
 };
 
 enum class ExtremumType {
@@ -43,16 +47,15 @@ struct InputData {
     ExtremumType extremum_type;     // Тип экстремума
 
     // --- ГРАНИЦЫ ПОИСКА ---
-    double x_left_bound;            // Левая граница диапазона X
-    double x_right_bound;           // Правая граница диапазона X
-    double y_left_bound;            // Левая граница диапазона Y
-    double y_right_bound;           // Правая граница диапазона Y
+    double x_left_bound = -1000;            // Левая граница диапазона X
+    double x_right_bound = 1000;           // Правая граница диапазона X
+    double y_left_bound = -1000;            // Левая граница диапазона Y
+    double y_right_bound = 1000;           // Правая граница диапазона Y
 
     // --- ПАРАМЕТРЫ ТОЧНОСТИ ---
-    int result_precision;           // Точность результата
-    int computation_precision;      // Точность вычислений
+    int result_precision = 1e-8;           // Точность результата
 
-    int count_function_calls;       // Количество вызовов фунции
+    int count_function_calls = 100000;       // Количество вызовов фунции
 };
 
 struct Individual {
@@ -96,14 +99,18 @@ inline std::string resultToString(Result result) {
         case Result::NoConvergence:               return "Алгоритм не сходится";
         case Result::ParseError:                  return "Ошибка обработки функции";
         case Result::ComputeError:                return "Вычислительная ошибка";
-        case Result::NonDifferentiableFunction:   return "Функция не является дифференцируемой";
         case Result::EmptyFunction:               return "Функция не передана";
         case Result::InvalidExtremumType:         return "Неверный ввод типа экстремума";
         case Result::InvalidXBound:               return "Неверный ввод границ X";
         case Result::InvalidYBound:               return "Неверный ввод границ Y";
         case Result::InvalidResultPrecision:      return "Неверный ввод точности результата";
-        case Result::InvalidComputationPrecision: return "Неверный ввод точности вычислений";
-        case Result::InvalidLogicPrecision:       return "Неверный ввод точностей";
+        case Result::InvalidPopulationSize:       return "Неверный ввод размера популяции";
+        case Result::InvaligGenerationsCount:     return "Неверный ввод количества поколений";
+        case Result::InvalidCrossoverRate:        return "Неверный ввод вероятности кроссовера";
+        case Result::InvalidMutationRate:         return "Неверный ввод вероятности мутации";
+        case Result::InvalidBits:                 return "Неверный ввод количества бит на переменную";
+        case Result::InvalidElite:                return "Неверный ввод количества элитных особей";
+        case Result::InvalidEliteLogic:           return "Количество элитных особей должно быть меньше размера популяции";
         default:                                  return "Unknown result";
     }
 }

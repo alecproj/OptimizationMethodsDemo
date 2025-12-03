@@ -139,7 +139,6 @@ int main(int argc, char* argv[])
     // Ввод точности
     std::cout << "\n=== ПАРАМЕТРЫ ТОЧНОСТИ ===" << std::endl;
     data.result_precision = safeInput<int>("Введите точность результата (1-15): ", 1, 15);
-    data.computation_precision = safeInput<int>("Введите точность вычислений (1-15): ", 1, 15);
 
     // Ввод параметров генетического алгоритма
     std::cout << "\n=== ПАРАМЕТРЫ ГЕНЕТИЧЕСКОГО АЛГОРИТМА ===" << std::endl;
@@ -157,8 +156,7 @@ int main(int argc, char* argv[])
     std::cout << "Тип экстремума: " << extremumTypeToString(data.extremum_type) << std::endl;
     std::cout << "Область поиска: X[" << data.x_left_bound << ", " << data.x_right_bound
         << "], Y[" << data.y_left_bound << ", " << data.y_right_bound << "]" << std::endl;
-    std::cout << "Точность: результат=" << data.result_precision
-        << ", вычисления=" << data.computation_precision << std::endl;
+    std::cout << "Точность: результат=" << data.result_precision;
     std::cout << "Параметры ГА: популяция=" << config.population_size
         << ", поколения=" << config.generations
         << ", кроссовер=" << config.crossover_rate

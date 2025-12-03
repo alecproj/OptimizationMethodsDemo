@@ -34,7 +34,7 @@ public:
     void initializePopulation();
 
     Result runGeneration();
-    Result checkFunction(const std::string &function);
+    //Result checkFunction(const std::string &function);
 
     // == Сходимость ===
 
@@ -52,9 +52,6 @@ public:
     size_t getFunctionCalls() const { return m_functionCalls; }
     const std::vector<Individual>& getPopulation() const { return m_population; }
 
-    //void selection(/* ... */);
-    //void crossover(/* ... */);
-    /* И другие методы, не требующие репортера */
 
 protected:
 
@@ -81,7 +78,6 @@ protected:
     Individual m_historicalBest;  
 
     virtual void reportConvergence(const std::string& message) {
-        // Базовая реализация - просто логирует
         LOG(INFO) << message;
     }
 

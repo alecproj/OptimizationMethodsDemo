@@ -118,7 +118,7 @@ namespace GA {
         double best_fitness = m_population[0].fitness;
         double worst_fitness = m_population.back().fitness;
 
-        double computationPrecision = std::pow(10, -m_inputData->computation_precision);
+        double computationPrecision = 1e-15;
         double precision_tolerance = computationPrecision * 10;
 
         // Деление на ноль
@@ -142,9 +142,6 @@ namespace GA {
             return Result::InvalidInput;
         }
 
-        if (inputData->computation_precision < 1 || inputData->computation_precision > 15) {
-            return Result::InvalidComputationPrecision;
-        }
         if (inputData->result_precision < 1 || inputData->result_precision > 15) {
             return Result::InvalidResultPrecision;
         }

@@ -36,8 +36,6 @@ public:
         //m_generations{ 0 },
         m_reporter{ reporter },
         m_digitResultPrecision{0},
-        m_digitComputationPrecision{0},
-        m_computationPrecision{0.},
         m_resultPrecision{0.}
     {
         resetAlgorithmState();
@@ -98,18 +96,67 @@ public:
             return rv;
         }
 
-        // Проверка точности вычислений
-        if (data->computation_precision < 1 || data->computation_precision > 15) {
-            rv = Result::InvalidComputationPrecision;
+        // Проверка размера популяции
+        if (config->population_size < 2 || config->population_size > 10000) {
+            rv = Result::InvalidPopulationSize;
             LOGERR(rv);
             return rv;
         }
 
-        // Проверка что точность вычислений меньше точности результата
-        if (data->computation_precision < data->result_precision) {
-            rv = Result::InvalidLogicPrecision;
+        // Проверка количества поколений
+        if (config->generations < 1 || config->generations > 10000) {
+            rv = Result::InvaligGenerationsCount;
             LOGERR(rv);
             return rv;
+        }
+
+        // Проверка вероятность кроссовера
+        if (config->crossover_rate < 0.0 || config->crossover_rate > 1.0) {
+            rv = Result::InvalidCrossoverRate;
+            LOGERR(rv);
+            return rv;
+        }
+
+        // Провека вероятности мутации
+        if (config->mutation_rate < 0.0 || config->mutation_rate > 1.0) {
+            rv = Result::InvalidMutationRate;
+            LOGERR(rv);
+            return rv;
+        }
+
+        // Проверка количества бит на переменную
+        if (config->bits_per_variable < 1 || config->bits_per_variable > 52) {
+            rv = Result::InvalidBits;
+            LOGERR(rv);
+            return rv;
+        }
+
+        // Проверка количества элитных особей
+        if (config->elite_count < 0) {
+            rv = Result::InvalidElite;
+            LOGERR(rv);
+            return rv;
+        }
+
+        // Проверка на логику выбора вероятностей
+        if (config->crossover_rate < config->mutation_rate) {
+            LOG(WARNING) << "Вероятность кроссовера меньше вероятности мутации - это может снизить эффективность алгоритма";
+        }
+
+
+        // Проверка логики элитных и обычных особей
+        if (config->elite_count >= config->population_size) {
+            rv = Result::InvalidEliteLogic;
+            LOGERR(rv);
+            return rv;
+        }
+
+        if (config->elite_count == 0) {
+            LOG(WARNING) << "Элитизм отключен - лучшие решения могут быть потеряны";
+        }
+
+        if (config->elite_count > config->population_size / 2) {
+            LOG(WARNING) << "Слишком много элитных особей - может снизить разнообразие популяции";
         }
 
         // Сохраняем данные
@@ -136,12 +183,9 @@ public:
         resetAlgorithmState();
 
         // Округляем результат
-        m_digitComputationPrecision = m_inputData->computation_precision;
         m_digitResultPrecision = m_inputData->result_precision;
-        m_computationPrecision = std::pow(10, (-m_inputData->computation_precision));
         m_resultPrecision = std::pow(10, (-m_inputData->result_precision));
 
-        m_reporter->begin();
 
         try {
 
@@ -238,7 +282,6 @@ public:
             m_reporter->insertMessage("❌ Вычислительная ошибка: " + std::string(e.what()));
         }
 
-        m_reporter->end();
         LOG(INFO) << "Алгоритм успешно завершил работу. Поколений: "
                   << m_currentGeneration << ", Вызовов функции: " << m_functionCalls;
         return Result::Success;
@@ -267,13 +310,8 @@ private:
     //int m_generations; 
     Reporter* m_reporter;
     int m_digitResultPrecision;                  // Количество знаков после запятой для результата
-    int m_digitComputationPrecision;             // Количество знаков после запятой для вычислений
-    double m_computationPrecision;
     double m_resultPrecision;
     
-    void insertResultInfo(/* ... */) 
-    {
-    }
 };
 
 } // namespace GA
