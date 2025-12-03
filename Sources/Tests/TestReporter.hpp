@@ -2,6 +2,8 @@
 #define SOURCES_TESTS_TESTREPORTER_HPP_
 
 #include "ReportWriter.hpp"
+#include "LOInputData.hpp"
+#include "GOInputData.hpp"
 #include "AppEnums.hpp"
 #include <QDebug>
 
@@ -9,15 +11,17 @@ using namespace std;
 
 class TestReporter {
     ReportWriter reporter;
-    InputData data;
+    InputData *data;
 public:
     void test()
     {
-        testData1();
-        reporter.setInputData(&data);
+        testData2();
+        reporter.setInputData(data);
         auto rv = reporter.begin();
         if (rv != 0) {
-            qDebug() << "TEST FAIL: reporter.begin: " << rv;
+            delete data;
+            data = nullptr;
+            qCritical() << "TEST FAIL: reporter.begin: " << rv;
             return;
         }
 
@@ -40,32 +44,78 @@ public:
         reporter.insertValue("Еще одна проверка на вшивость. Вот число", -1);
         rv = reporter.end();
         if (rv != 0) {
-            qDebug() << "TEST FAIL: reporter.end: " << rv;
+            delete data;
+            data = nullptr;
+            qCritical() << "TEST FAIL: reporter.end: " << rv;
             return;
         }
         qDebug() << "TEST SUCCESS: ура";
+        delete data;
+        data = nullptr;
     }
 private:
     inline void testData1()
     {
-        data.setFunction("4*x - x^2 - y^2 + 2*y + 5");
-        data.setAlgorithmId(AlgoType::CD);
-        data.setExtensionId(ExtensionType::B);
-        data.setFullAlgoId(FullAlgoType::CDB);
-        data.setExtremumId(ExtremumType::MAXIMUM);
-        data.setStepId(StepType::COEFFICIENT);
-        data.setStartX1(0.0);
-        data.setStartY1(0.0);
-        data.setMinX(-10.0);
-        data.setMaxX(10.0);
-        data.setMinY(-10.0);
-        data.setMaxY(10.0);
-        data.setResultAccuracy(0.000001);
-        data.setCalcAccuracy(0.00000001);
-        data.setStepX(0.1);
-        data.setStepY(0.1);
-        data.setMaxIterations(100);
-        data.setMaxFuncCalls(1000);
+        data = new LO::InputData();
+        auto lodata = static_cast<LO::InputData *>(data);
+        lodata->setFunction("4*x - x^2 - y^2 + 2*y + 5");
+        lodata->setAlgorithmId(AlgoType::CD);
+        lodata->setExtensionId(LO::ExtensionType::B);
+        lodata->setFullAlgoId(LO::FullAlgoType::CDB);
+        lodata->setExtremumId(ExtremumType::MAXIMUM);
+        lodata->setStepId(LO::StepType::COEFFICIENT);
+        lodata->setStartX1(0.0);
+        lodata->setStartY1(0.0);
+        lodata->setMinX(-10.0);
+        lodata->setMaxX(10.0);
+        lodata->setMinY(-10.0);
+        lodata->setMaxY(10.0);
+        lodata->setResultAccuracy(6);
+        lodata->setCalcAccuracy(8);
+        lodata->setStepX(0.1);
+        lodata->setStepY(0.1);
+        lodata->setMaxIterations(100);
+        lodata->setMaxFuncCalls(1000);
+    }
+
+    inline void testData2()
+    {
+        data = new GO::InputData();
+        auto godata = static_cast<GO::InputData *>(data);
+        godata->setFunction("4*x - x^2 - y^2 + 2*y + 5");
+        godata->setAlgorithmId(AlgoType::GA);
+        godata->setExtremumId(ExtremumType::MAXIMUM);
+        godata->setMinX(-10.0);
+        godata->setMaxX(10.0);
+        godata->setMinY(-10.0);
+        godata->setMaxY(10.0);
+        godata->setResultAccuracy(6);
+        godata->setCalcAccuracy(8);
+        godata->setMaxIterations(100);
+        godata->setSize(125);
+        godata->setElitism(5);
+        godata->setCrossoverProb(0.7);
+        godata->setMutationProb(0.05);
+    }
+
+    inline void testData3()
+    {
+        data = new GO::InputData();
+        auto godata = static_cast<GO::InputData *>(data);
+        godata->setFunction("4*x - x^2 - y^2 + 2*y + 5");
+        godata->setAlgorithmId(AlgoType::PS);
+        godata->setExtremumId(ExtremumType::MINIMUM);
+        godata->setMinX(-10.0);
+        godata->setMaxX(10.0);
+        godata->setMinY(-10.0);
+        godata->setMaxY(10.0);
+        godata->setResultAccuracy(6);
+        godata->setCalcAccuracy(8);
+        godata->setMaxIterations(100);
+        godata->setSize(125);
+        godata->setInertiaCoef(0.5);
+        godata->setCognitiveCoef(1.0);
+        godata->setSocialCoef(2.0);
     }
 };
 

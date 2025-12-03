@@ -129,6 +129,7 @@ void MainController::updateQuickInfoModel()
             auto info = new QuickInfo(&m_quickInfoModel);
             auto rv = ReportReader::quickInfo(file, info, m_currPartition);
             if (rv == ReportStatus::Ok) {
+                info->marked = true;
                 m_quickInfoModel.prepend(info);
                 updates = true;
             } else {
@@ -264,6 +265,12 @@ Status MainController::setGOInputData(const GO::InputData *data)
         return Status::InvalidPointer;
     }
     m_writer.setInputData(data);
+    // TEST
+    m_writer.begin();
+    m_writer.insertMessage("TEST");
+    m_writer.end();
+    updateQuickInfoModel();
+    // TODO delete TEST
     return Status::Fail;
 }
 
