@@ -100,18 +100,27 @@ public:
         MaxX                = (1 << 3),  // GA,PS
         MinY                = (1 << 4),  // GA,PS
         MaxY                = (1 << 5),  // GA,PS
-
-        GACheck             = 63,
-        PSCheck             = 63
+        Size                = (1 << 6),  // GA,PS
+        MaxIterations       = (1 << 7),  // GA,PS
+        CrossoverProb       = (1 << 8),  // GA,
+        MutationProb        = (1 << 9),  // GA,
+        Elitism             = (1 << 10), // GA,
+        InertiaCoef         = (1 << 11), //   ,PS
+        CognitiveCoef       = (1 << 12), //   ,PS
+        SocialCoef          = (1 << 13), //   ,PS
+        GACheck             = 2047,
+        PSCheck             = 14591
     };
     Q_ENUM(Check)
 
     explicit CheckList(QObject *parent = nullptr) : QObject(parent) {
         static_assert( GACheck == (
-            CalcAccuracy + ResultAccuracy + MinX + MaxX + MinY + MaxY
+            CalcAccuracy + ResultAccuracy + MinX + MaxX + MinY + MaxY +
+            Size + MaxIterations + CrossoverProb + MutationProb + Elitism
         ), "Invalid GACheck");
         static_assert( PSCheck == (
-            CalcAccuracy + ResultAccuracy + MinX + MaxX + MinY + MaxY
+            CalcAccuracy + ResultAccuracy + MinX + MaxX + MinY + MaxY +
+            Size + MaxIterations + InertiaCoef + CognitiveCoef + SocialCoef 
         ), "Invalid PSCheck");
     }
 };
@@ -316,7 +325,7 @@ public:
             case AlgoType::GA:
                 return "Генетический алгоритм";
             case AlgoType::PS:
-                return "Рой частиц";
+                return "Алгоритм роя частиц";
             default:
                 return "";
         }
