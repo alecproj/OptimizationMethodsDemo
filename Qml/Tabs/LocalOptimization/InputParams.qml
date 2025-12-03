@@ -107,7 +107,7 @@ Flickable {
         
             StyledComboBox {
                 id: extremum
-                Layout.preferredWidth: 100
+                Layout.preferredWidth: 150
         
                 property int selected: ExtremumType.MINIMUM
         

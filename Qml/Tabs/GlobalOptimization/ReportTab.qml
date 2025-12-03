@@ -21,7 +21,7 @@ Rectangle {
 
     EnumHelper { id: helper }
 
-    property int checkMask: helper.getCheckByFullType(inputData.fullAlgoId)
+    property int checkMask: helper.getCheckByAlgoType(inputData.algorithmId)
 
     function buildTaskDescription() {
         var fn = "<не задана>";
@@ -35,27 +35,20 @@ Rectangle {
         var algo = helper.algoTypeToString(inputData.algorithmId);
         if (algo) algo = algo.toLowerCase();
 
-        var extensionPart = "";
-        if (inputData.extensionId !== ExtensionType.B) {
-            var ext = helper.extensionTypeToString(inputData.extensionId);
-            if (ext) ext = ext.toLowerCase();
-            extensionPart = " и его расширение — " + ext;
+        var calc = inputData.calcAccuracy;
+        if (inputData.algorithmId === AlgoType.GA) {
+            calc = ", зависящей от длины кода, равной " + calc;
+        } else if (inputData.algorithmId === AlgoType.PS) {
+            calc = ", равной 10^-" + calc;
         }
 
-        return "Найти " + extremum + " функции " + fn +
-               ", применяя " + (algo || "") + extensionPart +
+        return "Найти глобальный " + extremum + " функции " + fn +
+               ", применяя " + (algo || "") +
                ", за не более чем " + inputData.maxIterations +
-               " шагов и не более чем " + inputData.maxFuncCalls +
-               " вызовов функции, с точностью вычислений, равной 10^-" +
-               inputData.calcAccuracy +
+               " итераций, с точностью вычислений" + calc +
                ", и с учетом заданного набора параметров: ";
     }
     
-    function stepTypeDescription() {
-        var stepstr = helper.stepTypeToString(inputData.stepId);
-        return "— тип шага — " + stepstr.toLowerCase() + ";";
-    }
-
     function buildAnswerDescription() {
         if (resultData) {
             var x = resultData.xValue;
@@ -118,62 +111,61 @@ Rectangle {
                 }
 
                 Text {
-                    visible: ((root.checkMask !== CheckList.GDSCheck)
-                        && (root.checkMask !== CheckList.GDRCheck))
+                    visible: (root.checkMask & CheckList.Size)
+                        && (root.inputData.algorithmId === AlgoType.PS)
                     Layout.preferredWidth: flickable.width
-                    text: stepTypeDescription()
+                    text: "— Размер роя — " + root.inputData.size + " частиц;"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
-                    visible: (root.checkMask & CheckList.StartX1)
+                    visible: (root.checkMask & CheckList.Size)
+                        && (root.inputData.algorithmId === AlgoType.GA)
                     Layout.preferredWidth: flickable.width
-                    text: "— начальное приближение по X — " + root.inputData.startX1 + ";"
+                    text: "— размер популяции — " + root.inputData.size + " особей;"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
-                    visible: (root.checkMask & CheckList.StartY1)
-                    text: "— начальное приближение по Y — " + root.inputData.startY1 + ";"
+                    visible: (root.checkMask & CheckList.Elitism)
+                    text: "— количество элитных особей — " + root.inputData.elitism + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
-                    visible: (root.checkMask & CheckList.StartX2)
-                    Layout.preferredWidth: flickable.width
-                    text: "— второе начальное приближение по X — " + root.inputData.startX2 + ";"
+                    visible: (root.checkMask & CheckList.CrossoverProb)
+                    text: "— вероятность скрещивания — " + root.inputData.crossoverProb+ ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
-                    visible: (root.checkMask & CheckList.StartY2)
-                    text: "— второе начальное приближение по Y — " + root.inputData.startY2 + ";"
+                    visible: (root.checkMask & CheckList.MutationProb)
+                    text: "— вероятность мутации — " + root.inputData.mutationProb + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
-                    visible: (root.checkMask & CheckList.StepX)
-                    Layout.preferredWidth: flickable.width
-                    text: "— шаг по X — " + root.inputData.stepX + ";"
+                    visible: (root.checkMask & CheckList.InertiaCoef)
+                    text: "— коэффициент инерции — " + root.inputData.inertiaCoef + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
-                    visible: (root.checkMask & CheckList.StepY)
-                    text: "— шаг по Y — " + root.inputData.stepY + ";"
+                    visible: (root.checkMask & CheckList.CognitiveCoef)
+                    text: "— когнитивный коэффициент — " + root.inputData.cognitiveCoef + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
 
                 Text {
-                    visible: (root.checkMask & CheckList.Step)
-                    text: "— шаг — " + root.inputData.step + ";"
+                    visible: (root.checkMask & CheckList.SocialCoef)
+                    text: "— социальный коэффициент — " + root.inputData.socialCoef + ";"
                     font.pixelSize: root.fontSize
                     wrapMode: Text.WordWrap
                 }
