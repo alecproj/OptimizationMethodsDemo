@@ -153,94 +153,281 @@ public:
         return Result::Success;
     }
 
-    Result solve()
-    {
-        Result rv = Result::Fail;
-        if (!m_inputData || !m_reporter) {
-            LOGERR(rv);
-            return rv;
-        }
-
-        resetAlgorithmState();
-
-        m_computationDigits = m_inputData->computation_precision;
-        m_resultDigits = m_inputData->result_precision;
-        m_computationPrecision = std::pow(10, (-m_inputData->computation_precision));
-        m_resultPrecision = std::pow(10, (-m_inputData->result_precision));
-
-        try {
-            initializeParser(m_inputData->function);
-
-            LOG(INFO) << "Функция для оптимизации: " << m_inputData->function;
-
-            // Инициализация роя
-            m_swarm.resize(m_swarm_size);
-            initializeSwarmPositions();
-            initializeSwarmVelocities();
-            initializeBestValues();
-
-            LOG(INFO) << "Начальный глобальный лучший: (" << m_global_best_x
-                      << ", " << m_global_best_y << ") значение = " << m_global_best_value;
-
-            // Основной цикл алгоритма PSO
-            int stagnation_count = 0;
-            double previous_global_best = m_global_best_value;
-
-            for (m_iterations = 1; m_iterations <= m_max_iterations; ++m_iterations) {
-                // Сохраняем предыдущее лучшее значение для проверки сходимости
-                previous_global_best = m_global_best_value;
-
-                // Основные шаги PSO
-                updateSwarmVelocities();
-                updateSwarmPositions();
-                updateBestValues();
-
-                // Проверка сходимости
-                double improvement = std::abs(m_global_best_value - previous_global_best);
-                if (improvement < m_resultPrecision) {
-                    stagnation_count++;
-                } else {
-                    stagnation_count = 0;
-                }
-
-                // Вывод прогресса каждые 10 итераций
-                if (m_iterations % 10 == 0) {
-                    LOG(INFO) << "Итерация " << m_iterations
-                              << ": Лучшее значение = " << m_global_best_value
-                              << " в точке (" << m_global_best_x << ", " << m_global_best_y << ")";
-                }
-
-                // Критерии остановки
-                if (stagnation_count >= 10) { // 10 итераций без улучшения
-                    LOG(INFO) << "Алгоритм сошелся после " << m_iterations << " итераций";
-                    break;
-                }
-            }
-
-            if (m_iterations > m_max_iterations) {
-                LOG(INFO) << "Достигнуто максимальное количество итераций: " << m_max_iterations;
-            }
-
-            LOG(INFO) << "Финальный результат:";
-            LOG(INFO) << "Точка оптимума: (" << m_global_best_x << ", " << m_global_best_y << ")";
-            LOG(INFO) << "Значение функции: " << m_global_best_value;
-            LOG(INFO) << "Всего итераций: " << m_iterations;
-            LOG(INFO) << "Всего вызовов функции: " << m_function_calls;
-
-        }
-        catch (const mu::Parser::exception_type& e) {
-            rv = Result::ParseError;
-            LOGERR(rv);
-        }
-        catch (const std::exception& e) {
-            rv = Result::ComputeError;
-            LOGERR(rv);
-        }
-
-        m_reporter->insertResult(m_global_best_x, m_global_best_y, m_global_best_value);
-        LOG(INFO) << "Алгоритм успешно завершил работу.";
-        return Result::Success;
+Result solve()
+{
+    Result rv = Result::Fail;
+    if (!m_inputData || !m_reporter) {
+        LOGERR(rv);
+        return rv;
     }
+
+    resetAlgorithmState();
+
+    m_computationDigits = m_inputData->computation_precision;
+    m_resultDigits = m_inputData->result_precision;
+    m_computationPrecision = std::pow(10, (-m_inputData->computation_precision));
+    m_resultPrecision = std::pow(10, (-m_inputData->result_precision));
+
+    try {
+        initializeParser(m_inputData->function);
+
+        //LOG(INFO) << "Функция для оптимизации: " << m_inputData->function;
+
+        // ============ НАЧАЛО РЕПОРТЕРА ============
+        m_reporter->insertMessage("=== АЛГОРИТМ РОЯ ЧАСТИЦ (PSO) ===");
+        m_reporter->insertMessage("Начало работы алгоритма");
+        //m_reporter->insertMessage("Цель: " + (m_inputData->extremum_type == ExtremumType::MINIMUM ? "Поиск минимума" : "Поиск максимума"));
+        m_reporter->insertMessage("Функция: " + m_inputData->function);
+
+        // Таблица параметров алгоритма
+        int paramsTableId = m_reporter->beginTable("Параметры алгоритма",
+            {"Параметр", "Значение"});
+
+        m_reporter->insertRow(paramsTableId, {
+            "Размер роя", static_cast<long long>(m_swarm_size)
+        });
+        m_reporter->insertRow(paramsTableId, {
+            "Инерция", m_inertia_weight
+        });
+        m_reporter->insertRow(paramsTableId, {
+            "Когнитивный коэффициент", m_cognitive_coeff
+        });
+        m_reporter->insertRow(paramsTableId, {
+            "Социальный коэффициент", m_social_coeff
+        });
+        m_reporter->insertRow(paramsTableId, {
+            "Макс. итераций", static_cast<long long>(m_max_iterations)
+        });
+
+        m_reporter->endTable(paramsTableId);
+
+        // Таблица границ области
+        /*
+        int boundsTableId = m_reporter->beginTable("Границы области поиска",
+            {"Ось", "Левая граница", "Правая граница"});
+
+        m_reporter->insertRow(boundsTableId, {
+            "X", m_inputData->x_left_bound, m_inputData->x_right_bound
+        });
+        m_reporter->insertRow(boundsTableId, {
+            "Y", m_inputData->y_left_bound, m_inputData->y_right_bound
+        });
+
+        m_reporter->endTable(boundsTableId);
+        */
+        // ==========================================
+
+        // Инициализация роя
+        m_reporter->insertMessage("=== ИНИЦИАЛИЗАЦИЯ РОЯ ===");
+        m_swarm.resize(m_swarm_size);
+        initializeSwarmPositions();
+        initializeSwarmVelocities();
+        initializeBestValues();
+
+        m_reporter->insertMessage("Начальный глобальный лучший:");
+        m_reporter->insertValue("X", m_global_best_x);
+        m_reporter->insertValue("Y", m_global_best_y);
+        m_reporter->insertValue("Значение функции", m_global_best_value);
+        m_reporter->insertValue("Вызовов функции", static_cast<double>(m_function_calls));
+
+        //LOG(INFO) << "Начальный глобальный лучший: (" << m_global_best_x << ", " << m_global_best_y << ") значение = " << m_global_best_value;
+
+        // Основной цикл алгоритма PSO
+        int stagnation_count = 0;
+        double previous_global_best = m_global_best_value;
+
+        // Таблица для всех итераций
+        int iterationsTableId = m_reporter->beginTable("Ход выполнения алгоритма",
+            {"Итерация", "Лучш.X", "Лучш.Y", "Значение", "Улучшение", "Вызовов", "Стагнация"});
+
+        for (m_iterations = 1; m_iterations <= m_max_iterations; ++m_iterations) {
+            // Сохраняем предыдущее лучшее значение для проверки сходимости
+            previous_global_best = m_global_best_value;
+
+            // Основные шаги PSO
+            updateSwarmVelocities();
+            updateSwarmPositions();
+            updateBestValues();
+
+            // ============ ДОБАВЛЕНИЕ СТРОКИ В ТАБЛИЦУ КАЖДОЙ ИТЕРАЦИИ ============
+            // Проверка сходимости
+            double improvement = std::abs(m_global_best_value - previous_global_best);
+            if (improvement < m_resultPrecision) {
+                stagnation_count++;
+            } else {
+                stagnation_count = 0;
+            }
+
+            // Добавляем строку для текущей итерации
+            m_reporter->insertRow(iterationsTableId, {
+                static_cast<long long>(m_iterations),
+                m_global_best_x,
+                m_global_best_y,
+                m_global_best_value,
+                improvement,
+                static_cast<double>(m_function_calls),
+                static_cast<double>(stagnation_count)
+            });
+
+            // ============ ДЕТАЛЬНАЯ ИНФОРМАЦИЯ КАЖДЫЕ 10 ИТЕРАЦИЙ ============
+            /*
+            if (m_iterations % 10 == 0) {
+                // Таблица статистики частиц на этой итерации
+                int detailTableId = m_reporter->beginTable(
+                    "Детали итерации " + std::to_string(m_iterations),
+                    {"Статистика", "Значение", "Единицы"});
+
+                // Вычисляем статистику
+                double min_x = m_swarm[0].x, max_x = m_swarm[0].x;
+                double min_y = m_swarm[0].y, max_y = m_swarm[0].y;
+                double avg_x = 0, avg_y = 0, avg_v = 0;
+
+                for (const auto& particle : m_swarm) {
+                    min_x = std::min(min_x, particle.x);
+                    max_x = std::max(max_x, particle.x);
+                    min_y = std::min(min_y, particle.y);
+                    max_y = std::max(max_y, particle.y);
+                    avg_x += particle.x;
+                    avg_y += particle.y;
+                    avg_v += std::sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
+                }
+                avg_x /= m_swarm_size;
+                avg_y /= m_swarm_size;
+                avg_v /= m_swarm_size;
+
+                // Вычисляем разброс
+                double spread_x = 0, spread_y = 0;
+                for (const auto& particle : m_swarm) {
+                    spread_x += std::pow(particle.x - avg_x, 2);
+                    spread_y += std::pow(particle.y - avg_y, 2);
+                }
+                spread_x = std::sqrt(spread_x / m_swarm_size);
+                spread_y = std::sqrt(spread_y / m_swarm_size);
+
+                // Добавляем статистику
+                m_reporter->insertRow(detailTableId, {
+                    "Лучшая частица",
+                    m_global_best_value,
+                    "значение f(x,y)"
+                });
+                m_reporter->insertRow(detailTableId, {
+                    "Диапазон X",
+                    max_x - min_x,
+                    "разность"
+                });
+                m_reporter->insertRow(detailTableId, {
+                    "Диапазон Y",
+                    max_y - min_y,
+                    "разность"
+                });
+                m_reporter->insertRow(detailTableId, {
+                    "Средняя скорость",
+                    avg_v,
+                    "модуль"
+                });
+                m_reporter->insertRow(detailTableId, {
+                    "Разброс X",
+                    spread_x,
+                    "СКО"
+                });
+                m_reporter->insertRow(detailTableId, {
+                    "Разброс Y",
+                    spread_y,
+                    "СКО"
+                });
+                m_reporter->insertRow(detailTableId, {
+                    "Частиц вблизи оптимума",
+                    countParticlesNearOptimum(0.1),
+                    "штук"
+                });
+
+                m_reporter->endTable(detailTableId);
+
+                m_reporter->insertMessage("Прогресс: " + std::to_string(m_iterations) +
+                    "/" + std::to_string(m_max_iterations) + " итераций");
+            }
+            */
+            //LOG(INFO) << "Итерация " << m_iterations << ": Лучшее значение = " << m_global_best_value << " в точке (" << m_global_best_x << ", " << m_global_best_y << ")";
+
+            // Критерии остановки
+            if (stagnation_count >= 10) { // 10 итераций без улучшения
+                m_reporter->insertMessage("=== АЛГОРИТМ СОШЕЛСЯ ===");
+                m_reporter->insertValue("Итераций выполнено", static_cast<double>(m_iterations));
+                m_reporter->insertValue("Стагнация", static_cast<double>(stagnation_count));
+                m_reporter->insertValue("Финальное улучшение", improvement);
+                break;
+            }
+        }
+
+        m_reporter->endTable(iterationsTableId);
+
+        if (m_iterations > m_max_iterations) {
+            //LOG(INFO) << "Достигнуто максимальное количество итераций: " << m_max_iterations;
+            m_reporter->insertMessage("=== ДОСТИГНУТ МАКСИМУМ ИТЕРАЦИЙ ===");
+            m_reporter->insertMessage("Остановка по достижению " +
+                std::to_string(m_max_iterations) + " итераций");
+        }
+
+        /*
+        LOG(INFO) << "Финальный результат:";
+        LOG(INFO) << "Точка оптимума: (" << m_global_best_x << ", " << m_global_best_y << ")";
+        LOG(INFO) << "Значение функции: " << m_global_best_value;
+        LOG(INFO) << "Всего итераций: " << m_iterations;
+        LOG(INFO) << "Всего вызовов функции: " << m_function_calls;
+        */
+
+        // ============ ФИНАЛЬНЫЙ ОТЧЕТ ============
+        m_reporter->insertMessage("=== ФИНАЛЬНЫЙ ОТЧЕТ ===");
+
+        // Итоговая таблица
+        int finalTableId = m_reporter->beginTable("Результаты оптимизации",
+            {"Параметр", "Значение"});
+
+        m_reporter->insertRow(finalTableId, {
+            "Найденный X", m_global_best_x
+        });
+        m_reporter->insertRow(finalTableId, {
+            "Найденный Y", m_global_best_y
+        });
+        m_reporter->insertRow(finalTableId, {
+            "Значение f(x,y)", m_global_best_value
+        });
+        m_reporter->insertRow(finalTableId, {
+            "Итераций выполнено", static_cast<long long>(m_iterations)
+        });
+        m_reporter->insertRow(finalTableId, {
+            "Вызовов функции", static_cast<long long>(m_function_calls)
+        });
+        m_reporter->insertRow(finalTableId, {
+            "Скорость сходимости",
+            static_cast<double>(m_function_calls) / std::max(1, m_iterations)
+        });
+        m_reporter->insertRow(finalTableId, {
+            "Точность результата", m_resultPrecision
+        });
+
+        m_reporter->endTable(finalTableId);
+
+        m_reporter->insertMessage("Алгоритм успешно завершен!");
+        // =========================================
+
+    }
+    catch (const mu::Parser::exception_type& e) {
+        rv = Result::ParseError;
+        LOGERR(rv);
+        m_reporter->insertMessage("ОШИБКА ПАРСИНГА: " + std::string(e.GetMsg()));
+    }
+    catch (const std::exception& e) {
+        rv = Result::ComputeError;
+        LOGERR(rv);
+        m_reporter->insertMessage("ОШИБКА ВЫЧИСЛЕНИЙ: " + std::string(e.what()));
+    }
+
+    m_reporter->insertResult(m_global_best_x, m_global_best_y, m_global_best_value);
+    m_reporter->insertMessage("Алгоритм успешно завершен!");
+    //LOG(INFO) << "Алгоритм успешно завершил работу.";
+    return Result::Success;
+}
 
 private:
     const InputData* m_inputData;
@@ -328,6 +515,26 @@ private:
                 m_global_best_y = particle.y;
             }
         }
+    }
+
+
+    // Вспомогательный метод для подсчета частиц вблизи оптимума
+    int countParticlesNearOptimum(double radius_factor) const {
+        int count = 0;
+        double x_range = m_inputData->x_right_bound - m_inputData->x_left_bound;
+        double y_range = m_inputData->y_right_bound - m_inputData->y_left_bound;
+        double radius = radius_factor * std::sqrt(x_range * x_range + y_range * y_range);
+
+        for (const auto& particle : m_swarm) {
+            double distance = std::sqrt(
+                std::pow(particle.x - m_global_best_x, 2) +
+                std::pow(particle.y - m_global_best_y, 2)
+            );
+            if (distance < radius) {
+                count++;
+            }
+        }
+        return count;
     }
 
     void updateParticleVelocity(ParticleData& particle) {

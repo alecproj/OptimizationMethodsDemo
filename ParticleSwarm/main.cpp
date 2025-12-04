@@ -1,7 +1,3 @@
-//
-// Created on 24 Nov, 2025
-// by alecproj
-//
 #include <ParticleSwarm/ParticleSwarm.hpp>
 #include <glog/logging.h>
 #include <muParser.h>
@@ -157,6 +153,7 @@ int main(int argc, char *argv[])
     rv = algo.solve();
 
     // Вывод результатов
+    
     std::cout << std::endl << "=== РЕЗУЛЬТАТЫ ===" << std::endl;
     std::cout << "Оптимум в точке: (" << algo.getX() << ", " << algo.getY() << ")" << std::endl;
     std::cout << "Значение функции: " << algo.getOptimumValue() << std::endl;
