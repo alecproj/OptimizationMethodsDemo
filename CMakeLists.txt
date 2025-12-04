@@ -11,6 +11,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(COORDINATEDESCENT_BUILD_STANDALONE "Build CoordinateDescent as standalone exe" OFF)
 option(GRADIENTDESCENT_BUILD_STANDALONE "Build GradientDescent as standalone exe" OFF)
 option(CONJUGATEGRADIENT_BUILD_STANDALONE "Build ConjugateGradient as standalone exe" OFF)
+option(GENETIC_BUILD_STANDALONE "Build GeneticAlgorithm standalone exe" OFF)
+option(PARTICLESWARM_BUILD_STANDALONE "Build ParticleSwarm standalone exe" OFF)
 
 # ----------- QML Files ------------
 
@@ -56,6 +58,8 @@ add_subdirectory(Qml/Tabs/GlobalOptimization)
 add_subdirectory(CoordinateDescent EXCLUDE_FROM_ALL)
 add_subdirectory(GradientDescent EXCLUDE_FROM_ALL)
 add_subdirectory(ConjugateGradient EXCLUDE_FROM_ALL)
+add_subdirectory(GeneticAlgorithm EXCLUDE_FROM_ALL)
+add_subdirectory(ParticleSwarm EXCLUDE_FROM_ALL)
 
 add_subdirectory(Sources)
 

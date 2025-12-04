@@ -17,6 +17,8 @@
 #include <CoordinateDescent/CoordinateDescent.hpp>
 #include <GradientDescent/GradientDescent.hpp>
 #include <ConjugateGradient/ConjugateGradient.hpp>
+#include <GeneticAlgorithm/GeneticAlgorithm.hpp>
+#include <ParticleSwarm/ParticleSwarm.hpp>
 
 #include <QObject>
 
@@ -24,6 +26,8 @@ using Status = Result::Type;
 using CDAlgoType = CD::CoordinateDescent<ReportWriter>;
 using GDAlgoType = GD::GradientDescent<ReportWriter>;
 using CGAlgoType = CG::ConjugateGradient<ReportWriter>;
+using GAAlgoType = GA::GeneticAlgorithm<ReportWriter>;
+using PSAlgoType = PS::ParticleSwarm<ReportWriter>;
 
 class MainController : public QObject {
     Q_OBJECT
@@ -72,6 +76,10 @@ private:
     QuickInfoListModel m_quickInfoModel;
     CGAlgoType m_cgAlgo;
     CG::InputData m_cgData;
+    GAAlgoType m_gaAlgo;
+    GA::InputData m_gaData;
+    PSAlgoType m_psAlgo;
+    PS::InputData m_psData;
     ReportsModel m_openReports;
     QString m_filePendingDeletion;
     EnumHelper m_enumHelper;
@@ -83,6 +91,8 @@ private:
     void fillCDData(const LO::InputData *data);
     void fillGDData(const LO::InputData *data);
     void fillCGData(const LO::InputData *data);
+    void fillGAData(const GO::InputData *data);
+    void fillPSData(const GO::InputData *data);
 };
 
 #endif // SOURCES_MAINCONTROLLER_HPP_
