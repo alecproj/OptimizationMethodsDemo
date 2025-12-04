@@ -16,6 +16,10 @@ MainController::MainController(QObject *parent)
     , m_gdData{}
     , m_cgAlgo{&m_writer}
     , m_cgData{}
+    , m_gaAlgo{&m_writer}
+    , m_gaData{}
+    , m_psAlgo{&m_writer}
+    , m_psData{}
     , m_quickInfoModel{this}
     , m_openReports{this}
     , m_filePendingDeletion{}
@@ -91,8 +95,41 @@ Status MainController::solveLO()
 
 Status MainController::solveGO()
 {
-    qWarning() << "Solving GO..." ;
-    return Status::Fail;
+    qDebug() << "Solving GO..." ;
+    int rv = m_writer.begin();
+    if (rv != 0) {
+        qCritical() << "Error opening report for writing: " << rv;
+        return Status::Fail;
+    }
+    if (m_currAlgorithm == AlgoType::GA) {
+        auto rv = m_gaAlgo.solve();
+        if (rv != GA::Result::Success) {
+            askConfirm(
+                "Ошибка при решении",
+                QString::fromStdString(GA::resultToString(rv))
+            );
+            return Status::Fail;
+        }
+    } else if (m_currAlgorithm == AlgoType::PS) {
+        auto rv = m_psAlgo.solve();
+        if (rv != PS::Result::Success) {
+            askConfirm(
+                "Ошибка при решении",
+                QString::fromStdString(PS::resultToString(rv))
+            );
+            return Status::Fail;
+        }
+    } else {
+        askConfirm("Ошибка при решении", "Алгоритм не поддерживается");
+        return Status::Fail;
+    }
+    rv = m_writer.end();
+    if (rv != 0) {
+        qCritical() << "Error saving report: " << rv;
+        return Status::Fail;
+    }
+    openReport(m_writer.fileName());
+    return Status::Success;
 }
 
 void MainController::setPartition(PartType::Type partition)
@@ -145,7 +182,7 @@ void MainController::updateQuickInfoModel()
 
 Status MainController::openReport(const QString &fileName)
 {
-    InputData *input;
+    InputData *input = nullptr;
     auto model = new SolutionModel();
     auto result = new ResultData();
     QJsonArray solution;
@@ -158,8 +195,10 @@ Status MainController::openReport(const QString &fileName)
         case ReportStatus::InvalidCRC:
             break;
         default: {
-            delete input;
-            input = nullptr;
+            if (input) {
+                delete input;
+                input = nullptr;
+            }
             delete model;
             model = nullptr;
             delete result;
@@ -265,13 +304,33 @@ Status MainController::setGOInputData(const GO::InputData *data)
         return Status::InvalidPointer;
     }
     m_writer.setInputData(data);
-    // TEST
-    m_writer.begin();
-    m_writer.insertMessage("TEST");
-    m_writer.end();
-    updateQuickInfoModel();
-    // TODO delete TEST
-    return Status::Fail;
+    m_currAlgorithm = data->algorithmId();
+
+    if (m_currAlgorithm == AlgoType::GA) {
+        fillGAData(data);
+        auto rv = m_gaAlgo.setInputData(&m_gaData);
+        if (rv != GA::Result::Success) {
+            askConfirm(
+                "Ошибка подготовки данных",
+                QString::fromStdString(GA::resultToString(rv))
+            );
+            return Status::Fail;
+        }
+    } else if (m_currAlgorithm == AlgoType::PS) {
+        fillPSData(data);
+        auto rv = m_psAlgo.setInputData(&m_psData);
+        if (rv != PS::Result::Success) {
+            askConfirm(
+                "Ошибка подготовки данных",
+                QString::fromStdString(PS::resultToString(rv))
+            );
+            return Status::Fail;
+        }
+    } else {
+        askConfirm("Ошибка подготовки данных", "Алгоритм не поддерживается");
+        return Status::InvalidAlgoType;
+    }
+    return Status::Success;
 }
 
 void MainController::fillCDData(const LO::InputData *data)
@@ -349,3 +408,45 @@ void MainController::fillCGData(const LO::InputData *data)
     m_cgData.max_iterations = data->maxIterations();
     m_cgData.max_function_calls = data->maxFuncCalls();
 }
+
+void MainController::fillGAData(const GO::InputData *data)
+{
+    qDebug() << "Setting up the input data for the GO GeneticAlgorithm...";
+
+    m_gaData.function = data->function().toStdString();
+    qInfo() << data->extremumId();
+    m_gaData.extremum_type = static_cast<GA::ExtremumType>(data->extremumId());
+    m_gaData.x_left_bound = data->minX();
+    m_gaData.x_right_bound = data->maxX();
+    m_gaData.y_left_bound = data->minY();
+    m_gaData.y_right_bound = data->maxY();
+    m_gaData.result_precision = data->resultAccuracy();
+
+    m_gaData.population_size = data->size();
+    m_gaData.generations = data->maxIterations();
+    m_gaData.crossover_rate = data->crossoverProb();
+    m_gaData.mutation_rate = data->mutationProb();
+    m_gaData.bits_per_variable = data->calcAccuracy();
+    m_gaData.elite_count = data->elitism();
+}
+
+void MainController::fillPSData(const GO::InputData *data)
+{
+    qDebug() << "Setting up the input data for the GO ParticleSwarm algorithm...";
+
+    m_psData.function = data->function().toStdString();
+    m_psData.extremum_type = static_cast<PS::ExtremumType>(data->extremumId());
+    m_psData.x_left_bound = data->minX();
+    m_psData.x_right_bound = data->maxX();
+    m_psData.y_left_bound = data->minY();
+    m_psData.y_right_bound = data->maxY();
+    m_psData.result_precision = data->resultAccuracy();
+    m_psData.computation_precision = data->calcAccuracy();
+
+    m_psAlgo.setSwarmSize(data->size());
+    m_psAlgo.setInertiaWeight(data->inertiaCoef());
+    m_psAlgo.setCognitiveCoeff(data->cognitiveCoef());
+    m_psAlgo.setSocialCoeff(data->socialCoef());
+    m_psAlgo.setMaxIterations(data->maxIterations());
+}
+

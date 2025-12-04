@@ -20,6 +20,7 @@ Flickable {
     InputData {
         id: inputData
         algorithmId: AppStates.selectedAlgorithm
+        extremumId: extremum.currentValue
     }
 
     onInputDataChanged: console.log(inputData)
@@ -36,7 +37,6 @@ Flickable {
     property bool valid: false
 
     function setInputData(data) {
-        inputData.algorithmId = AppStates.selectedAlgorithm;
         extremum.selected = data.extremumId;
         inputData.extremumId = data.extremumId;
         calcAccuracy.text = data.calcAccuracyAsString();
@@ -593,7 +593,7 @@ Flickable {
                 placeholderText: "2.0"
 
                 validator: RegularExpressionValidator {
-                    regularExpression: /^(0\.0\d{0,15}|0\.1)$/i
+                    regularExpression: /^(0?\.\d{1,15}|[1-3]\.\d{1,15}|4\.0)$/i
                 }
 
                 onActiveFocusChanged: {
@@ -629,7 +629,7 @@ Flickable {
                 placeholderText: "2.0"
 
                 validator: RegularExpressionValidator {
-                    regularExpression: /^(0\.0\d{0,15}|0\.1)$/i
+                    regularExpression: /^(0?\.\d{1,15}|[1-3]\.\d{1,15}|4\.0)$/i
                 }
 
                 onActiveFocusChanged: {

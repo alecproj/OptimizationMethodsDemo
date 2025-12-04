@@ -49,8 +49,8 @@ void QuickInfoListModel::beginTraversing()
 
 bool QuickInfoListModel::mark(const QString &fileName)
 {
-    for (auto entry : m_data) {
-        if (QString::compare(entry->name(), fileName) == 0) {
+    for (auto &entry : m_data) {
+        if (entry->name() == fileName) {
             entry->marked = true;
             return true;
         }

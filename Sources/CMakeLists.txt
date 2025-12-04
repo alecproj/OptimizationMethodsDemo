@@ -57,4 +57,6 @@ target_link_libraries(app_sources
         CoordinateDescent
         GradientDescent
         ConjugateGradient
+        GeneticAlgorithm
+        ParticleSwarm
 )
