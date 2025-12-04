@@ -66,7 +66,7 @@ Rectangle {
                 s = s.trim();
                 if (s.length === 0) return false;
                 if (!/\b(?:x|y)\b/i.test(s)) return false;
-                if (!/^[0-9A-Za-z\s+\-*/^().,]+$/.test(s)) return false;
+                if (!/^[0-9A-Za-z\s+\-*/^().,_]+$/.test(s)) return false;
                 if (/[;`{}[\]|&<>\\]/.test(s)) return false;
 
                 let bal = 0;
@@ -112,7 +112,6 @@ Rectangle {
 
             onReleased: {
                 inputParams.inputData.function = func.text;
-                inputParams.inputData.algorithmId = AppStates.selectedAlgorithm;
                 var rv = controller.setInputData(inputParams.inputData.instance());
                 if (rv !== 0) {
                     return;
