@@ -6,6 +6,7 @@
 #ifndef SOURCES_SOLUTIONMODEL_HPP_
 #define SOURCES_SOLUTIONMODEL_HPP_
 
+#include "SolutionEntry.hpp"
 #include <QAbstractListModel>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -16,12 +17,7 @@ class SolutionModel : public QAbstractListModel {
     Q_OBJECT
 public:
     enum Roles {
-        TypeRole = Qt::UserRole + 1,
-        TitleRole,
-        ValueRole,
-        TextRole,
-        ColumnsRole,
-        RowsRole
+        EntryRole = Qt::UserRole + 1,
     };
 
     SolutionModel(QObject *parent = nullptr);
@@ -34,7 +30,7 @@ public:
     void setData(const QJsonArray &arr);
 
 private:
-    QJsonArray m_items;
+    QList<SolutionEntry *> m_items;
 };
 
 #endif // SOURCES_SOLUTIONMODEL_HPP_

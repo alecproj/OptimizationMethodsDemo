@@ -7,8 +7,9 @@
 MainController::MainController(QObject *parent)
     : QObject{parent}
     , m_writer{}
+    , m_currPartition{PartType::NONE}
     , m_currAlgorithm{AlgoType::ALL}
-    , m_currExtension{ExtensionType::B}
+    , m_currExtension{LO::ExtensionType::B}
     , m_cdAlgo{&m_writer}
     , m_cdData{}
     , m_gdAlgo{&m_writer}
@@ -16,7 +17,7 @@ MainController::MainController(QObject *parent)
     , m_cgAlgo{&m_writer}
     , m_cgData{}
     , m_quickInfoModel{this}
-    , m_openReports{}
+    , m_openReports{this}
     , m_filePendingDeletion{}
     , m_enumHelper{this}
 {
@@ -25,54 +26,36 @@ MainController::MainController(QObject *parent)
 Status MainController::setInputData(const InputData *data)
 {
     if (!data) {
-        return Status::Fail;
+        return Status::InvalidPointer;
     }
-    m_writer.setInputData(data);
-    m_currAlgorithm = data->algorithmId();
-    m_currExtension = data->extensionId();
-    if (m_currAlgorithm == AlgoType::CD) {
-        fillCDData(data);
-        auto rv = m_cdAlgo.setInputData(&m_cdData);
-        qDebug() << "SET INPUT" << static_cast<int>(rv);
-        if (rv != CD::Result::Success) {
-            askConfirm(
-                "Ошибка подготовки данных",
-                QString::fromStdString(CD::resultToString(rv))
-            );
-            return Status::Fail;
-        }
-    } else if (m_currAlgorithm == AlgoType::GD) {
-        fillGDData(data);
-        auto rv = m_gdAlgo.setInputData(&m_gdData);
-        if (rv != GD::Result::Success) {
-            askConfirm(
-                "Ошибка подготовки данных",
-                QString::fromStdString(GD::resultToString(rv))
-            );
-            return Status::Fail;
-        }
-    } else if (m_currAlgorithm == AlgoType::CG) {
-        fillCGData(data);
-        auto rv = m_cgAlgo.setInputData(&m_cgData);
-        if (rv != CG::Result::Success) {
-            askConfirm(
-                "Ошибка подготовки данных",
-                QString::fromStdString(CG::resultToString(rv))
-            );
-            return Status::Fail;
-        }
-    } else {
-        askConfirm("Ошибка подготовки данных", "Алгоритм не поддерживается");
-        return Status::Fail;
+
+    m_currPartition = data->partitionId();
+    switch (m_currPartition) {
+        case PartType::LO:
+            return setLOInputData(dynamic_cast<const LO::InputData *>(data));
+        case PartType::GO:
+            return setGOInputData(dynamic_cast<const GO::InputData *>(data));
+        default:
+            return Status::InvalidPartType;
     }
-    return Status::Success;
 }
 
 Status MainController::solve()
 {
+    if (m_currPartition == PartType::LO) {
+        return solveLO();
+    } else if (m_currPartition == PartType::GO) {
+        return solveGO();
+    } else {
+        qCritical() << "Unknown partition type when solving";
+        return Status::InvalidPartType;
+    }
+}
+
+Status MainController::solveLO()
+{
     if (m_currAlgorithm == AlgoType::CD) {
         auto rv = m_cdAlgo.solve();
-        qDebug() << "ALGO RESUULT: " << static_cast<int>(rv);
         if (rv != CD::Result::Success) {
             askConfirm(
                 "Ошибка при решении",
@@ -106,15 +89,47 @@ Status MainController::solve()
     return Status::Success;
 }
 
+Status MainController::solveGO()
+{
+    qWarning() << "Solving GO..." ;
+    return Status::Fail;
+}
+
+void MainController::setPartition(PartType::Type partition)
+{
+    if (partition != m_currPartition) {
+        m_currPartition = partition;
+        initQuickInfoModel();
+    }
+}
+
+void MainController::initQuickInfoModel()
+{
+    m_quickInfoModel.clear();
+    QStringList files = FileManager::listFiles();
+    for (const auto file : files) {
+        auto info = new QuickInfo(&m_quickInfoModel);
+        auto rv = ReportReader::quickInfo(file, info, m_currPartition);
+        if (rv == ReportStatus::Ok) {
+            m_quickInfoModel.prepend(info);
+        } else {
+            delete info;
+        }
+    }
+    emit quickInfoModelChanged();
+}
+
 void MainController::updateQuickInfoModel()
 {
     bool updates = false;
     QStringList files = FileManager::listFiles();
+    m_quickInfoModel.beginTraversing();
     for (const auto file : files) {
-        if (!m_quickInfoModel.exists(file)) {
+        if (!m_quickInfoModel.mark(file)) {
             auto info = new QuickInfo(&m_quickInfoModel);
-            auto rv = ReportReader::quickInfo(file, info);
+            auto rv = ReportReader::quickInfo(file, info, m_currPartition);
             if (rv == ReportStatus::Ok) {
+                info->marked = true;
                 m_quickInfoModel.prepend(info);
                 updates = true;
             } else {
@@ -125,11 +140,12 @@ void MainController::updateQuickInfoModel()
     if (updates) {
         emit quickInfoModelChanged();
     }
+    m_quickInfoModel.endTraversing();
 }
 
 Status MainController::openReport(const QString &fileName)
 {
-    auto input = new InputData();
+    InputData *input;
     auto model = new SolutionModel();
     auto result = new ResultData();
     QJsonArray solution;
@@ -153,11 +169,12 @@ Status MainController::openReport(const QString &fileName)
         }
     }
     model->setData(solution);
-    auto report = new Report(fileName, input, model, result, this);
+    auto report = new Report(input->partitionId(),
+        fileName, input, model, result, this);
     input->setParent(report);
     model->setParent(report);
     if (result) result->setParent(report);
-    m_openReports.append(report);
+    m_openReports.appendReport(report);
     emit openReportsUpdated();
     return Status::Success;
 }
@@ -165,14 +182,8 @@ Status MainController::openReport(const QString &fileName)
 
 void MainController::closeReport(const QString &fileName)
 {
-    const size_t reportsCnt = m_openReports.count();
-    for (size_t i = 0; i < reportsCnt; ++i) {
-        if (m_openReports[i]->fileName() == fileName) {
-            m_openReports.remove(i, 1);
-            emit openReportsUpdated();
-            return;
-        }
-    }
+    m_openReports.removeReport(fileName);
+    emit openReportsUpdated();
 }
 
 void MainController::requestDeleteReport(const QString &fileName)
@@ -201,8 +212,71 @@ Status MainController::inputDataFromFile(const QString &fileName, InputData *out
     return Status::Fail;
 }
 
-void MainController::fillCDData(const InputData *data)
+Status MainController::setLOInputData(const LO::InputData *data)
 {
+    if (!data) {
+        return Status::InvalidPointer;
+    }
+    m_writer.setInputData(data);
+    m_currAlgorithm = data->algorithmId();
+    m_currExtension = data->extensionId();
+    if (m_currAlgorithm == AlgoType::CD) {
+        fillCDData(data);
+        auto rv = m_cdAlgo.setInputData(&m_cdData);
+        if (rv != CD::Result::Success) {
+            askConfirm(
+                "Ошибка подготовки данных",
+                QString::fromStdString(CD::resultToString(rv))
+            );
+            return Status::Fail;
+        }
+    } else if (m_currAlgorithm == AlgoType::GD) {
+        fillGDData(data);
+        auto rv = m_gdAlgo.setInputData(&m_gdData);
+        if (rv != GD::Result::Success) {
+            askConfirm(
+                "Ошибка подготовки данных",
+                QString::fromStdString(GD::resultToString(rv))
+            );
+            return Status::Fail;
+        }
+    } else if (m_currAlgorithm == AlgoType::CG) {
+        fillCGData(data);
+        auto rv = m_cgAlgo.setInputData(&m_cgData);
+        if (rv != CG::Result::Success) {
+            askConfirm(
+                "Ошибка подготовки данных",
+                QString::fromStdString(CG::resultToString(rv))
+            );
+            return Status::Fail;
+        }
+    } else {
+        askConfirm("Ошибка подготовки данных", "Алгоритм не поддерживается");
+        return Status::InvalidAlgoType;
+    }
+    return Status::Success;
+
+}
+
+Status MainController::setGOInputData(const GO::InputData *data)
+{
+    qDebug() << "Setting up the input data for the GO...";
+    if (!data) {
+        return Status::InvalidPointer;
+    }
+    m_writer.setInputData(data);
+    // TEST
+    m_writer.begin();
+    m_writer.insertMessage("TEST");
+    m_writer.end();
+    updateQuickInfoModel();
+    // TODO delete TEST
+    return Status::Fail;
+}
+
+void MainController::fillCDData(const LO::InputData *data)
+{
+    qDebug() << "Setting up the input data for the LO CoordinateDescent algorithm...";
     m_cdData.function = data->function().toStdString();
     m_cdData.algorithm_type = static_cast<CD::AlgorithmType>(data->extensionId());
     m_cdData.extremum_type = static_cast<CD::ExtremumType>(data->extremumId());
@@ -228,8 +302,9 @@ void MainController::fillCDData(const InputData *data)
     m_cdData.max_function_calls = data->maxFuncCalls();
 }
 
-void MainController::fillGDData(const InputData *data)
+void MainController::fillGDData(const LO::InputData *data)
 {
+    qDebug() << "Setting up the input data for the LO GradientDescent algorithm...";
     m_gdData.function = data->function().toStdString();
     m_gdData.algorithm_type = static_cast<GD::AlgorithmType>(data->extensionId());
     m_gdData.extremum_type = static_cast<GD::ExtremumType>(data->extremumId());
@@ -256,8 +331,9 @@ void MainController::fillGDData(const InputData *data)
 
 }
 
-void MainController::fillCGData(const InputData *data)
+void MainController::fillCGData(const LO::InputData *data)
 {
+    qDebug() << "Setting up the input data for the LO ConjugateGradient algorithm...";
     m_cgData.function = data->function().toStdString();
     m_cgData.algorithm_type = static_cast<CG::AlgorithmType>(data->extensionId());
     m_cgData.extremum_type = static_cast<CG::ExtremumType>(data->extremumId());

@@ -22,6 +22,7 @@ QVariant QuickInfoListModel::data(const QModelIndex &index, int role) const
 
     const auto &obj = m_data.at(index.row());
     switch (role) {
+        case PartitionRole: return obj->partition();
         case NameRole: return obj->name();
         case InfoRole: return obj->info();
         case StatusRole: return obj->status();
@@ -32,10 +33,40 @@ QVariant QuickInfoListModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> QuickInfoListModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
+    roles[PartitionRole] = "partition";
     roles[NameRole] = "name";
     roles[InfoRole] = "info";
     roles[StatusRole] = "status";
     return roles;
+}
+
+void QuickInfoListModel::beginTraversing()
+{
+    for (auto entry : m_data) {
+        entry->marked = false;
+    }
+}
+
+bool QuickInfoListModel::mark(const QString &fileName)
+{
+    for (auto entry : m_data) {
+        if (QString::compare(entry->name(), fileName) == 0) {
+            entry->marked = true;
+            return true;
+        }
+    }
+    return false;
+}
+
+void QuickInfoListModel::endTraversing()
+{
+    beginResetModel();
+    for (size_t i = 0; i < m_data.count(); ++i) {
+        if (!m_data[i]->marked) {
+            m_data.remove(i);
+        }
+    }
+    endResetModel();
 }
 
 bool QuickInfoListModel::exists(const QString &fileName) const

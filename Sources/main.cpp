@@ -1,8 +1,7 @@
 #include "AppEnums.hpp"
-#include "InputData.hpp"
+#include "FileManager.hpp"
 #include "MainController.hpp"
 
-#include "Tests/TestReporter.hpp"
 #include <glog/logging.h>
 #include <muParser.h>
 
@@ -40,6 +39,64 @@ void testMuparser()
 	}
 }
 
+QString shortFunctionName(const char* func)
+{
+    if (!func)
+        return "unknown";
+
+    QString f = func;
+
+    int paren = f.indexOf('(');
+    if (paren > 0)
+        f = f.left(paren);
+
+    int lastSpace = f.lastIndexOf(' ');
+    if (lastSpace > 0)
+        f = f.mid(lastSpace + 1);
+
+    return f;
+}
+
+void msgHandler(QtMsgType type, const QMessageLogContext& ctx, const QString& msg)
+{
+    QString func = shortFunctionName(ctx.function);
+    const char* color;
+    const char* t;
+
+    switch (type) {
+    case QtDebugMsg:
+        t = "DEBUG";
+        color = "";
+        break; // белый
+    case QtInfoMsg:
+        t = "INFO";
+        color = "\033[36m";
+        break; // голубой
+    case QtWarningMsg:
+        t = "WARNING";
+        color = "\033[33m";
+        break; // желтый
+    case QtCriticalMsg:
+        t = "CRITICAL";
+        color = "\033[31m";
+        break; // красный
+    case QtFatalMsg:
+        t = "FATAL";
+        color = "\033[41m";
+        break; // красный фон
+    }
+
+    fprintf(stderr, "%s[%s] %s: %s\033[0m\n",
+        color,
+        t,
+        func.toUtf8().constData(),
+        msg.toUtf8().constData()
+    );
+
+    if (type == QtFatalMsg)
+        abort();
+}
+
 int main(int argc, char *argv[])
 {
     /* ------------- TEST -------------- */
@@ -62,24 +119,27 @@ int main(int argc, char *argv[])
     google::SetVLOGLevel("*", DEBUG);
 #endif
 
-    LOG(INFO) << "Логирование включено";
-    VLOG(DEBUG) << "Отладочная сборка";
+    LOG(INFO) << "GLOG: Логирование включено";
+    VLOG(DEBUG) << "GLOG: Отладочная сборка";
 
     QGuiApplication app(argc, argv);
-
+    qInstallMessageHandler(msgHandler);
+    qDebug() << "Отладочная сборка";
     qmlRegisterUncreatableType<ExtremumType>("AppEnums", 1, 0, "ExtremumType", "Type of extremum");
-    qmlRegisterUncreatableType<StepType>("AppEnums", 1, 0, "StepType", "Type of step");
     qmlRegisterUncreatableType<AlgoType>("AppEnums", 1, 0, "AlgoType", "Algo type ID");
-    qmlRegisterUncreatableType<ExtensionType>("AppEnums", 1, 0, "ExtensionType", "Extension type ID");
-    qmlRegisterUncreatableType<FullAlgoType>("AppEnums", 1, 0, "FullAlgoType", "Full algo type ID");
-    qmlRegisterUncreatableType<CheckList>("AppEnums", 1, 0, "CheckList", "Input data check list");
     qmlRegisterUncreatableType<Result>("AppEnums", 1, 0, "Result", "Result of MainController methods");
     qmlRegisterType<EnumHelper>("AppEnums", 1, 0, "EnumHelper");
-    qmlRegisterType<InputData>("InputData", 1, 0, "InputData");
+    qmlRegisterType<PartType>("AppEnums", 1, 0, "PartType");
+    qmlRegisterUncreatableType<LO::ExtensionType>("AppEnums", 1, 0, "ExtensionType", "Extension type ID");
+    qmlRegisterUncreatableType<LO::StepType>("AppEnums", 1, 0, "StepType", "Type of step");
+    qmlRegisterUncreatableType<LO::FullAlgoType>("AppEnums", 1, 0, "FullAlgoType", "Full algo type ID");
+    qmlRegisterUncreatableType<LO::CheckList>("LOInputData", 1, 0, "CheckList", "LO input data check list");
+    qmlRegisterType<LO::InputData>("LOInputData", 1, 0, "InputData");
+    qmlRegisterUncreatableType<GO::CheckList>("GOInputData", 1, 0, "CheckList", "GO input data check list");
+    qmlRegisterType<GO::InputData>("GOInputData", 1, 0, "InputData");
 
     MainController controller{};
-    controller.updateQuickInfoModel();
-    qDebug() << "Files count: " << controller.quickInfoModel()->count();
+    qDebug() << "Files count: " << FileManager::listFiles().count();
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("controller", &controller);

@@ -1,8 +1,10 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+
 import AppEnums
-import InputData
+import Globals
+import Components
 
 Rectangle {
     id: root
@@ -46,7 +48,7 @@ Rectangle {
 
             onPressed: function(fileName) {
                 if (controller.openReport(fileName) == 0) {
-                    AppStates.currentTabIndex = controller.openReportsCount + 1;
+                    AppStates.currentTabIndex = controller.openReportsCount + 2;
                 }
             }
         }

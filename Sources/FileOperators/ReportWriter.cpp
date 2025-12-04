@@ -5,6 +5,8 @@
 
 #include "ReportWriter.hpp"
 #include "FileManager.hpp"
+#include "LOInputData.hpp"
+#include "GOInputData.hpp"
 
 #include <QString>
 #include <QDateTime>
@@ -49,9 +51,25 @@ int ReportWriter::begin()
     if (!FileManager::ensureBaseDirExists(m_path)) {
         return -2;
     }
-    m_fileName = fileName(
-        static_cast<FullAlgoType::Type>(m_inputData->fullAlgoId())
-    );
+    auto partType = m_inputData->partitionId();
+
+    if (partType == PartType::LO) {
+        qDebug() << "Begin writing a report with LO InputData";
+        auto data = dynamic_cast<const LO::InputData *>(m_inputData);
+        m_fileName = fileNameLO(
+            static_cast<LO::FullAlgoType::Type>(data->fullAlgoId())
+        );
+    } else if (partType == PartType::GO) {
+        qDebug() << "Begin writing a report with GO InputData";
+        auto data = dynamic_cast<const GO::InputData *>(m_inputData);
+        m_fileName = fileNameGO(
+            static_cast<AlgoType::Type>(data->algorithmId())
+        );
+    } else {
+        qCritical() << "Unable to begin report. Invalid part type";
+        return -3;
+    }
+    qDebug() << "FileName: " << m_fileName;
     m_solution = QJsonArray{};
     m_openTables.clear();
     m_nextTableId = 1;
@@ -153,27 +171,56 @@ void ReportWriter::prepare()
 void ReportWriter::writeInputData()
 {
     QJsonObject inputData;
-    inputData.insert("function", m_inputData->function());
-    inputData.insert("algorithmId", m_inputData->algorithmId());
-    inputData.insert("extensionId", m_inputData->extensionId());
-    inputData.insert("fullAlgoId", m_inputData->fullAlgoId());
-    inputData.insert("extremumId", m_inputData->extremumId());
-    inputData.insert("stepId", m_inputData->stepId());
-    inputData.insert("maxIterations", m_inputData->maxIterations());
-    inputData.insert("maxFuncCalls", m_inputData->maxFuncCalls());
-    inputData.insert("calcAccuracy", m_inputData->calcAccuracy());
-    inputData.insert("resultAccuracy", m_inputData->resultAccuracy());
-    inputData.insert("startX1", m_inputData->startX1());
-    inputData.insert("startY1", m_inputData->startY1());
-    inputData.insert("startX2", m_inputData->startX2());
-    inputData.insert("startY2", m_inputData->startY2());
-    inputData.insert("stepX", m_inputData->stepX());
-    inputData.insert("stepY", m_inputData->stepY());
-    inputData.insert("step", m_inputData->step());
-    inputData.insert("minX", m_inputData->minX());
-    inputData.insert("maxX", m_inputData->maxX());
-    inputData.insert("minY", m_inputData->minY());
-    inputData.insert("maxY", m_inputData->maxY());
+    auto partType = m_inputData->partitionId();
+    if (partType == PartType::LO) {
+        auto idata = static_cast<const LO::InputData *>(m_inputData);
+        inputData.insert("partitionId", idata->partitionId());
+        inputData.insert("function", idata->function());
+        inputData.insert("algorithmId", idata->algorithmId());
+        inputData.insert("extensionId", idata->extensionId());
+        inputData.insert("fullAlgoId", idata->fullAlgoId());
+        inputData.insert("extremumId", idata->extremumId());
+        inputData.insert("stepId", idata->stepId());
+        inputData.insert("maxIterations", idata->maxIterations());
+        inputData.insert("maxFuncCalls", idata->maxFuncCalls());
+        inputData.insert("calcAccuracy", idata->calcAccuracy());
+        inputData.insert("resultAccuracy", idata->resultAccuracy());
+        inputData.insert("startX1", idata->startX1());
+        inputData.insert("startY1", idata->startY1());
+        inputData.insert("startX2", idata->startX2());
+        inputData.insert("startY2", idata->startY2());
+        inputData.insert("stepX", idata->stepX());
+        inputData.insert("stepY", idata->stepY());
+        inputData.insert("step", idata->step());
+        inputData.insert("minX", idata->minX());
+        inputData.insert("maxX", idata->maxX());
+        inputData.insert("minY", idata->minY());
+        inputData.insert("maxY", idata->maxY());
+        qDebug() << "Writing LO Input Data";
+    } else if (partType == PartType::GO) {
+        auto idata = static_cast<const GO::InputData *>(m_inputData);
+        inputData.insert("partitionId", idata->partitionId());
+        inputData.insert("function", idata->function());
+        inputData.insert("algorithmId", idata->algorithmId());
+        inputData.insert("extremumId", idata->extremumId());
+        inputData.insert("calcAccuracy", idata->calcAccuracy());
+        inputData.insert("resultAccuracy", idata->resultAccuracy());
+        inputData.insert("minX", idata->minX());
+        inputData.insert("maxX", idata->maxX());
+        inputData.insert("minY", idata->minY());
+        inputData.insert("maxY", idata->maxY());
+        inputData.insert("size", idata->size());
+        inputData.insert("maxIterations", idata->maxIterations());
+        inputData.insert("crossoverProb", idata->crossoverProb());
+        inputData.insert("mutationProb", idata->mutationProb());
+        inputData.insert("elitism", idata->elitism());
+        inputData.insert("inertiaCoef", idata->inertiaCoef());
+        inputData.insert("cognitiveCoef", idata->cognitiveCoef());
+        inputData.insert("socialCoef", idata->socialCoef());
+        qDebug() << "Writing GO Input Data";
+    } else {
+        qCritical() << "Unable to write Input Data. Invalid type.";
+    }
 
     QJsonObject dataObj = m_report.value("data").toObject();
     QJsonObject taskObj = dataObj.value("task").toObject();
@@ -184,6 +231,7 @@ void ReportWriter::writeInputData()
 
 void ReportWriter::writeSolutionAndResult()
 {
+    qDebug() << "Writing solution and result...";
     QJsonObject dataObj = m_report.value("data").toObject();
     dataObj.insert("solution", m_solution);
     dataObj.insert("result", m_result);
@@ -192,19 +240,30 @@ void ReportWriter::writeSolutionAndResult()
 
 void ReportWriter::writeCRC()
 {
+    qDebug() << "Writing checksum...";
     uint32_t crc = calculateCRC();
     QString hex = QString("0x%1").arg(crc, 8, 16, QLatin1Char('0')).toUpper();
     m_report.insert("checksum", hex);
 }
 
-QString ReportWriter::fileName(FullAlgoType::Type type)
+QString ReportWriter::fileNameLO(LO::FullAlgoType::Type type)
 {
-    QMetaEnum meta = QMetaEnum::fromType<FullAlgoType::Type>();
+    QMetaEnum meta = QMetaEnum::fromType<LO::FullAlgoType::Type>();
     const char *key = meta.valueToKey(static_cast<int>(type));
     QString enumName = key ? QString::fromLatin1(key) : QString::number(static_cast<int>(type));
 
     QString timestamp = QDateTime::currentDateTime().toString("dd-MM-yyyy-HH-mm-ss");
-    return QString("%1-%2.json").arg(enumName, timestamp);
+    return QString("LO-%1-%2.json").arg(enumName, timestamp);
+}
+
+QString ReportWriter::fileNameGO(AlgoType::Type type)
+{
+    QMetaEnum meta = QMetaEnum::fromType<AlgoType::Type>();
+    const char *key = meta.valueToKey(static_cast<int>(type));
+    QString enumName = key ? QString::fromLatin1(key) : QString::number(static_cast<int>(type));
+
+    QString timestamp = QDateTime::currentDateTime().toString("dd-MM-yyyy-HH-mm-ss");
+    return QString("GO-%1-%2.json").arg(enumName, timestamp);
 }
 
 uint32_t ReportWriter::calculateCRC()

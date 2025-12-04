@@ -1,16 +1,19 @@
 //
-// Created on 3 Nov, 2025
+// Created on 28 Nov, 2025
 //  by alecproj
 //
 
-#ifndef SOURCES_INPUTDATA_HPP_
-#define SOURCES_INPUTDATA_HPP_
+#ifndef SOURCES_LOINPUTDATA_HPP_
+#define SOURCES_LOINPUTDATA_HPP_
 
+#include "InputData.hpp"
 #include "AppEnums.hpp"
 #include <QObject>
 #include <QString>
 
-class InputData : public QObject
+namespace LO {
+
+class InputData : public ::InputData
 {
     Q_OBJECT
 
@@ -18,7 +21,6 @@ class InputData : public QObject
     Q_PROPERTY(QString function READ function WRITE setFunction NOTIFY functionChanged)
 
     // int
-    Q_PROPERTY(int algorithmId READ algorithmId WRITE setAlgorithmId NOTIFY algorithmIdChanged)
     Q_PROPERTY(int extensionId READ extensionId WRITE setExtensionId NOTIFY extensionIdChanged)
     Q_PROPERTY(int fullAlgoId READ fullAlgoId WRITE setFullAlgoId NOTIFY fullAlgoIdChanged)
     Q_PROPERTY(int extremumId READ extremumId WRITE setExtremumId NOTIFY extremumIdChanged)
@@ -43,7 +45,7 @@ class InputData : public QObject
 
 public:
     explicit InputData(QObject* parent = nullptr)
-        : QObject(parent)
+        : ::InputData(parent)
         , m_function()
         , m_algorithmId(AlgoType::CD)
         , m_extensionId(ExtensionType::B)
@@ -68,9 +70,11 @@ public:
     {}
 
     // Getters
+    PartType::Type partitionId() const override { return PartType::LO; }
+    AlgoType::Type algorithmId() const override { return m_algorithmId; }
+
     QString function() const { return m_function; }
 
-    AlgoType::Type algorithmId() const { return m_algorithmId; }
     ExtensionType::Type extensionId() const { return m_extensionId; }
     FullAlgoType::Type fullAlgoId() const { return m_fullAlgoId; }
     ExtremumType::Type extremumId() const { return m_extremumId; }
@@ -134,7 +138,7 @@ public slots:
         }
     }
 
-    void setAlgorithmId(int v)
+    void setAlgorithmId(int v) override
     {
         auto value = static_cast<AlgoType::Type>(v);
         if (m_algorithmId != value) {
@@ -426,7 +430,6 @@ public:
 signals:
     void functionChanged();
 
-    void algorithmIdChanged();
     void extensionIdChanged();
     void fullAlgoIdChanged();
     void extremumIdChanged();
@@ -474,4 +477,6 @@ private:
     double m_maxY;
 };
 
-#endif // SOURCES_INPUTDATA_HPP_
+} // namespace LO
+
+#endif // SOURCES_LOINPUTDATA_HPP_

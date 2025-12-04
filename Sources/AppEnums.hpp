@@ -7,6 +7,7 @@
 #define SOURCES_APPENUMS_HPP_
 
 #include <QObject>
+#include <QDebug>
 #include <cassert>
 
 class ReportStatus: public QObject {
@@ -22,7 +23,8 @@ public:
         InvalidName         = -2,
         FileDoesNotExists   = -1,
         Ok                  = 0,
-        NotVerified         = 1
+        NotVerified         = 1,
+        AnotherPartType     = 2
     };
     Q_ENUM(Status)
 
@@ -33,25 +35,28 @@ class Result: public QObject {
     Q_OBJECT
 public:
     enum Type {
-        Fail        = -1,
-        Success     = 0,
+        InvalidAlgoType = -4,
+        InvalidPartType = -3,
+        InvalidPointer  = -2,
+        Fail            = -1,
+        Success         = 0,
     };
     Q_ENUM(Type)
 
     explicit Result(QObject *parent = nullptr) : QObject(parent) {}
 };
 
-class StepType : public QObject {
+class PartType : public QObject {
     Q_OBJECT
 public:
     enum Type {
-        CONSTANT    = 0,
-        COEFFICIENT = 1,
-        ADAPTIVE    = 2
+        NONE = 0,
+        LO = 1, // Local Optimization
+        GO = 2  // Global Optimization
     };
     Q_ENUM(Type)
 
-    explicit StepType(QObject *parent = nullptr) : QObject(parent) {}
+    explicit PartType(QObject *parent = nullptr) : QObject(parent) {}
 };
 
 class ExtremumType : public QObject {
@@ -73,12 +78,56 @@ public:
         ALL = 0,
         CD  = 1, // Coordinate Descent
         GD  = 2, // Gradient Descent
-        CG  = 3  // Conjugate Gradient
+        CG  = 3, // Conjugate Gradient
+        GA  = 4, // Genetic Algorithm
+        PS  = 5  // Particle Swarm
     };
     Q_ENUM(Type)
 
     explicit AlgoType(QObject *parent = nullptr) : QObject(parent) {}
 };
+
+namespace GO {
+
+class CheckList : public QObject {
+    Q_OBJECT
+public:
+    enum Check { 
+        Error               = -1,
+        CalcAccuracy        = (1 << 0),  // GA,PS
+        ResultAccuracy      = (1 << 1),  // GA,PS
+        MinX                = (1 << 2),  // GA,PS
+        MaxX                = (1 << 3),  // GA,PS
+        MinY                = (1 << 4),  // GA,PS
+        MaxY                = (1 << 5),  // GA,PS
+        Size                = (1 << 6),  // GA,PS
+        MaxIterations       = (1 << 7),  // GA,PS
+        CrossoverProb       = (1 << 8),  // GA,
+        MutationProb        = (1 << 9),  // GA,
+        Elitism             = (1 << 10), // GA,
+        InertiaCoef         = (1 << 11), //   ,PS
+        CognitiveCoef       = (1 << 12), //   ,PS
+        SocialCoef          = (1 << 13), //   ,PS
+        GACheck             = 2047,
+        PSCheck             = 14591
+    };
+    Q_ENUM(Check)
+
+    explicit CheckList(QObject *parent = nullptr) : QObject(parent) {
+        static_assert( GACheck == (
+            CalcAccuracy + ResultAccuracy + MinX + MaxX + MinY + MaxY +
+            Size + MaxIterations + CrossoverProb + MutationProb + Elitism
+        ), "Invalid GACheck");
+        static_assert( PSCheck == (
+            CalcAccuracy + ResultAccuracy + MinX + MaxX + MinY + MaxY +
+            Size + MaxIterations + InertiaCoef + CognitiveCoef + SocialCoef 
+        ), "Invalid PSCheck");
+    }
+};
+
+} // namespace GO
+
+namespace LO {
 
 class ExtensionType : public QObject {
     Q_OBJECT
@@ -91,6 +140,19 @@ public:
     Q_ENUM(Type)
 
     explicit ExtensionType(QObject *parent = nullptr) : QObject(parent) {}
+};
+
+class StepType : public QObject {
+    Q_OBJECT
+public:
+    enum Type {
+        CONSTANT    = 0,
+        COEFFICIENT = 1,
+        ADAPTIVE    = 2
+    };
+    Q_ENUM(Type)
+
+    explicit StepType(QObject *parent = nullptr) : QObject(parent) {}
 };
 
 class FullAlgoType : public QObject {
@@ -171,8 +233,9 @@ public:
             MaxY            + Iterations     + FuncCalls
         ), "Invalid CGBCheck");
     }
-
 };
+
+} // namespace LO
 
 class EnumHelper : public QObject {
     Q_OBJECT
@@ -180,8 +243,10 @@ public:
 
     explicit EnumHelper(QObject *parent = nullptr) : QObject(parent) {}
 
-    Q_INVOKABLE FullAlgoType::Type calculateFullType(AlgoType::Type algo, ExtensionType::Type extension)
+    Q_INVOKABLE LO::FullAlgoType::Type calculateFullType(AlgoType::Type algo, LO::ExtensionType::Type extension)
     {
+        using namespace LO;
+
         if (algo == AlgoType::CD) {
             if (extension == ExtensionType::B) {
                 return FullAlgoType::CDB;
@@ -202,8 +267,22 @@ public:
         return FullAlgoType::INVALID;
     }
 
-    Q_INVOKABLE CheckList::Check getCheckByFullType(FullAlgoType::Type type) 
+    Q_INVOKABLE GO::CheckList::Check getCheckByAlgoType(AlgoType::Type type) 
     {
+        using namespace GO;
+        if (type == AlgoType::GA) {
+            return CheckList::GACheck;
+        } else if (type == AlgoType::PS) {
+            return CheckList::PSCheck;
+        }
+        qCritical() << "Trying to get a checklist for an unsupported algo: " << type;
+        return CheckList::Error;
+    }
+
+    Q_INVOKABLE LO::CheckList::Check getCheckByFullType(LO::FullAlgoType::Type type) 
+    {
+        using namespace LO;
+
         if (type == FullAlgoType::CDB) {
             return CheckList::CDBCheck;
         } else if (type == FullAlgoType::CDS) {
@@ -217,7 +296,21 @@ public:
         } else if (type == FullAlgoType::CGB) {
             return CheckList::CGBCheck;
         }
+        qCritical() << "Trying to get a checklist for an unsupported full algo: " << type;
         return CheckList::Error;
+    }
+
+    Q_INVOKABLE QString partTypeToString(PartType::Type type)
+    {
+        switch (type) {
+            case PartType::LO:
+                return "Локальная оптимизация";
+            case PartType::GO:
+                return "Глобальная оптимизация";
+            default:
+                qWarning() << "No string name fo type: " << type;
+                return "";
+        }
     }
 
     Q_INVOKABLE QString algoTypeToString(AlgoType::Type type)
@@ -229,13 +322,18 @@ public:
                 return "Метод градиентного спуска";
             case AlgoType::CG:
                 return "Метод сопряженных градиентов";
+            case AlgoType::GA:
+                return "Генетический алгоритм";
+            case AlgoType::PS:
+                return "Алгоритм роя частиц";
             default:
                 return "";
         }
     }
 
-    Q_INVOKABLE QString extensionTypeToString(ExtensionType::Type type)
+    Q_INVOKABLE QString extensionTypeToString(LO::ExtensionType::Type type)
     {
+        using namespace LO;
         switch (type) {
             case ExtensionType::B:
                 return "Базовый";
@@ -248,8 +346,9 @@ public:
         }
     }
 
-    Q_INVOKABLE QString stepTypeToString(StepType::Type type)
+    Q_INVOKABLE QString stepTypeToString(LO::StepType::Type type)
     {
+        using namespace LO;
         switch (type) {
             case StepType::CONSTANT:
                 return "Константный";
@@ -297,6 +396,8 @@ public:
                 return "Файл корректен";
             case ReportStatus::NotVerified:
                 return "Проверка файла не выполнена";
+            case ReportStatus::AnotherPartType:
+                return "Отчет из другого раздела";
             default:
                 return "";
         }

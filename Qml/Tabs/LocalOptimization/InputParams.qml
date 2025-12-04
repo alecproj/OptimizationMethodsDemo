@@ -1,8 +1,11 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+
 import AppEnums
-import InputData
+import LOInputData
+import Globals
+import Components
 
 Flickable {
     id: root
@@ -20,6 +23,8 @@ Flickable {
         extensionId: AppStates.selectedExtension
         fullAlgoId: AppStates.selectedFullAlgo
     }
+
+    onInputDataChanged: console.log(inputData)
 
     EnumHelper { id: helper }
 
@@ -102,7 +107,7 @@ Flickable {
         
             StyledComboBox {
                 id: extremum
-                Layout.preferredWidth: 100
+                Layout.preferredWidth: 150
         
                 property int selected: ExtremumType.MINIMUM
         

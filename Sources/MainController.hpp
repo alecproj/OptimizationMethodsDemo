@@ -8,8 +8,11 @@
 
 #include "AppEnums.hpp"
 #include "ReportWriter.hpp"
-#include "Report.hpp"
+#include "ReportsModel.hpp"
 #include "QuickInfoListModel.hpp"
+
+#include "LOInputData.hpp"
+#include "GOInputData.hpp"
 
 #include <CoordinateDescent/CoordinateDescent.hpp>
 #include <GradientDescent/GradientDescent.hpp>
@@ -26,7 +29,7 @@ class MainController : public QObject {
     Q_OBJECT
 
     Q_PROPERTY(QuickInfoListModel *quickInfoModel READ quickInfoModel NOTIFY quickInfoModelChanged)
-    Q_PROPERTY(QList<Report *> openReports READ openReports NOTIFY openReportsUpdated)
+    Q_PROPERTY(ReportsModel *openReports READ openReports NOTIFY openReportsUpdated)
     Q_PROPERTY(int openReportsCount READ openReportsCount NOTIFY openReportsUpdated)
 public:
 
@@ -34,17 +37,19 @@ public:
 
     Q_INVOKABLE Status setInputData(const InputData *data);
     Q_INVOKABLE Status solve();
+    Q_INVOKABLE void setPartition(PartType::Type partition);
+    Q_INVOKABLE void initQuickInfoModel();
     Q_INVOKABLE void updateQuickInfoModel();
     Q_INVOKABLE Status inputDataFromFile(const QString &fileName, InputData *out);
     Q_INVOKABLE Status openReport(const QString &fileName);
     Q_INVOKABLE void closeReport(const QString &fileName);
     Q_INVOKABLE void requestDeleteReport(const QString &fileName);
-    Q_INVOKABLE int openReportsCount() { return m_openReports.count(); }
-    QList<Report *> &openReports() { return m_openReports; }
+    Q_INVOKABLE int openReportsCount() { return m_openReports.countReports(); }
     Q_INVOKABLE void askConfirm(const QString &title, const QString &text, bool twoButtons = false) {
         emit requestConfirm(title, text, twoButtons);
     }
 
+    ReportsModel *openReports() { return &m_openReports; }
     QuickInfoListModel *quickInfoModel() { return &m_quickInfoModel; }
 
 signals:
@@ -57,8 +62,9 @@ public slots:
 
 private:
     ReportWriter m_writer;
+    PartType::Type m_currPartition;
     AlgoType::Type m_currAlgorithm;
-    ExtensionType::Type m_currExtension;
+    LO::ExtensionType::Type m_currExtension;
     CDAlgoType m_cdAlgo;
     CD::InputData m_cdData;
     GDAlgoType m_gdAlgo;
@@ -66,13 +72,17 @@ private:
     QuickInfoListModel m_quickInfoModel;
     CGAlgoType m_cgAlgo;
     CG::InputData m_cgData;
-    QList<Report *> m_openReports;
+    ReportsModel m_openReports;
     QString m_filePendingDeletion;
     EnumHelper m_enumHelper;
 
-    void fillCDData(const InputData *data);
-    void fillGDData(const InputData *data);
-    void fillCGData(const InputData *data);
+    inline Status setLOInputData(const LO::InputData *data);
+    inline Status setGOInputData(const GO::InputData *data);
+    inline Status solveLO();
+    inline Status solveGO();
+    void fillCDData(const LO::InputData *data);
+    void fillGDData(const LO::InputData *data);
+    void fillCGData(const LO::InputData *data);
 };
 
 #endif // SOURCES_MAINCONTROLLER_HPP_
