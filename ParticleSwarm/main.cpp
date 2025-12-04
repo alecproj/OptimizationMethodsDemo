@@ -1,0 +1,164 @@
+#include <ParticleSwarm/ParticleSwarm.hpp>
+#include <glog/logging.h>
+#include <muParser.h>
+#include <iostream>
+#include <string>
+#include <variant>
+#include <sstream>
+
+using namespace PS;
+
+// Класс-заглушка - реализовывать не нужно!
+class MockReporter {
+    using Cell = std::variant<std::string, double, long long, bool>;
+public:
+    int begin() { return 0; }
+    int end() { return 0; }
+    void insertValue(const std::string &name, double value) {
+        LOG(WARNING) << name << ": " << value;
+    }
+    void insertMessage(const std::string &text) {
+        LOG(WARNING) << text;
+    }
+    int beginTable(const std::string &title, const std::vector<std::string> &columnHeaders) {
+        static int tid = 0;
+        LOG(WARNING) << "Открыта таблица: " << title;
+        std::ostringstream stream;
+        for (const auto h : columnHeaders) {
+            stream << h << " ";
+        }
+        LOG(WARNING) << stream.str();
+        return ++tid;
+    }
+    int insertRow(int tableId, const std::vector<Cell> &row) {
+        std::ostringstream stream;
+        for (const auto v : row) {
+            std::visit([&stream](auto&& value) {
+                stream << value;
+            }, v);
+            stream << " ";
+        }
+        LOG(WARNING) << tableId << ": " << stream.str();
+        return 0;
+    }
+    void insertResult(double x, double y, double funcValue) {
+        LOG(WARNING) << "Ответ: x=" << x << " y=" << y << " f=" << funcValue;
+    }
+    void endTable(int tableId) {
+        LOG(WARNING) << "Таблица " << tableId << " закрыта";
+    }
+};
+
+// Конвертация типа экстремума в строку
+inline std::string extremumTypeToString(ExtremumType type) {
+    switch (type) {
+    case ExtremumType::MINIMUM: return "Минимум";
+    case ExtremumType::MAXIMUM: return "Максимум";
+    default:                    return "";
+    }
+}
+
+ExtremumType stringToExtremumType(const std::string& str) {
+    if (str == "MINIMUM") return ExtremumType::MINIMUM;
+    if (str == "MAXIMUM") return ExtremumType::MAXIMUM;
+    throw std::invalid_argument("Неверный тип экстремума");
+}
+
+int main(int argc, char *argv[])
+{
+    FLAGS_logtostderr = true;
+    FLAGS_alsologtostderr = false;
+    FLAGS_stderrthreshold = 0;
+    FLAGS_log_prefix = false;
+    FLAGS_colorlogtostderr = true;
+    FLAGS_minloglevel = 0;
+    google::InitGoogleLogging(argv[0]);
+    google::SetVLOGLevel("*", DEBUG);
+
+    using AlgoType = ParticleSwarm<MockReporter>;
+    MockReporter reporter{};
+    AlgoType algo{ &reporter };
+    InputData data{};
+
+
+
+
+    /*
+    LOG(INFO) << "Параметры алгоритма PSO:";
+    LOG(INFO) << "Размер роя: " << algo.getSwarmSize();
+    LOG(INFO) << "Инерция: " << algo.getInertiaWeight();
+    LOG(INFO) << "Когнитивный коэффициент: " << algo.getCognitiveCoeff();
+    LOG(INFO) << "Социальный коэффициент: " << algo.getSocialCoeff();
+    LOG(INFO) << "Макс. итераций: " << algo.getMaxIterations();
+    */
+
+    try {
+        int tmp_int;
+        double tmp_dbl;
+        // Ввод данных от пользователя
+        std::cout << "Введите функцию (например, x^2 + y^2): ";
+        std::getline(std::cin, data.function);
+        std::string input_str;
+
+        std::cout << "Используемые параметры:" << std::endl;
+        std::cout << "Введите размер роя (например, 50): ";
+        std::cin >> tmp_int;
+        algo.setSwarmSize(tmp_int);
+        std::cout << "Введите коэффициент инерции (например, 0.8): ";
+        std::cin >> tmp_dbl;
+        algo.setInertiaWeight(tmp_dbl);
+        std::cout << "Введите когнитивный коэффициент (например, 2.0): ";
+        std::cin >> tmp_dbl;
+        algo.setCognitiveCoeff(tmp_dbl);
+        std::cout << "Введите социальный коэффициент (например, 2.0): ";
+        std::cin >> tmp_dbl;
+        algo.setSocialCoeff(tmp_dbl);
+        std::cout << "Введите максимальное число итераций (например, 200): ";
+        std::cin >> tmp_int;
+        algo.setMaxIterations(tmp_int);
+        tmp_int = NULL;
+        tmp_dbl = NULL;
+
+        std::cout << "Введите тип экстремума (MINIMUM или MAXIMUM): ";
+        std::cin >> input_str;
+        data.extremum_type = stringToExtremumType(input_str);
+
+        std::cout << "=== ПАРАМЕТРЫ АЛГОРИТМА ===" << std::endl;
+        std::cout << "Введите левую границу X: ";
+        std::cin >> data.x_left_bound;
+        std::cout << "Введите правую границу X: ";
+        std::cin >> data.x_right_bound;
+        std::cout << "Введите левую границу Y: ";
+        std::cin >> data.y_left_bound;
+        std::cout << "Введите правую границу Y: ";
+        std::cin >> data.y_right_bound;
+        std::cout << "Введите точность результата (например, 8): ";
+        std::cin >> data.result_precision;
+        std::cout << "Введите точность вычислений (например, 15): ";
+        std::cin >> data.computation_precision;
+    }
+    catch (const std::exception& e) {
+        std::cout << "Ошибка ввода: " << e.what() << std::endl;
+        return 1;
+    }
+
+    // Проверка и установка данных
+    auto rv = algo.setInputData(&data);
+    if (rv != Result::Success) {
+        std::cout << "Ошибка установки данных: " << resultToString(rv) << std::endl;
+        return 1;
+    }
+
+    // Запуск алгоритма
+    rv = algo.solve();
+
+    // Вывод результатов
+    
+    std::cout << std::endl << "=== РЕЗУЛЬТАТЫ ===" << std::endl;
+    std::cout << "Оптимум в точке: (" << algo.getX() << ", " << algo.getY() << ")" << std::endl;
+    std::cout << "Значение функции: " << algo.getOptimumValue() << std::endl;
+    std::cout << "Итераций: " << algo.getIterations() << ", Вызовов функции: " << algo.getFunctionCalls() << std::endl;
+
+    google::ShutdownGoogleLogging();
+    return 0;
+}
