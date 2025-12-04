@@ -51,6 +51,22 @@ public:
             return rv;
         }
 
+        if (config) {
+            m_config.population_size = config->population_size;
+            m_config.generations = config->generations;
+            m_config.crossover_rate = config->crossover_rate;
+            m_config.mutation_rate = config->mutation_rate;
+            m_config.bits_per_variable = config->bits_per_variable;
+            m_config.elite_count = config->elite_count;
+        } else {
+            m_config.population_size = data->population_size;
+            m_config.generations = data->generations;
+            m_config.crossover_rate = data->crossover_rate;
+            m_config.mutation_rate = data->mutation_rate;
+            m_config.bits_per_variable = data->bits_per_variable;
+            m_config.elite_count = data->elite_count;
+        }
+
         // ВАЛИДАЦИЯ ВХОДНЫХ ДАННЫХ
         // Проверка функции
         if (data->function.empty()) {
@@ -97,72 +113,72 @@ public:
         }
 
         // Проверка размера популяции
-        if (config->population_size < 2 || config->population_size > 10000) {
+        if (m_config.population_size < 2 || m_config.population_size > 10000) {
             rv = Result::InvalidPopulationSize;
             LOGERR(rv);
             return rv;
         }
 
         // Проверка количества поколений
-        if (config->generations < 1 || config->generations > 10000) {
+        if (m_config.generations < 1 || m_config.generations > 10000) {
             rv = Result::InvaligGenerationsCount;
             LOGERR(rv);
             return rv;
         }
 
         // Проверка вероятность кроссовера
-        if (config->crossover_rate < 0.0 || config->crossover_rate > 1.0) {
+        if (m_config.crossover_rate < 0.0 || m_config.crossover_rate > 1.0) {
             rv = Result::InvalidCrossoverRate;
             LOGERR(rv);
             return rv;
         }
 
         // Провека вероятности мутации
-        if (config->mutation_rate < 0.0 || config->mutation_rate > 1.0) {
+        if (m_config.mutation_rate < 0.0 || m_config.mutation_rate > 1.0) {
             rv = Result::InvalidMutationRate;
             LOGERR(rv);
             return rv;
         }
 
         // Проверка количества бит на переменную
-        if (config->bits_per_variable < 1 || config->bits_per_variable > 52) {
+        if (m_config.bits_per_variable < 1 || m_config.bits_per_variable > 52) {
             rv = Result::InvalidBits;
             LOGERR(rv);
             return rv;
         }
 
         // Проверка количества элитных особей
-        if (config->elite_count < 0) {
+        if (m_config.elite_count < 0) {
             rv = Result::InvalidElite;
             LOGERR(rv);
             return rv;
         }
 
         // Проверка на логику выбора вероятностей
-        if (config->crossover_rate < config->mutation_rate) {
+        if (m_config.crossover_rate < m_config.mutation_rate) {
             LOG(WARNING) << "Вероятность кроссовера меньше вероятности мутации - это может снизить эффективность алгоритма";
         }
 
 
         // Проверка логики элитных и обычных особей
-        if (config->elite_count >= config->population_size) {
+        if (m_config.elite_count >= m_config.population_size) {
             rv = Result::InvalidEliteLogic;
             LOGERR(rv);
             return rv;
         }
 
-        if (config->elite_count == 0) {
+        if (m_config.elite_count == 0) {
             LOG(WARNING) << "Элитизм отключен - лучшие решения могут быть потеряны";
         }
 
-        if (config->elite_count > config->population_size / 2) {
+        if (m_config.elite_count > m_config.population_size / 2) {
             LOG(WARNING) << "Слишком много элитных особей - может снизить разнообразие популяции";
         }
 
         // Сохраняем данные
         m_inputData = data;
         
-        rv = initialize(data, config);
+        rv = initialize(data, &m_config);
         if (rv != Result::Success) {
             LOGERR(rv);
             return rv;
@@ -311,6 +327,7 @@ private:
     Reporter* m_reporter;
     int m_digitResultPrecision;                  // Количество знаков после запятой для результата
     double m_resultPrecision;
+    GAConfig m_config;
     
 };
 
