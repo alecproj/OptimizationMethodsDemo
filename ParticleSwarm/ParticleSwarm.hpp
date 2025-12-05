@@ -162,6 +162,7 @@ Result solve()
     }
 
     resetAlgorithmState();
+    resetSwarmState();
 
     m_computationDigits = m_inputData->computation_precision;
     m_resultDigits = m_inputData->result_precision;
@@ -362,6 +363,14 @@ private:
         }
     }
 
+    void resetSwarmState() {
+        m_swarm.clear();
+        m_global_best_x = 0;
+        m_global_best_y = 0;
+        m_global_best_value = 0;
+        m_iterations = 0;
+        m_function_calls = 0;
+    }
 
     // Вспомогательный метод для подсчета частиц вблизи оптимума
     int countParticlesNearOptimum(double radius_factor) const {
