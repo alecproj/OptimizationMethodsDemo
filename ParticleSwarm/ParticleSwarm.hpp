@@ -104,13 +104,13 @@ public:
             LOGERR(rv);
             return rv;
         }
-
+        /*
         rv = checkFunctionDifferentiability(data->function);
         if (rv != Result::Success) {
             LOGERR(rv);
             return rv;
         }
-
+        */
         if (data->extremum_type != ExtremumType::MINIMUM &&
             data->extremum_type != ExtremumType::MAXIMUM) {
             rv = Result::InvalidExtremumType;
