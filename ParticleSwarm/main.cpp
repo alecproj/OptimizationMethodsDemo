@@ -93,8 +93,8 @@ int main(int argc, char *argv[])
     */
 
     try {
-        int tmp_int;
-        double tmp_dbl;
+        int tmp_int = 0;
+        double tmp_dbl = 0.0;
         // Ввод данных от пользователя
         std::cout << "Введите функцию (например, x^2 + y^2): ";
         std::getline(std::cin, data.function);
@@ -116,8 +116,6 @@ int main(int argc, char *argv[])
         std::cout << "Введите максимальное число итераций (например, 200): ";
         std::cin >> tmp_int;
         algo.setMaxIterations(tmp_int);
-        tmp_int = NULL;
-        tmp_dbl = NULL;
 
         std::cout << "Введите тип экстремума (MINIMUM или MAXIMUM): ";
         std::cin >> input_str;
