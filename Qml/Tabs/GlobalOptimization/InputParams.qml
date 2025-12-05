@@ -365,7 +365,7 @@ Flickable {
                 placeholderText: "50"
 
                 validator: RegularExpressionValidator {
-                    regularExpression: /^[1-9]\d{0,2}$/i
+                    regularExpression: /^[1-9]\d{0,4}$/i
                 }
 
                 onActiveFocusChanged: {

@@ -173,64 +173,13 @@ Result solve()
 
         //LOG(INFO) << "Функция для оптимизации: " << m_inputData->function;
 
-        // ============ НАЧАЛО РЕПОРТЕРА ============
-        m_reporter->insertMessage("=== АЛГОРИТМ РОЯ ЧАСТИЦ (PSO) ===");
-        m_reporter->insertMessage("Начало работы алгоритма");
-        //m_reporter->insertMessage("Цель: " + (m_inputData->extremum_type == ExtremumType::MINIMUM ? "Поиск минимума" : "Поиск максимума"));
-        m_reporter->insertMessage("Функция: " + m_inputData->function);
 
-        // Таблица параметров алгоритма
-        int paramsTableId = m_reporter->beginTable("Параметры алгоритма",
-            {"Параметр", "Значение"});
-
-        m_reporter->insertRow(paramsTableId, {
-            "Размер роя", static_cast<long long>(m_swarm_size)
-        });
-        m_reporter->insertRow(paramsTableId, {
-            "Инерция", m_inertia_weight
-        });
-        m_reporter->insertRow(paramsTableId, {
-            "Когнитивный коэффициент", m_cognitive_coeff
-        });
-        m_reporter->insertRow(paramsTableId, {
-            "Социальный коэффициент", m_social_coeff
-        });
-        m_reporter->insertRow(paramsTableId, {
-            "Макс. итераций", static_cast<long long>(m_max_iterations)
-        });
-
-        m_reporter->endTable(paramsTableId);
-
-        // Таблица границ области
-        /*
-        int boundsTableId = m_reporter->beginTable("Границы области поиска",
-            {"Ось", "Левая граница", "Правая граница"});
-
-        m_reporter->insertRow(boundsTableId, {
-            "X", m_inputData->x_left_bound, m_inputData->x_right_bound
-        });
-        m_reporter->insertRow(boundsTableId, {
-            "Y", m_inputData->y_left_bound, m_inputData->y_right_bound
-        });
-
-        m_reporter->endTable(boundsTableId);
-        */
-        // ==========================================
 
         // Инициализация роя
-        m_reporter->insertMessage("=== ИНИЦИАЛИЗАЦИЯ РОЯ ===");
         m_swarm.resize(m_swarm_size);
         initializeSwarmPositions();
         initializeSwarmVelocities();
         initializeBestValues();
-
-        m_reporter->insertMessage("Начальный глобальный лучший:");
-        m_reporter->insertValue("X", m_global_best_x);
-        m_reporter->insertValue("Y", m_global_best_y);
-        m_reporter->insertValue("Значение функции", m_global_best_value);
-        m_reporter->insertValue("Вызовов функции", static_cast<double>(m_function_calls));
-
-        //LOG(INFO) << "Начальный глобальный лучший: (" << m_global_best_x << ", " << m_global_best_y << ") значение = " << m_global_best_value;
 
         // Основной цикл алгоритма PSO
         int stagnation_count = 0;
@@ -238,7 +187,7 @@ Result solve()
 
         // Таблица для всех итераций
         int iterationsTableId = m_reporter->beginTable("Ход выполнения алгоритма",
-            {"Итерация", "Лучш.X", "Лучш.Y", "Значение", "Улучшение", "Вызовов", "Стагнация"});
+            {"Итерация", "Лучший x", "Лучший y", "Значение", "Улучшение", "Вызовов", "Стагнация"});
 
         for (m_iterations = 1; m_iterations <= m_max_iterations; ++m_iterations) {
             // Сохраняем предыдущее лучшее значение для проверки сходимости
@@ -260,13 +209,13 @@ Result solve()
 
             // Добавляем строку для текущей итерации
             m_reporter->insertRow(iterationsTableId, {
-                static_cast<long long>(m_iterations),
+                m_iterations,
                 m_global_best_x,
                 m_global_best_y,
                 m_global_best_value,
                 improvement,
-                static_cast<double>(m_function_calls),
-                static_cast<double>(stagnation_count)
+                m_function_calls,
+                stagnation_count
             });
 
             // ============ ДЕТАЛЬНАЯ ИНФОРМАЦИЯ КАЖДЫЕ 10 ИТЕРАЦИЙ ============
@@ -351,10 +300,7 @@ Result solve()
 
             // Критерии остановки
             if (stagnation_count >= 10) { // 10 итераций без улучшения
-                m_reporter->insertMessage("=== АЛГОРИТМ СОШЕЛСЯ ===");
-                m_reporter->insertValue("Итераций выполнено", static_cast<double>(m_iterations));
-                m_reporter->insertValue("Стагнация", static_cast<double>(stagnation_count));
-                m_reporter->insertValue("Финальное улучшение", improvement);
+                m_reporter->insertMessage("\nСходимость по стагнации: "+ std::to_string(stagnation_count) +  " итераций без улучшений.");
                 break;
             }
         }
@@ -363,68 +309,31 @@ Result solve()
 
         if (m_iterations > m_max_iterations) {
             //LOG(INFO) << "Достигнуто максимальное количество итераций: " << m_max_iterations;
-            m_reporter->insertMessage("=== ДОСТИГНУТ МАКСИМУМ ИТЕРАЦИЙ ===");
+            m_reporter->insertMessage("Достигнут максимум итераций. Ответ является неточным!");
             m_reporter->insertMessage("Остановка по достижению " +
                 std::to_string(m_max_iterations) + " итераций");
         }
 
-        /*
-        LOG(INFO) << "Финальный результат:";
-        LOG(INFO) << "Точка оптимума: (" << m_global_best_x << ", " << m_global_best_y << ")";
-        LOG(INFO) << "Значение функции: " << m_global_best_value;
-        LOG(INFO) << "Всего итераций: " << m_iterations;
-        LOG(INFO) << "Всего вызовов функции: " << m_function_calls;
-        */
+        m_reporter->insertValue("Итераций выполнено:", m_iterations);
+        m_reporter->insertValue("Вызовов функции выполнено:", m_function_calls);
+        m_reporter->insertValue("Скорость сходимости:", static_cast<double>(m_function_calls) / std::max(1, m_iterations));
+        m_reporter->insertMessage("✅ Алгоритм успешно завершил работу");
 
-        // ============ ФИНАЛЬНЫЙ ОТЧЕТ ============
-        m_reporter->insertMessage("=== ФИНАЛЬНЫЙ ОТЧЕТ ===");
-
-        // Итоговая таблица
-        int finalTableId = m_reporter->beginTable("Результаты оптимизации",
-            {"Параметр", "Значение"});
-
-        m_reporter->insertRow(finalTableId, {
-            "Найденный X", m_global_best_x
-        });
-        m_reporter->insertRow(finalTableId, {
-            "Найденный Y", m_global_best_y
-        });
-        m_reporter->insertRow(finalTableId, {
-            "Значение f(x,y)", m_global_best_value
-        });
-        m_reporter->insertRow(finalTableId, {
-            "Итераций выполнено", static_cast<long long>(m_iterations)
-        });
-        m_reporter->insertRow(finalTableId, {
-            "Вызовов функции", static_cast<long long>(m_function_calls)
-        });
-        m_reporter->insertRow(finalTableId, {
-            "Скорость сходимости",
-            static_cast<double>(m_function_calls) / std::max(1, m_iterations)
-        });
-        m_reporter->insertRow(finalTableId, {
-            "Точность результата", m_resultPrecision
-        });
-
-        m_reporter->endTable(finalTableId);
-
-        m_reporter->insertMessage("Алгоритм успешно завершен!");
         // =========================================
 
     }
     catch (const mu::Parser::exception_type& e) {
         rv = Result::ParseError;
         LOGERR(rv);
-        m_reporter->insertMessage("ОШИБКА ПАРСИНГА: " + std::string(e.GetMsg()));
+        m_reporter->insertMessage("Ошибка парсинга!: " + std::string(e.GetMsg()));
     }
     catch (const std::exception& e) {
         rv = Result::ComputeError;
         LOGERR(rv);
-        m_reporter->insertMessage("ОШИБКА ВЫЧИСЛЕНИЙ: " + std::string(e.what()));
+        m_reporter->insertMessage("Ошибка вычислений!: " + std::string(e.what()));
     }
 
     m_reporter->insertResult(m_global_best_x, m_global_best_y, m_global_best_value);
-    m_reporter->insertMessage("Алгоритм успешно завершен!");
     //LOG(INFO) << "Алгоритм успешно завершил работу.";
     return Result::Success;
 }
@@ -465,6 +374,7 @@ private:
             return new_value > current_best;
         }
     }
+    
 
     void initializeSwarmPositions() {
         double x_range = m_inputData->x_right_bound - m_inputData->x_left_bound;
@@ -612,6 +522,8 @@ private:
             updateParticleBest(particle);
         }
     }
+
+
 
     void insertResultInfo(/* ... */)
     {
