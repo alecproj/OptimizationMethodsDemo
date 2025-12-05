@@ -210,10 +210,10 @@ Result solve()
             // Добавляем строку для текущей итерации
             m_reporter->insertRow(iterationsTableId, {
                 m_iterations,
-                m_global_best_x,
-                m_global_best_y,
-                m_global_best_value,
-                improvement,
+                roundComputation(m_global_best_x),
+                roundComputation(m_global_best_y),
+                roundComputation(m_global_best_value),
+                roundComputation(improvement),
                 m_function_calls,
                 stagnation_count
             });
@@ -333,7 +333,7 @@ Result solve()
         m_reporter->insertMessage("Ошибка вычислений!: " + std::string(e.what()));
     }
 
-    m_reporter->insertResult(m_global_best_x, m_global_best_y, m_global_best_value);
+    m_reporter->insertResult(roundResult(m_global_best_x), roundResult(m_global_best_y), roundResult(m_global_best_value));
     //LOG(INFO) << "Алгоритм успешно завершил работу.";
     return Result::Success;
 }
@@ -374,7 +374,23 @@ private:
             return new_value > current_best;
         }
     }
-    
+    //Округляет число до указанного количества знаков после запятой
+    double roundTo(const double value_1, const int digits) {
+        double factor = pow(10.0, digits);
+        return round(value_1 * factor) / factor;
+    }
+
+    inline double roundComputation(double v)
+    {
+        double factor = std::pow(10.0, m_inputData->computation_precision);
+        return std::round(v * factor) / factor;
+    }
+
+    inline double roundResult(double v)
+    {
+        double factor = std::pow(10.0, m_inputData->result_precision);
+        return std::round(v * factor) / factor;
+    }
 
     void initializeSwarmPositions() {
         double x_range = m_inputData->x_right_bound - m_inputData->x_left_bound;
